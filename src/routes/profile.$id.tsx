@@ -1,10 +1,11 @@
 import { createFileRoute, useParams, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { createServerFn } from "@tanstack/react-start";
+import { useEffect, useState } from "react";
 import {
   getCandidateById,
   getJobMatchesForTrack,
 } from "@/data/mock";
-import type { JobMatch, SkillScore, TrackType } from "@/types/unmapped";
+import type { CandidateSkillProfile, JobMatch, SkillItem, SkillScore, TrackType } from "@/types/unmapped";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -25,6 +26,7 @@ import {
   getRiskProfileForCandidate,
   type SkillAIRisk,
 } from "@/data/aiRisk";
+import { readCandidateSkillProfileJson, type ProfileSnapshot } from "@/services/profileHandler";
 
 export const Route = createFileRoute("/profile/$id")({
   head: ({ params }) => {
@@ -55,6 +57,10 @@ export const Route = createFileRoute("/profile/$id")({
     </div>
   ),
 });
+
+const loadProfileSnapshot = createServerFn({ method: "POST" })
+  .inputValidator((data: { profileId: string }) => data)
+  .handler(async ({ data }) => readCandidateSkillProfileJson(data.profileId));
 
 const trackMeta: Record<
   TrackType,
@@ -89,14 +95,57 @@ function trustColor(score: number) {
 function ProfilePage() {
   const { id } = useParams({ from: "/profile/$id" });
   const candidate = getCandidateById(id);
+  const [dynamicSnapshot, setDynamicSnapshot] = useState<ProfileSnapshot | null>(null);
+  const [dynamicLoading, setDynamicLoading] = useState(!candidate);
+  const [dynamicError, setDynamicError] = useState("");
   const [activeJob, setActiveJob] = useState<JobMatch | null>(null);
+
+  useEffect(() => {
+    if (candidate) {
+      setDynamicLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setDynamicLoading(true);
+    setDynamicError("");
+
+    loadProfileSnapshot({ data: { profileId: id } })
+      .then((snapshot) => {
+        if (!cancelled) setDynamicSnapshot(snapshot);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setDynamicError(err instanceof Error ? err.message : "Could not load profile.");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setDynamicLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [candidate, id]);
+
+  if (!candidate && dynamicLoading) {
+    return (
+      <main className="mx-auto max-w-2xl px-4 py-20 text-center">
+        <p className="text-muted-foreground">Loading profile...</p>
+      </main>
+    );
+  }
+
+  if (!candidate && dynamicSnapshot) {
+    return <DynamicProfilePage snapshot={dynamicSnapshot} />;
+  }
 
   if (!candidate) {
     return (
       <main className="mx-auto max-w-2xl px-4 py-20 text-center">
         <h1 className="text-2xl font-semibold text-navy">Profile not found</h1>
         <p className="mt-2 text-muted-foreground">
-          We couldn't find a passport with that id.
+          {dynamicError || "We couldn't find a passport with that id."}
         </p>
         <Link
           to="/"
@@ -269,6 +318,177 @@ function ProfilePage() {
         />
       )}
     </main>
+  );
+}
+
+function DynamicProfilePage({ snapshot }: { snapshot: ProfileSnapshot }) {
+  const profile = snapshot.profile;
+  const skills = Object.values(profile.skills).flat();
+  const initials = (profile.profile.roleName || "Candidate")
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+  return (
+    <main className="mx-auto max-w-5xl px-4 pb-20 pt-8 sm:px-6">
+      <section className="rounded-xl border border-border bg-card p-6 sm:p-8">
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex items-start gap-4">
+            <div className="flex h-16 w-16 flex-none items-center justify-center rounded-full bg-navy text-xl font-bold text-navy-foreground">
+              {initials}
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-navy">
+                {profile.profile.roleName || "Candidate profile"}
+              </h1>
+              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                {profile.profile.summary}
+              </p>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <span className="rounded-md bg-navy/10 px-2.5 py-1 text-xs font-medium capitalize text-navy">
+                  {profile.profile.track}
+                </span>
+                <span className="rounded-md bg-muted px-2.5 py-1 text-xs font-medium capitalize text-foreground">
+                  {profile.profile.seniority}
+                </span>
+                {(profile.occupation.escoOccupationTitle || profile.occupation.iscoTitle) && (
+                  <span className="rounded-md bg-muted px-2.5 py-1 text-xs font-medium text-foreground">
+                    {profile.occupation.escoOccupationTitle || profile.occupation.iscoTitle}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col items-start sm:items-end">
+            <span className="text-xs uppercase tracking-wide text-muted-foreground">
+              Profile Status
+            </span>
+            <div className="mt-2 rounded-md bg-teal/10 px-3 py-1 text-sm font-semibold capitalize text-teal">
+              {snapshot.status}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="mt-8">
+        <h2 className="text-lg font-semibold text-navy">Skills from profile</h2>
+        <div className="mt-4 space-y-3">
+          {skills.map((skill) => (
+            <DynamicSkillRow key={`${skill.category}-${skill.name}`} skill={skill} />
+          ))}
+          {!skills.length && (
+            <div className="rounded-lg border border-border bg-card p-4 text-sm text-muted-foreground">
+              No skills were captured in this profile yet.
+            </div>
+          )}
+        </div>
+      </section>
+
+      <section className="mt-10 grid gap-6 md:grid-cols-2">
+        <ProfileList
+          title="Experience"
+          items={[
+            ...profile.experience.jobTitles,
+            ...profile.experience.responsibilities,
+            ...profile.experience.achievements,
+          ]}
+          empty="No experience details captured yet."
+        />
+        <ProfileList
+          title="Education and training"
+          items={[
+            profile.education.highestLevel,
+            ...profile.education.degrees,
+            ...profile.education.certifications,
+            ...profile.education.trainings,
+          ].filter(Boolean)}
+          empty="No education or training details captured yet."
+        />
+      </section>
+
+      {profile.automationAndReskilling && (
+        <section className="mt-10 rounded-xl border border-border bg-card p-6">
+          <h2 className="text-lg font-semibold text-navy">Automation and reskilling</h2>
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <ProfileList
+              title="Resilient skills"
+              items={profile.automationAndReskilling.resilientSkills}
+              empty="No resilient skills listed yet."
+              compact
+            />
+            <ProfileList
+              title="Recommended learning"
+              items={profile.automationAndReskilling.recommendedLearningSkills}
+              empty="No learning recommendations listed yet."
+              compact
+            />
+          </div>
+        </section>
+      )}
+    </main>
+  );
+}
+
+function DynamicSkillRow({ skill }: { skill: SkillItem }) {
+  const score = skill.confidence === "high" ? 86 : skill.confidence === "medium" ? 68 : 45;
+  const evidence = skill.evidence[0] ?? "Captured from the CV/profile interview.";
+
+  return (
+    <div className="rounded-lg border border-border bg-card p-4">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="font-semibold text-foreground">{skill.name}</span>
+          <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold capitalize text-muted-foreground">
+            {skill.category}
+          </span>
+          {skill.proficiency && (
+            <span className="rounded-full bg-teal/10 px-2 py-0.5 text-[10px] font-semibold capitalize text-teal">
+              {skill.proficiency}
+            </span>
+          )}
+        </div>
+        <span className="text-sm font-semibold capitalize text-foreground">
+          {skill.confidence}
+        </span>
+      </div>
+
+      <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-muted">
+        <div className="h-full bg-teal" style={{ width: `${score}%` }} />
+      </div>
+
+      <p className="mt-2 text-xs text-muted-foreground">{evidence}</p>
+    </div>
+  );
+}
+
+function ProfileList({
+  title,
+  items,
+  empty,
+  compact = false,
+}: {
+  title: string;
+  items: string[];
+  empty: string;
+  compact?: boolean;
+}) {
+  const visibleItems = items.filter(Boolean);
+
+  return (
+    <div className={compact ? "" : "rounded-xl border border-border bg-card p-6"}>
+      <h2 className="text-lg font-semibold text-navy">{title}</h2>
+      <div className="mt-3 space-y-2">
+        {visibleItems.map((item) => (
+          <div key={item} className="rounded-md bg-muted px-3 py-2 text-sm text-foreground">
+            {item}
+          </div>
+        ))}
+        {!visibleItems.length && <p className="text-sm text-muted-foreground">{empty}</p>}
+      </div>
+    </div>
   );
 }
 

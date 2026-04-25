@@ -1,0 +1,385 @@
+{
+  "profileId": "candidate-moevyvjz-qhz76k",
+  "profile": {
+    "profile": {
+      "roleName": "IT Support Specialist",
+      "normalizedRoleName": "it_support_specialist",
+      "summary": "IT Support Specialist with 2 years of professional experience in issue analysis, troubleshooting, user support, and incident management, primarily supporting C Tier Stakeholders and managing external IT requests at XXXLdigital. Participated in a hackathon programming a Job Skill matching platform using React and MongoDB. Additional academic and personal experience in software development using Java Spring, Angular, NestJS, and skills in online marketing and accounting automation. Multilingual and certified in Data Protection, Online Marketing, and ITILv4 Foundation.",
+      "seniority": "junior",
+      "track": "tech",
+      "confidence": "high"
+    },
+    "occupation": {
+      "alternativeOccupationMatches": [],
+      "iscoCode": "3512",
+      "iscoTitle": "Information and communications technology user support technicians",
+      "escoOccupationUri": "https://data.europa.eu/esco/occupation/d513b2e0-b1f1-4553-89e2-217eb66e5b42",
+      "escoOccupationTitle": "ICT user support technician"
+    },
+    "experience": {
+      "industries": [
+        "Information Technology",
+        "Education",
+        "Healthcare",
+        "Logistics"
+      ],
+      "jobTitles": [
+        "Support Application Care Specialist",
+        "Accountant and Management",
+        "Software Developer"
+      ],
+      "companies": [
+        "XXXLdigital",
+        "Apapika",
+        "Kindergarten Bunter Zug"
+      ],
+      "responsibilities": [
+        "Issue analysis and troubleshooting Level 1 and Level 2 support",
+        "User support and incident management",
+        "System maintenance and quality assurance",
+        "Managed external IT requests and supported C Tier Stakeholders at XXXLdigital",
+        "Developed management systems for medical practice, storage, and logistics (academic/personal projects)",
+        "Automated accounting and inventory management",
+        "Developed online marketing strategy",
+        "Participated in hackathon developing Job Skill matching platform using React and MongoDB"
+      ],
+      "achievements": [
+        "Automated quality control and quantity checks",
+        "Integrated POS system with accounting",
+        "Developed automated inventory management",
+        "Designed a medical practice management system compliant with FHIR (project)",
+        "Led teams developing logistics and storage management systems (project)",
+        "Increased visibility and engagement of kindergarten through website"
+      ],
+      "totalYears": 2,
+      "relevantYears": 2
+    },
+    "education": {
+      "degrees": [
+        "BSc Artificial Intelligence (in progress)",
+        "BSc Software- & Information Engineering (transferred)",
+        "Higher Technical Institute Diploma in Medical Informatics"
+      ],
+      "fieldsOfStudy": [
+        "Artificial Intelligence",
+        "Software & Information Engineering",
+        "Medical Informatics"
+      ],
+      "certifications": [
+        "Data Protection Officer (DPO)",
+        "Online Marketing diploma",
+        "ITILv4 Foundation"
+      ],
+      "trainings": [],
+      "highestLevel": "bachelor"
+    },
+    "skills": {
+      "technical": [
+        {
+          "name": "Application Support",
+          "normalizedName": "application_support",
+          "category": "technical",
+          "proficiency": "intermediate",
+          "evidence": [
+            "Currently involved in issue analysis, troubleshooting, user support and incident management at XXXLdigital."
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "",
+          "escoSkillType": "skill/competence",
+          "confidence": "high"
+        },
+        {
+          "name": "Java Spring",
+          "normalizedName": "java_spring",
+          "category": "technical",
+          "proficiency": "basic",
+          "evidence": [
+            "Developed medical practice management system using Java Spring (project)."
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "",
+          "escoSkillType": "skill/competence",
+          "confidence": "medium"
+        },
+        {
+          "name": "Angular",
+          "normalizedName": "angular",
+          "category": "technical",
+          "proficiency": "basic",
+          "evidence": [
+            "Developed applications using Angular (projects)."
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "",
+          "escoSkillType": "skill/competence",
+          "confidence": "medium"
+        },
+        {
+          "name": "NestJS",
+          "normalizedName": "nestjs",
+          "category": "technical",
+          "proficiency": "basic",
+          "evidence": [
+            "Led development of logistics web application using NestJS (project)."
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "",
+          "escoSkillType": "skill/competence",
+          "confidence": "medium"
+        },
+        {
+          "name": "Full-stack application development",
+          "normalizedName": "full_stack_application_development",
+          "category": "technical",
+          "proficiency": "basic",
+          "evidence": [
+            "Experience in full-stack development during studies and projects.",
+            "Participated in hackathon developing Job Skill matching platform using React and MongoDB."
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "",
+          "escoSkillType": "skill/competence",
+          "confidence": "medium"
+        },
+        {
+          "name": "React",
+          "normalizedName": "react",
+          "category": "technical",
+          "proficiency": "basic",
+          "evidence": [
+            "Participated in hackathon programming a Job Skill matching platform using React."
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "",
+          "escoSkillType": "skill/competence",
+          "confidence": "medium"
+        },
+        {
+          "name": "MongoDB",
+          "normalizedName": "mongodb",
+          "category": "technical",
+          "proficiency": "basic",
+          "evidence": [
+            "Participated in hackathon programming a Job Skill matching platform using MongoDB."
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "",
+          "escoSkillType": "skill/competence",
+          "confidence": "medium"
+        }
+      ],
+      "tools": [
+        {
+          "name": "AWS",
+          "normalizedName": "aws",
+          "category": "tool",
+          "proficiency": "unknown",
+          "evidence": [
+            "Used AWS in software development studies and projects."
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "",
+          "escoSkillType": "skill/competence",
+          "confidence": "medium"
+        },
+        {
+          "name": "Visual Studio Code",
+          "normalizedName": "visual_studio_code",
+          "category": "tool",
+          "proficiency": "unknown",
+          "evidence": [
+            "Used Visual Studio Code as a development environment."
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "",
+          "escoSkillType": "skill/competence",
+          "confidence": "medium"
+        },
+        {
+          "name": "GitHub",
+          "normalizedName": "github",
+          "category": "tool",
+          "proficiency": "unknown",
+          "evidence": [
+            "Used GitHub for code version control and collaboration."
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "",
+          "escoSkillType": "skill/competence",
+          "confidence": "medium"
+        }
+      ],
+      "domain": [
+        {
+          "name": "Online Marketing",
+          "normalizedName": "online_marketing",
+          "category": "domain",
+          "proficiency": "intermediate",
+          "evidence": [
+            "Crafted online marketing strategy for a tech startup",
+            "Completed online marketing diploma focusing on SEO, SEA, strategy analysis."
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "",
+          "escoSkillType": "skill/competence",
+          "confidence": "high"
+        },
+        {
+          "name": "Medical Informatics",
+          "normalizedName": "medical_informatics",
+          "category": "domain",
+          "proficiency": "basic",
+          "evidence": [
+            "Higher technical institute diploma focused on E-Health development adhering to medical standards and norms.",
+            "Developed medical practice management system compliant with FHIR."
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "",
+          "escoSkillType": "skill/competence",
+          "confidence": "medium"
+        }
+      ],
+      "business": [
+        {
+          "name": "Accounting and Bookkeeping",
+          "normalizedName": "accounting_and_bookkeeping",
+          "category": "business",
+          "proficiency": "intermediate",
+          "evidence": [
+            "Managed bookkeeping activities at Kindergarten and Apapika",
+            "Developed and integrated accounting and inventory management automation."
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "",
+          "escoSkillType": "skill/competence",
+          "confidence": "high"
+        }
+      ],
+      "soft": [
+        {
+          "name": "Team leadership",
+          "normalizedName": "team_leadership",
+          "category": "soft",
+          "proficiency": "intermediate",
+          "evidence": [
+            "Led teams of 3 and 5 in software development projects."
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "",
+          "escoSkillType": "skill/competence",
+          "confidence": "high"
+        },
+        {
+          "name": "Project coordination",
+          "normalizedName": "project_coordination",
+          "category": "soft",
+          "proficiency": "intermediate",
+          "evidence": [
+            "Coordinating projects as student representative and volunteer.",
+            "Organized workshops and handled photo/video tasks in volunteer roles."
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "",
+          "escoSkillType": "skill/competence",
+          "confidence": "medium"
+        }
+      ],
+      "languages": [
+        {
+          "name": "German",
+          "normalizedName": "german",
+          "category": "language",
+          "proficiency": "expert",
+          "evidence": [
+            "Listed proficiency C2."
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "",
+          "escoSkillType": "language",
+          "confidence": "high"
+        },
+        {
+          "name": "English",
+          "normalizedName": "english",
+          "category": "language",
+          "proficiency": "advanced",
+          "evidence": [
+            "Listed proficiency C1."
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "",
+          "escoSkillType": "language",
+          "confidence": "high"
+        },
+        {
+          "name": "Arabic",
+          "normalizedName": "arabic",
+          "category": "language",
+          "proficiency": "intermediate",
+          "evidence": [
+            "Listed proficiency B1."
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "",
+          "escoSkillType": "language",
+          "confidence": "medium"
+        },
+        {
+          "name": "Turkish",
+          "normalizedName": "turkish",
+          "category": "language",
+          "proficiency": "basic",
+          "evidence": [
+            "Listed proficiency A1."
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "",
+          "escoSkillType": "language",
+          "confidence": "medium"
+        }
+      ]
+    },
+    "evidence": [
+      {
+        "text": "Developed management systems using Java Spring, Angular, NestJS."
+      },
+      {
+        "text": "Led teams for logistics and storage system development."
+      },
+      {
+        "text": "Accountant roles involving automation and POS integration."
+      },
+      {
+        "text": "Support Application Care role involves troubleshooting, user support, and system maintenance."
+      },
+      {
+        "text": "Managed external IT requests and supported C Tier Stakeholders at XXXLdigital."
+      },
+      {
+        "text": "Languages German (C2), English (C1), Arabic (B1), Turkish (A1)."
+      },
+      {
+        "text": "Certifications: Data Protection Officer, Online Marketing diploma, ITILv4 Foundation."
+      },
+      {
+        "text": "Used AWS, Visual Studio Code, GitHub in software development studies and projects."
+      },
+      {
+        "text": "Participated in hackathon programming a Job Skill matching platform using React and MongoDB."
+      }
+    ],
+    "automationAndReskilling": {
+      "riskDrivers": [],
+      "resilientSkills": [],
+      "missingRecommendedSkills": [],
+      "recommendedLearningSkills": [],
+      "automationRiskOccupationCode": "",
+      "automationRiskScore": 0
+    },
+    "nextQuestion": "Could you please describe more about your responsibilities and tasks specifically related to managing external IT requests and supporting C Tier Stakeholders at XXXLdigital?",
+    "isComplete": false
+  },
+  "status": "complete",
+  "questionsAnswered": 5,
+  "savedAt": "2026-04-25T22:07:05.979Z"
+}

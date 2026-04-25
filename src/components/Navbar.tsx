@@ -34,6 +34,15 @@ export function Navbar() {
         </nav>
 
         <div className="flex items-center gap-2 sm:gap-3">
+          <Button
+            asChild
+            variant="ghost"
+            size="sm"
+            className="rounded-md text-muted-foreground hover:text-navy"
+          >
+            <Link to="/login">Login</Link>
+          </Button>
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button

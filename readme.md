@@ -3,7 +3,7 @@ ToDo List:
 A) Skills Signal Engine
 1) youth user, training provider, or community navigator inputs their education level,
 informal experience, and demonstrated competencies.
-[CV Parsing is done]
+[CV Parsing is done] , do ISCO + ESCO taxonomies
 2) The system maps these to a
 standardized, portable skills profile grounded in real taxonomies (ISCO, ESCO, O∗NET or
 equivalent). 
