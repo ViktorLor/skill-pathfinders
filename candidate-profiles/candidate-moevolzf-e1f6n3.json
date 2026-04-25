@@ -1,0 +1,413 @@
+{
+  "profileId": "candidate-moevolzf-e1f6n3",
+  "profile": {
+    "profile": {
+      "roleName": "Software Developer / Application Support Specialist",
+      "normalizedRoleName": "software developer",
+      "summary": "Experienced in software development, application support, and management, with skills in Java Spring, Angular, NestJS, logistics and storage systems, online marketing strategy, and financial/accounting process automation. Current student in Artificial Intelligence and active in voluntary and student representation roles.",
+      "seniority": "mid",
+      "track": "tech",
+      "confidence": "high"
+    },
+    "occupation": {
+      "alternativeOccupationMatches": [],
+      "iscoCode": "2512",
+      "iscoTitle": "Software developers",
+      "escoOccupationUri": "http://data.europa.eu/esco/occupation/0728f6bf-e2f4-4b42-9526-f76c971a8b5d",
+      "escoOccupationTitle": "Software developer"
+    },
+    "experience": {
+      "industries": [
+        "Software Development",
+        "Healthcare IT",
+        "Logistics",
+        "Early Childhood Education"
+      ],
+      "jobTitles": [
+        "Support Application Care Specialist",
+        "Accountant and Management",
+        "Software Developer (project leadership)"
+      ],
+      "companies": [
+        "XXXLdigital",
+        "Apapika",
+        "Kindergarten Bunter Zug"
+      ],
+      "responsibilities": [
+        "Issue analysis and troubleshooting in application support",
+        "User support and incident management",
+        "System maintenance and quality assurance",
+        "Design and development of management and logistics software",
+        "Automation of financial and inventory processes",
+        "Leading teams in software development projects"
+      ],
+      "achievements": [
+        "Developed medical practice management system compliant with FHIR",
+        "Led development of logistics and storage management systems",
+        "Automated quality control, inventory and financial reporting",
+        "Created online marketing strategy for tech startup"
+      ],
+      "totalYears": 7,
+      "relevantYears": 2
+    },
+    "education": {
+      "degrees": [
+        "Bachelor of Science Artificial Intelligence (in progress)",
+        "BSc Software- & Information Engineering (transferred)",
+        "Higher Technical Institute Diploma in Medical Informatics"
+      ],
+      "fieldsOfStudy": [
+        "Artificial Intelligence",
+        "Software and Information Engineering",
+        "Medical Informatics"
+      ],
+      "certifications": [
+        "Data Protection Officer (DPO)",
+        "Online Marketing Diploma",
+        "ITILv4 Foundation"
+      ],
+      "trainings": [],
+      "highestLevel": "bachelor"
+    },
+    "skills": {
+      "technical": [
+        {
+          "name": "Java Spring",
+          "normalizedName": "java spring",
+          "category": "technical",
+          "proficiency": "advanced",
+          "evidence": [
+            "Medical Practice - Management System project"
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "",
+          "escoSkillType": "skill/competence",
+          "confidence": "high"
+        },
+        {
+          "name": "Angular",
+          "normalizedName": "angular",
+          "category": "technical",
+          "proficiency": "advanced",
+          "evidence": [
+            "Medical Practice - Management System project",
+            "Goha’s Logistics Web Application",
+            "Storage Management System project"
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "",
+          "escoSkillType": "skill/competence",
+          "confidence": "high"
+        },
+        {
+          "name": "NestJS",
+          "normalizedName": "nestjs",
+          "category": "technical",
+          "proficiency": "advanced",
+          "evidence": [
+            "Goha’s Logistics Web Application project"
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "",
+          "escoSkillType": "skill/competence",
+          "confidence": "high"
+        },
+        {
+          "name": "Full-stack development",
+          "normalizedName": "full stack development",
+          "category": "technical",
+          "proficiency": "intermediate",
+          "evidence": [
+            "Technical University of Vienna studies",
+            "multiple project leadership"
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "",
+          "escoSkillType": "skill/competence",
+          "confidence": "medium"
+        },
+        {
+          "name": "Software troubleshooting and support",
+          "normalizedName": "software troubleshooting and support",
+          "category": "technical",
+          "proficiency": "intermediate",
+          "evidence": [
+            "Support Application Care role at XXXLdigital"
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "",
+          "escoSkillType": "skill/competence",
+          "confidence": "high"
+        },
+        {
+          "name": "AWS",
+          "normalizedName": "aws",
+          "category": "tool",
+          "proficiency": "unknown",
+          "evidence": [
+            "Interview answer: used regularly in projects"
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "",
+          "escoSkillType": "skill/competence",
+          "confidence": "medium"
+        },
+        {
+          "name": "React Native",
+          "normalizedName": "react native",
+          "category": "technical",
+          "proficiency": "unknown",
+          "evidence": [
+            "Interview answer: used regularly in projects"
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "",
+          "escoSkillType": "skill/competence",
+          "confidence": "medium"
+        },
+        {
+          "name": "Codex (AI programming assistant)",
+          "normalizedName": "codex",
+          "category": "tool",
+          "proficiency": "unknown",
+          "evidence": [
+            "Interview answer: used regularly in projects"
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "",
+          "escoSkillType": "skill/competence",
+          "confidence": "medium"
+        },
+        {
+          "name": "Visual Studio Code",
+          "normalizedName": "visual studio code",
+          "category": "tool",
+          "proficiency": "unknown",
+          "evidence": [
+            "Interview answer: used regularly in projects"
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "",
+          "escoSkillType": "skill/competence",
+          "confidence": "medium"
+        }
+      ],
+      "tools": [
+        {
+          "name": "AWS",
+          "normalizedName": "aws",
+          "category": "tool",
+          "proficiency": "unknown",
+          "evidence": [
+            "Interview answer: used regularly in projects"
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "",
+          "escoSkillType": "skill/competence",
+          "confidence": "medium"
+        },
+        {
+          "name": "Codex (AI programming assistant)",
+          "normalizedName": "codex",
+          "category": "tool",
+          "proficiency": "unknown",
+          "evidence": [
+            "Interview answer: used regularly in projects"
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "",
+          "escoSkillType": "skill/competence",
+          "confidence": "medium"
+        },
+        {
+          "name": "Visual Studio Code",
+          "normalizedName": "visual studio code",
+          "category": "tool",
+          "proficiency": "unknown",
+          "evidence": [
+            "Interview answer: used regularly in projects"
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "",
+          "escoSkillType": "skill/competence",
+          "confidence": "medium"
+        }
+      ],
+      "domain": [
+        {
+          "name": "Medical Informatics",
+          "normalizedName": "medical informatics",
+          "category": "domain",
+          "proficiency": "advanced",
+          "evidence": [
+            "HTL Spengergasse diploma",
+            "Medical Practice - Management System project"
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "",
+          "escoSkillType": "knowledge",
+          "confidence": "high"
+        },
+        {
+          "name": "Online Marketing",
+          "normalizedName": "online marketing",
+          "category": "domain",
+          "proficiency": "intermediate",
+          "evidence": [
+            "Online Marketing Diploma",
+            "created marketing strategy for startup"
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "",
+          "escoSkillType": "skill/competence",
+          "confidence": "high"
+        },
+        {
+          "name": "Accounting and Bookkeeping",
+          "normalizedName": "accounting and bookkeeping",
+          "category": "domain",
+          "proficiency": "intermediate",
+          "evidence": [
+            "Accountant and Management at Apapika and Kindergarten Bunter Zug"
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "",
+          "escoSkillType": "skill/competence",
+          "confidence": "high"
+        }
+      ],
+      "business": [
+        {
+          "name": "Project Coordination",
+          "normalizedName": "project coordination",
+          "category": "business",
+          "proficiency": "intermediate",
+          "evidence": [
+            "Led teams in software projects",
+            "Student representative role"
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "",
+          "escoSkillType": "skill/competence",
+          "confidence": "high"
+        }
+      ],
+      "soft": [
+        {
+          "name": "Team Leadership",
+          "normalizedName": "team leadership",
+          "category": "soft",
+          "proficiency": "intermediate",
+          "evidence": [
+            "Led teams of 3 and 5 in projects"
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "",
+          "escoSkillType": "skill/competence",
+          "confidence": "high"
+        },
+        {
+          "name": "Communication",
+          "normalizedName": "communication",
+          "category": "soft",
+          "proficiency": "intermediate",
+          "evidence": [
+            "Voluntary youth work and student representation",
+            "Project coordination"
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "",
+          "escoSkillType": "skill/competence",
+          "confidence": "high"
+        }
+      ],
+      "languages": [
+        {
+          "name": "German",
+          "normalizedName": "german",
+          "category": "language",
+          "proficiency": "expert",
+          "evidence": [
+            "Language certificates"
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "",
+          "escoSkillType": "language",
+          "confidence": "high"
+        },
+        {
+          "name": "English",
+          "normalizedName": "english",
+          "category": "language",
+          "proficiency": "advanced",
+          "evidence": [
+            "Language certificates"
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "",
+          "escoSkillType": "language",
+          "confidence": "high"
+        },
+        {
+          "name": "Arabic",
+          "normalizedName": "arabic",
+          "category": "language",
+          "proficiency": "intermediate",
+          "evidence": [
+            "Language certificates"
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "",
+          "escoSkillType": "language",
+          "confidence": "high"
+        },
+        {
+          "name": "Turkish",
+          "normalizedName": "turkish",
+          "category": "language",
+          "proficiency": "basic",
+          "evidence": [
+            "Language certificates"
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "",
+          "escoSkillType": "language",
+          "confidence": "medium"
+        }
+      ]
+    },
+    "evidence": [
+      "CV text and project descriptions",
+      "Certifications and education",
+      "Professional roles and achievements",
+      "Interview answers about experience and tools"
+    ],
+    "automationAndReskilling": {
+      "riskDrivers": [
+        "Routine support and accounting tasks",
+        "Manual quality checks"
+      ],
+      "resilientSkills": [
+        "Software development",
+        "Team leadership",
+        "Project coordination",
+        "Language skills"
+      ],
+      "missingRecommendedSkills": [
+        "Cloud computing",
+        "Advanced AI techniques"
+      ],
+      "recommendedLearningSkills": [
+        "Advanced machine learning",
+        "Cloud services"
+      ],
+      "automationRiskOccupationCode": "2512",
+      "automationRiskScore": 30
+    },
+    "nextQuestion": "Can you describe any notable achievements or projects you have led or contributed to in your software development roles?",
+    "isComplete": false
+  },
+  "status": "draft",
+  "questionsAnswered": 2,
+  "savedAt": "2026-04-25T21:57:03.666Z"
+}
