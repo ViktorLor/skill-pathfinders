@@ -120,11 +120,168 @@ export const TRADE_RISK_PROFILE: SkillRiskProfile = {
   ],
 };
 
+export const TECH_RISK_PROFILE: SkillRiskProfile = {
+  summary: {
+    overallLevel: "moderate",
+    overallExposure: 62,
+    headline:
+      "Software development sees the highest GenAI exposure of any occupation (ILO 2024), but in LMIC markets demand is still rising. Value shifts from writing boilerplate to system design, integration and AI-tool orchestration.",
+  },
+  bySkill: {
+    JavaScript: {
+      level: "high",
+      exposure: 74,
+      rationale:
+        "Routine JS coding (CRUD, UI scaffolding) is heavily automated by Copilot/Claude. Frey-Osborne underestimates this — recent ILO GenAI exposure index places software writing in the top decile.",
+      source: "ILO 2024 GenAI exposure note · Frey-Osborne 2017",
+    },
+    React: {
+      level: "high",
+      exposure: 70,
+      rationale:
+        "Component scaffolding is largely AI-generated today. Durable value is in architecture, accessibility and product judgment — not raw JSX.",
+      source: "ILO 2024 GenAI exposure note",
+    },
+    "Node.js": {
+      level: "moderate",
+      exposure: 55,
+      rationale:
+        "API glue code is automatable, but production reliability, security and integration with payment/SMS providers in LMIC contexts still need human judgment.",
+      source: "World Bank STEP · ILO Task Index 2023",
+    },
+    AWS: {
+      level: "low",
+      exposure: 32,
+      rationale:
+        "Cloud architecture and cost-optimization remain non-routine cognitive work. Demand is rising fastest in African tech hubs (Wittgenstein Centre 2025–35).",
+      source: "Frey-Osborne 2017 · Wittgenstein 2024",
+    },
+    PostgreSQL: {
+      level: "moderate",
+      exposure: 48,
+      rationale:
+        "AI writes SQL well, but schema design, performance tuning and data modeling stay with engineers. Stable demand projected through 2035.",
+      source: "ILO Task Index 2023",
+    },
+  },
+  resilient: ["AWS", "PostgreSQL"],
+  adjacent: [
+    {
+      name: "Cloud / DevOps (AWS, Cloudflare)",
+      reason:
+        "Builds on your Node.js base. Infrastructure work is far less AI-displaced than frontend code and pays a premium across African remote markets.",
+      outlook: "rising",
+    },
+    {
+      name: "AI-tool orchestration (LLM APIs, RAG)",
+      reason:
+        "Companies need engineers who can wire LLMs into products responsibly. Direct extension of your JS/Node skills.",
+      outlook: "rising",
+    },
+    {
+      name: "Data engineering & analytics",
+      reason:
+        "Pipelines and dashboards for fintech/agritech are growing fast in Ghana and Nigeria. PostgreSQL is the entry point.",
+      outlook: "rising",
+    },
+    {
+      name: "Mobile money / fintech integration",
+      reason:
+        "MTN MoMo, Paystack, Flutterwave APIs require local context and judgment — non-routine work AI can't replace.",
+      outlook: "stable",
+    },
+  ],
+};
+
+export const AGRI_RISK_PROFILE: SkillRiskProfile = {
+  summary: {
+    overallLevel: "low",
+    overallExposure: 24,
+    headline:
+      "Smallholder farming is among the most AI-resilient livelihoods in LMICs (ILO 2023). Risks come from precision-ag tools displacing record-keeping and price-discovery middlemen — not field work itself.",
+  },
+  bySkill: {
+    "Crop cultivation": {
+      level: "low",
+      exposure: 12,
+      rationale:
+        "Highly non-routine, context-dependent manual work. Frey-Osborne place field crop farming at <10% automation probability; mechanization in LMICs is constrained by smallholder plot sizes.",
+      source: "Frey-Osborne 2017 · ILO Task Index 2023",
+    },
+    "Irrigation management": {
+      level: "low",
+      exposure: 22,
+      rationale:
+        "Smart-irrigation sensors are emerging, but installation, repair and judgment under variable rainfall remain human work — and rising in demand.",
+      source: "ILO Task Index 2023 · Wittgenstein 2024",
+    },
+    "Pest control": {
+      level: "moderate",
+      exposure: 45,
+      rationale:
+        "AI image-recognition apps (e.g. PlantVillage Nuru) now diagnose pests from a phone photo. Field application and integrated pest management decisions remain human.",
+      source: "World Bank STEP · CGIAR digital ag review",
+    },
+    "Record keeping": {
+      level: "high",
+      exposure: 78,
+      rationale:
+        "Mobile bookkeeping apps and AI auto-categorization are displacing manual ledgers fast. The skill that survives is interpreting the numbers, not recording them.",
+      source: "ILO 2024 GenAI exposure note",
+    },
+    "Cooperative management": {
+      level: "low",
+      exposure: 20,
+      rationale:
+        "Trust-building, negotiation and group facilitation are non-routine social work. Wittgenstein Centre projects rising demand for cooperative leaders as LMIC value chains formalize.",
+      source: "Wittgenstein 2024 · ILO Task Index 2023",
+    },
+  },
+  resilient: [
+    "Crop cultivation",
+    "Irrigation management",
+    "Cooperative management",
+  ],
+  adjacent: [
+    {
+      name: "Agri-tech app literacy (PlantVillage, Esoko)",
+      reason:
+        "Use AI tools instead of competing with them. Boosts yields and unlocks extension-officer roles.",
+      outlook: "rising",
+    },
+    {
+      name: "Post-harvest processing & storage",
+      reason:
+        "Adds margin to your existing crops and is far less automated than field work. Strong policy push in MoFA Ghana 2025 strategy.",
+      outlook: "rising",
+    },
+    {
+      name: "Climate-smart agriculture (drought-resilient varieties)",
+      reason:
+        "Builds directly on cultivation know-how. Wittgenstein 2025–35 flags climate adaptation as the fastest-growing rural skill cluster.",
+      outlook: "rising",
+    },
+    {
+      name: "Cooperative finance & group savings (VSLA)",
+      reason:
+        "Extends your cooperative role into financial leadership — non-routine, trust-based work AI can't replace.",
+      outlook: "stable",
+    },
+  ],
+};
+
 export function getRiskProfileForCandidate(
   candidateId: string,
 ): SkillRiskProfile | null {
   if (candidateId === "demo-trade" || candidateId === "cand_002") {
     return TRADE_RISK_PROFILE;
   }
+  if (candidateId === "demo-tech" || candidateId === "cand_001") {
+    return TECH_RISK_PROFILE;
+  }
+  if (candidateId === "demo-agri" || candidateId === "cand_003") {
+    return AGRI_RISK_PROFILE;
+  }
   return null;
 }
+
