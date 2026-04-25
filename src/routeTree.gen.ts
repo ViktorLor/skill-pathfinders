@@ -9,14 +9,26 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ProfileIdRouteImport } from './routes/profile.$id'
 import { Route as OnboardTradeRouteImport } from './routes/onboard.trade'
 import { Route as OnboardTechRouteImport } from './routes/onboard.tech'
 import { Route as OnboardAgricultureRouteImport } from './routes/onboard.agriculture'
 
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileIdRoute = ProfileIdRouteImport.update({
+  id: '/profile/$id',
+  path: '/profile/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OnboardTradeRoute = OnboardTradeRouteImport.update({
@@ -37,50 +49,86 @@ const OnboardAgricultureRoute = OnboardAgricultureRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
   '/onboard/agriculture': typeof OnboardAgricultureRoute
   '/onboard/tech': typeof OnboardTechRoute
   '/onboard/trade': typeof OnboardTradeRoute
+  '/profile/$id': typeof ProfileIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
   '/onboard/agriculture': typeof OnboardAgricultureRoute
   '/onboard/tech': typeof OnboardTechRoute
   '/onboard/trade': typeof OnboardTradeRoute
+  '/profile/$id': typeof ProfileIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
   '/onboard/agriculture': typeof OnboardAgricultureRoute
   '/onboard/tech': typeof OnboardTechRoute
   '/onboard/trade': typeof OnboardTradeRoute
+  '/profile/$id': typeof ProfileIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/onboard/agriculture' | '/onboard/tech' | '/onboard/trade'
-  fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/onboard/agriculture' | '/onboard/tech' | '/onboard/trade'
-  id:
-    | '__root__'
+  fullPaths:
     | '/'
+    | '/dashboard'
     | '/onboard/agriculture'
     | '/onboard/tech'
     | '/onboard/trade'
+    | '/profile/$id'
+  fileRoutesByTo: FileRoutesByTo
+  to:
+    | '/'
+    | '/dashboard'
+    | '/onboard/agriculture'
+    | '/onboard/tech'
+    | '/onboard/trade'
+    | '/profile/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/dashboard'
+    | '/onboard/agriculture'
+    | '/onboard/tech'
+    | '/onboard/trade'
+    | '/profile/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DashboardRoute: typeof DashboardRoute
   OnboardAgricultureRoute: typeof OnboardAgricultureRoute
   OnboardTechRoute: typeof OnboardTechRoute
   OnboardTradeRoute: typeof OnboardTradeRoute
+  ProfileIdRoute: typeof ProfileIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile/$id': {
+      id: '/profile/$id'
+      path: '/profile/$id'
+      fullPath: '/profile/$id'
+      preLoaderRoute: typeof ProfileIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/onboard/trade': {
@@ -109,9 +157,11 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DashboardRoute: DashboardRoute,
   OnboardAgricultureRoute: OnboardAgricultureRoute,
   OnboardTechRoute: OnboardTechRoute,
   OnboardTradeRoute: OnboardTradeRoute,
+  ProfileIdRoute: ProfileIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
