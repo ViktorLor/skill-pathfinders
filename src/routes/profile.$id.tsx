@@ -16,8 +16,15 @@ import {
   BarChart3,
   TrendingDown,
   ExternalLink,
+  Bot,
+  Shield,
 } from "lucide-react";
 import { CoverLetterModal } from "@/components/profile/CoverLetterModal";
+import { AIRiskLens } from "@/components/profile/AIRiskLens";
+import {
+  getRiskProfileForCandidate,
+  type SkillAIRisk,
+} from "@/data/aiRisk";
 
 export const Route = createFileRoute("/profile/$id")({
   head: ({ params }) => {
@@ -103,6 +110,7 @@ function ProfilePage() {
 
   const meta = trackMeta[candidate.track];
   const jobs = getJobMatchesForTrack(candidate.track);
+  const riskProfile = getRiskProfileForCandidate(candidate.id);
   const initials = candidate.name
     .split(" ")
     .map((n) => n[0])
@@ -203,10 +211,17 @@ function ProfilePage() {
         <h2 className="text-lg font-semibold text-navy">Verified skills</h2>
         <div className="mt-4 space-y-3">
           {candidate.skillScores.map((s) => (
-            <SkillRow key={s.name} skill={s} />
+            <SkillRow
+              key={s.name}
+              skill={s}
+              aiRisk={riskProfile?.bySkill[s.name]}
+            />
           ))}
         </div>
       </section>
+
+      {/* AI risk lens */}
+      {riskProfile && <AIRiskLens profile={riskProfile} />}
 
       {/* Experience */}
       <section className="mt-10">
@@ -257,7 +272,13 @@ function ProfilePage() {
   );
 }
 
-function SkillRow({ skill }: { skill: SkillScore }) {
+function SkillRow({
+  skill,
+  aiRisk,
+}: {
+  skill: SkillScore;
+  aiRisk?: SkillAIRisk;
+}) {
   const cfg = (() => {
     switch (skill.status) {
       case "confirmed":
