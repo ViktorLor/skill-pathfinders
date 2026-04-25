@@ -16,8 +16,15 @@ import {
   BarChart3,
   TrendingDown,
   ExternalLink,
+  Bot,
+  Shield,
 } from "lucide-react";
 import { CoverLetterModal } from "@/components/profile/CoverLetterModal";
+import { AIRiskLens } from "@/components/profile/AIRiskLens";
+import {
+  getRiskProfileForCandidate,
+  type SkillAIRisk,
+} from "@/data/aiRisk";
 
 export const Route = createFileRoute("/profile/$id")({
   head: ({ params }) => {
@@ -103,6 +110,7 @@ function ProfilePage() {
 
   const meta = trackMeta[candidate.track];
   const jobs = getJobMatchesForTrack(candidate.track);
+  const riskProfile = getRiskProfileForCandidate(candidate.id);
   const initials = candidate.name
     .split(" ")
     .map((n) => n[0])
@@ -203,10 +211,17 @@ function ProfilePage() {
         <h2 className="text-lg font-semibold text-navy">Verified skills</h2>
         <div className="mt-4 space-y-3">
           {candidate.skillScores.map((s) => (
-            <SkillRow key={s.name} skill={s} />
+            <SkillRow
+              key={s.name}
+              skill={s}
+              aiRisk={riskProfile?.bySkill[s.name]}
+            />
           ))}
         </div>
       </section>
+
+      {/* AI risk lens */}
+      {riskProfile && <AIRiskLens profile={riskProfile} />}
 
       {/* Experience */}
       <section className="mt-10">
@@ -257,7 +272,13 @@ function ProfilePage() {
   );
 }
 
-function SkillRow({ skill }: { skill: SkillScore }) {
+function SkillRow({
+  skill,
+  aiRisk,
+}: {
+  skill: SkillScore;
+  aiRisk?: SkillAIRisk;
+}) {
   const cfg = (() => {
     switch (skill.status) {
       case "confirmed":
@@ -300,10 +321,43 @@ function SkillRow({ skill }: { skill: SkillScore }) {
 
   const detail = skill.flags[0] ?? skill.evidence[0] ?? "";
 
+  const riskChip = (() => {
+    if (!aiRisk) return null;
+    const map = {
+      low: {
+        cls: "bg-teal/10 text-teal",
+        icon: <Shield className="h-3 w-3" />,
+        label: "AI-resilient",
+      },
+      moderate: {
+        cls: "bg-amber/15 text-amber",
+        icon: <Bot className="h-3 w-3" />,
+        label: "Some AI risk",
+      },
+      high: {
+        cls: "bg-danger/10 text-danger",
+        icon: <Bot className="h-3 w-3" />,
+        label: "At AI risk",
+      },
+    } as const;
+    return map[aiRisk.level];
+  })();
+
   return (
     <div className="rounded-lg border border-border bg-card p-4">
       <div className="flex items-center justify-between gap-3">
-        <div className="font-semibold text-foreground">{skill.name}</div>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="font-semibold text-foreground">{skill.name}</span>
+          {riskChip && (
+            <span
+              title={aiRisk?.rationale}
+              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${riskChip.cls}`}
+            >
+              {riskChip.icon}
+              {riskChip.label}
+            </span>
+          )}
+        </div>
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold text-foreground">
             {skill.score}
