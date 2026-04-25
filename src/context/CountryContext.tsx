@@ -12,9 +12,7 @@ const CountryContext = createContext<Ctx | null>(null);
 export function CountryProvider({ children }: { children: ReactNode }) {
   const [code, setCode] = useState<"GHA" | "BGD" | "NGA">("GHA");
   return (
-    <CountryContext.Provider
-      value={{ country: COUNTRY_CONFIGS[code], setCountryCode: setCode }}
-    >
+    <CountryContext.Provider value={{ country: COUNTRY_CONFIGS[code], setCountryCode: setCode }}>
       {children}
     </CountryContext.Provider>
   );

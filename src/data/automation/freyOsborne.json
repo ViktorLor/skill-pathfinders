@@ -1,0 +1,36 @@
+{
+  "_meta": {
+    "source": "Frey, C. B. & Osborne, M. A. (2017). 'The Future of Employment: How susceptible are jobs to computerisation?' Technological Forecasting and Social Change, 114, 254–280.",
+    "url": "https://www.oxfordmartin.ox.ac.uk/downloads/academic/future-of-employment.pdf",
+    "field": "probability",
+    "fieldDescription": "Probability of computerisation, 0–1, original published table.",
+    "rowCount": 24,
+    "note": "Curated subset of the 702-occupation original table — limited to SOC codes referenced by the skill→occupation map. Add rows here as the map grows."
+  },
+  "occupations": {
+    "15-1132": { "title": "Software Developers, Applications", "probability": 0.042 },
+    "15-1133": { "title": "Software Developers, Systems Software", "probability": 0.13 },
+    "15-1134": { "title": "Web Developers", "probability": 0.21 },
+    "15-1141": { "title": "Database Administrators", "probability": 0.03 },
+    "15-1142": { "title": "Network and Computer Systems Administrators", "probability": 0.03 },
+    "15-1143": { "title": "Computer Network Architects", "probability": 0.03 },
+    "15-1199": { "title": "Computer Occupations, All Other", "probability": 0.21 },
+    "49-2022": { "title": "Telecommunications Equipment Installers and Repairers", "probability": 0.5 },
+    "49-2094": { "title": "Electrical and Electronics Repairers, Commercial and Industrial Equipment", "probability": 0.5 },
+    "49-2098": { "title": "Security and Fire Alarm Systems Installers", "probability": 0.55 },
+    "43-4051": { "title": "Customer Service Representatives", "probability": 0.55 },
+    "43-3031": { "title": "Bookkeeping, Accounting, and Auditing Clerks", "probability": 0.98 },
+    "43-5081": { "title": "Stock Clerks and Order Fillers", "probability": 0.84 },
+    "43-9061": { "title": "Office Clerks, General", "probability": 0.96 },
+    "27-3091": { "title": "Interpreters and Translators", "probability": 0.38 },
+    "11-9013": { "title": "Farmers, Ranchers, and Other Agricultural Managers", "probability": 0.045 },
+    "45-2092": { "title": "Farmworkers and Laborers, Crop, Nursery, and Greenhouse", "probability": 0.87 },
+    "45-2091": { "title": "Agricultural Equipment Operators", "probability": 0.97 },
+    "45-2093": { "title": "Farmworkers, Farm, Ranch, and Aquacultural Animals", "probability": 0.87 },
+    "25-9031": { "title": "Instructional Coordinators", "probability": 0.0084 },
+    "13-2011": { "title": "Accountants and Auditors", "probability": 0.94 },
+    "41-9041": { "title": "Telemarketers", "probability": 0.99 },
+    "27-3043": { "title": "Writers and Authors", "probability": 0.038 },
+    "13-1199": { "title": "Business Operations Specialists, All Other", "probability": 0.23 }
+  }
+}

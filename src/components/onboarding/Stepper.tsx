@@ -28,25 +28,17 @@ export function Stepper({
           <li key={s} className="flex items-center gap-2">
             <div
               className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold ${
-                done || active
-                  ? a.active
-                  : "bg-muted text-muted-foreground"
+                done || active ? a.active : "bg-muted text-muted-foreground"
               }`}
             >
               {done ? <Check className="h-3.5 w-3.5" /> : idx}
             </div>
             <span
-              className={`text-sm ${
-                active
-                  ? `font-semibold ${a.text}`
-                  : "text-muted-foreground"
-              }`}
+              className={`text-sm ${active ? `font-semibold ${a.text}` : "text-muted-foreground"}`}
             >
               {s}
             </span>
-            {idx < steps.length && (
-              <div className="hidden h-px w-6 bg-border sm:block" />
-            )}
+            {idx < steps.length && <div className="hidden h-px w-6 bg-border sm:block" />}
           </li>
         );
       })}

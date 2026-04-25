@@ -1,10 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Copy, Download, Loader2 } from "lucide-react";
@@ -83,10 +78,7 @@ export function CoverLetterModal({
                 <Copy className="mr-1 h-4 w-4" />
                 Copy
               </Button>
-              <Button
-                onClick={download}
-                className="bg-navy text-navy-foreground hover:bg-navy/90"
-              >
+              <Button onClick={download} className="bg-navy text-navy-foreground hover:bg-navy/90">
                 <Download className="mr-1 h-4 w-4" />
                 Download .txt
               </Button>

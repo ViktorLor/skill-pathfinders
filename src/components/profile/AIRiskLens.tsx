@@ -1,10 +1,7 @@
 import { Bot, Shield, Sparkles, TrendingUp } from "lucide-react";
 import type { SkillRiskProfile, AIRiskLevel } from "@/data/aiRisk";
 
-const levelStyles: Record<
-  AIRiskLevel,
-  { bar: string; chip: string; label: string }
-> = {
+const levelStyles: Record<AIRiskLevel, { bar: string; chip: string; label: string }> = {
   low: {
     bar: "bg-teal",
     chip: "bg-teal/10 text-teal",
@@ -37,9 +34,9 @@ export function AIRiskLens({ profile }: { profile: SkillRiskProfile }) {
               AI readiness &amp; displacement risk
             </h2>
             <p className="mt-1 max-w-2xl text-xs text-muted-foreground">
-              Calibrated for LMIC labor markets using Frey-Osborne automation
-              probabilities, ILO task indices and World Bank STEP. Outlook
-              uses Wittgenstein Centre 2025–2035 projections.
+              Calibrated for LMIC labor markets using Frey-Osborne automation probabilities, ILO
+              task indices and World Bank STEP. Outlook uses Wittgenstein Centre 2025–2035
+              projections.
             </p>
           </div>
         </div>
@@ -57,17 +54,12 @@ export function AIRiskLens({ profile }: { profile: SkillRiskProfile }) {
 
       {/* Per-skill exposure */}
       <div className="mt-6">
-        <h3 className="text-sm font-semibold text-navy">
-          Per-skill exposure
-        </h3>
+        <h3 className="text-sm font-semibold text-navy">Per-skill exposure</h3>
         <div className="mt-3 space-y-3">
           {Object.entries(profile.bySkill).map(([name, risk]) => {
             const s = levelStyles[risk.level];
             return (
-              <div
-                key={name}
-                className="rounded-lg border border-border bg-background p-4"
-              >
+              <div key={name} className="rounded-lg border border-border bg-background p-4">
                 <div className="flex items-center justify-between gap-3">
                   <div className="font-medium text-foreground">{name}</div>
                   <span
@@ -77,10 +69,7 @@ export function AIRiskLens({ profile }: { profile: SkillRiskProfile }) {
                   </span>
                 </div>
                 <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                  <div
-                    className={`h-full ${s.bar}`}
-                    style={{ width: `${risk.exposure}%` }}
-                  />
+                  <div className={`h-full ${s.bar}`} style={{ width: `${risk.exposure}%` }} />
                 </div>
                 <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
                   {risk.rationale}
@@ -99,13 +88,10 @@ export function AIRiskLens({ profile }: { profile: SkillRiskProfile }) {
         <div className="rounded-lg border border-teal/30 bg-teal/5 p-4">
           <div className="flex items-center gap-2">
             <Shield className="h-4 w-4 text-teal" />
-            <h3 className="text-sm font-semibold text-navy">
-              Your resilient skills
-            </h3>
+            <h3 className="text-sm font-semibold text-navy">Your resilient skills</h3>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
-            Skills you already have that are unlikely to be displaced by AI in
-            the next decade.
+            Skills you already have that are unlikely to be displaced by AI in the next decade.
           </p>
           <div className="mt-3 flex flex-wrap gap-1.5">
             {profile.resilient.map((s) => (
@@ -123,24 +109,16 @@ export function AIRiskLens({ profile }: { profile: SkillRiskProfile }) {
         <div className="rounded-lg border border-sky/30 bg-sky/5 p-4">
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-sky" />
-            <h3 className="text-sm font-semibold text-navy">
-              Adjacent skills to learn
-            </h3>
+            <h3 className="text-sm font-semibold text-navy">Adjacent skills to learn</h3>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
-            Close to what you already do — small step to learn, big resilience
-            gain.
+            Close to what you already do — small step to learn, big resilience gain.
           </p>
           <ul className="mt-3 space-y-2.5">
             {profile.adjacent.map((a) => (
-              <li
-                key={a.name}
-                className="rounded-md border border-border bg-card p-3"
-              >
+              <li key={a.name} className="rounded-md border border-border bg-card p-3">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm font-medium text-foreground">
-                    {a.name}
-                  </span>
+                  <span className="text-sm font-medium text-foreground">{a.name}</span>
                   {a.outlook === "rising" && (
                     <span className="inline-flex items-center gap-1 rounded-full bg-greenT/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-greenT">
                       <TrendingUp className="h-3 w-3" />
@@ -148,9 +126,7 @@ export function AIRiskLens({ profile }: { profile: SkillRiskProfile }) {
                     </span>
                   )}
                 </div>
-                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                  {a.reason}
-                </p>
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{a.reason}</p>
               </li>
             ))}
           </ul>

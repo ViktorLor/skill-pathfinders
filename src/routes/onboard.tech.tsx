@@ -2,10 +2,8 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Stepper } from "@/components/onboarding/Stepper";
 import { LoadingPipeline } from "@/components/onboarding/LoadingPipeline";
-import { Upload } from "lucide-react";
 
 export const Route = createFileRoute("/onboard/tech")({
   head: () => ({
@@ -20,7 +18,6 @@ export const Route = createFileRoute("/onboard/tech")({
 function TechOnboarding() {
   const { cvAnalyzed } = Route.useSearch();
   const [step, setStep] = useState(cvAnalyzed ? 2 : 1);
-  const [cv, setCv] = useState("");
   const [github, setGithub] = useState("");
   const [portfolio, setPortfolio] = useState("");
   const [linkedin, setLinkedin] = useState("");
@@ -37,9 +34,12 @@ function TechOnboarding() {
 
   const start = () => {
     setLoading(true);
-    setTimeout(() => {
-      navigate({ to: "/profile/$id", params: { id: "demo-tech" } });
-    }, stages.length * 900 + 400);
+    setTimeout(
+      () => {
+        navigate({ to: "/profile/$id", params: { id: "demo-tech" } });
+      },
+      stages.length * 900 + 400,
+    );
   };
 
   if (loading) return <LoadingPipeline stages={stages} accent="navy" />;
@@ -57,9 +57,7 @@ function TechOnboarding() {
 
         {step === 1 && (
           <>
-            <h2 className="text-xl font-semibold text-navy">
-              Connect your profiles
-            </h2>
+            <h2 className="text-xl font-semibold text-navy">Connect your profiles</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               GitHub is required for the tech track. Others are optional.
             </p>
@@ -110,18 +108,10 @@ function TechOnboarding() {
   );
 }
 
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-sm font-medium text-foreground">
-        {label}
-      </span>
+      <span className="mb-1 block text-sm font-medium text-foreground">{label}</span>
       {children}
     </label>
   );

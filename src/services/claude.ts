@@ -1,9 +1,4 @@
-import type {
-  CandidateProfile,
-  JobMatch,
-  SkillScore,
-  TrackType,
-} from "@/types/unmapped";
+import type { CandidateProfile, JobMatch, SkillScore, TrackType } from "@/types/unmapped";
 import {
   MOCK_TECH_CANDIDATE,
   MOCK_TRADE_CANDIDATE,
@@ -11,10 +6,7 @@ import {
   getJobMatchesForTrack,
 } from "@/data/mock";
 
-export async function parseCV(
-  _cvText: string,
-  track: TrackType,
-): Promise<CandidateProfile> {
+export async function parseCV(_cvText: string, track: TrackType): Promise<CandidateProfile> {
   console.log("TODO: implement parseCV");
   if (track === "tech") return MOCK_TECH_CANDIDATE;
   if (track === "trade") return MOCK_TRADE_CANDIDATE;
@@ -39,9 +31,7 @@ export async function verifyGitHub(
   return skills;
 }
 
-export async function matchJobs(
-  profile: CandidateProfile,
-): Promise<JobMatch[]> {
+export async function matchJobs(profile: CandidateProfile): Promise<JobMatch[]> {
   console.log("TODO: implement matchJobs");
   return getJobMatchesForTrack(profile.track);
 }

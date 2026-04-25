@@ -1,9 +1,6 @@
 import { createFileRoute, useParams, Link } from "@tanstack/react-router";
-import { useState } from "react";
-import {
-  getCandidateById,
-  getJobMatchesForTrack,
-} from "@/data/mock";
+import { useEffect, useState } from "react";
+import { getCandidateById, getJobMatchesForTrack } from "@/data/mock";
 import type { JobMatch, SkillScore, TrackType } from "@/types/unmapped";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,10 +18,9 @@ import {
 } from "lucide-react";
 import { CoverLetterModal } from "@/components/profile/CoverLetterModal";
 import { AIRiskLens } from "@/components/profile/AIRiskLens";
-import {
-  getRiskProfileForCandidate,
-  type SkillAIRisk,
-} from "@/data/aiRisk";
+import type { SkillAIRisk, SkillRiskProfile } from "@/data/aiRisk";
+import { computeRiskProfile } from "@/services/aiRisk";
+import { fetchIncomeGroup } from "@/services/worldBank";
 
 export const Route = createFileRoute("/profile/$id")({
   head: ({ params }) => {
@@ -32,9 +28,7 @@ export const Route = createFileRoute("/profile/$id")({
     return {
       meta: [
         {
-          title: c
-            ? `${c.name} · Skill Passport · Unmapped`
-            : "Profile · Unmapped",
+          title: c ? `${c.name} · Skill Passport · Unmapped` : "Profile · Unmapped",
         },
         {
           name: "description",
@@ -56,10 +50,7 @@ export const Route = createFileRoute("/profile/$id")({
   ),
 });
 
-const trackMeta: Record<
-  TrackType,
-  { label: string; bg: string; text: string; ring: string }
-> = {
+const trackMeta: Record<TrackType, { label: string; bg: string; text: string; ring: string }> = {
   tech: {
     label: "Tech Track",
     bg: "bg-navy",
@@ -90,14 +81,34 @@ function ProfilePage() {
   const { id } = useParams({ from: "/profile/$id" });
   const candidate = getCandidateById(id);
   const [activeJob, setActiveJob] = useState<JobMatch | null>(null);
+  const [riskProfile, setRiskProfile] = useState<SkillRiskProfile | null>(null);
+  const [riskLoading, setRiskLoading] = useState(true);
+
+  const countryCode = candidate?.country.code;
+  const skillScores = candidate?.skillScores;
+
+  useEffect(() => {
+    if (!countryCode || !skillScores) return;
+    let cancelled = false;
+    setRiskLoading(true);
+    (async () => {
+      const incomeGroup = await fetchIncomeGroup(countryCode);
+      const profile = await computeRiskProfile(skillScores, incomeGroup, countryCode);
+      if (!cancelled) {
+        setRiskProfile(profile);
+        setRiskLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [countryCode, skillScores]);
 
   if (!candidate) {
     return (
       <main className="mx-auto max-w-2xl px-4 py-20 text-center">
         <h1 className="text-2xl font-semibold text-navy">Profile not found</h1>
-        <p className="mt-2 text-muted-foreground">
-          We couldn't find a passport with that id.
-        </p>
+        <p className="mt-2 text-muted-foreground">We couldn't find a passport with that id.</p>
         <Link
           to="/"
           className="mt-6 inline-block rounded-md bg-navy px-4 py-2 text-sm text-navy-foreground"
@@ -110,7 +121,6 @@ function ProfilePage() {
 
   const meta = trackMeta[candidate.track];
   const jobs = getJobMatchesForTrack(candidate.track);
-  const riskProfile = getRiskProfileForCandidate(candidate.id);
   const initials = candidate.name
     .split(" ")
     .map((n) => n[0])
@@ -129,9 +139,7 @@ function ProfilePage() {
               {initials}
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-navy">
-                {candidate.name}
-              </h1>
+              <h1 className="text-2xl font-bold text-navy">{candidate.name}</h1>
               <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
                 {candidate.location && (
                   <span className="inline-flex items-center gap-1">
@@ -142,9 +150,7 @@ function ProfilePage() {
                 {candidate.age && <span>· {candidate.age} years old</span>}
               </p>
               <div className="mt-3 flex flex-wrap items-center gap-2">
-                <span
-                  className={`rounded-md px-2.5 py-1 text-xs font-medium ${meta.ring}`}
-                >
+                <span className={`rounded-md px-2.5 py-1 text-xs font-medium ${meta.ring}`}>
                   {meta.label}
                 </span>
                 {candidate.escoOccupation && (
@@ -160,9 +166,7 @@ function ProfilePage() {
             <span className="text-xs uppercase tracking-wide text-muted-foreground">
               Skill Passport Score
             </span>
-            <div
-              className={`mt-1 text-5xl font-bold ${trustColor(candidate.trustScore)}`}
-            >
+            <div className={`mt-1 text-5xl font-bold ${trustColor(candidate.trustScore)}`}>
               {candidate.trustScore}
               <span className="text-xl text-muted-foreground">/100</span>
             </div>
@@ -211,17 +215,28 @@ function ProfilePage() {
         <h2 className="text-lg font-semibold text-navy">Verified skills</h2>
         <div className="mt-4 space-y-3">
           {candidate.skillScores.map((s) => (
-            <SkillRow
-              key={s.name}
-              skill={s}
-              aiRisk={riskProfile?.bySkill[s.name]}
-            />
+            <SkillRow key={s.name} skill={s} aiRisk={riskProfile?.bySkill[s.name]} />
           ))}
         </div>
       </section>
 
       {/* AI risk lens */}
-      {riskProfile && <AIRiskLens profile={riskProfile} />}
+      {riskProfile ? (
+        <AIRiskLens profile={riskProfile} />
+      ) : riskLoading ? (
+        <section className="mt-10 rounded-xl border border-border bg-card p-6">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 animate-pulse items-center justify-center rounded-lg bg-muted" />
+            <div className="flex-1">
+              <div className="h-4 w-64 animate-pulse rounded bg-muted" />
+              <div className="mt-2 h-3 w-96 max-w-full animate-pulse rounded bg-muted/60" />
+            </div>
+          </div>
+          <p className="mt-4 text-xs text-muted-foreground">
+            Resolving skills against ESCO and World Bank classifications…
+          </p>
+        </section>
+      ) : null}
 
       {/* Experience */}
       <section className="mt-10">
@@ -236,13 +251,9 @@ function ProfilePage() {
                   <Badge variant="secondary" className="text-xs capitalize">
                     {e.context}
                   </Badge>
-                  <span className="text-xs text-muted-foreground">
-                    {e.duration}
-                  </span>
+                  <span className="text-xs text-muted-foreground">{e.duration}</span>
                 </div>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {e.description}
-                </p>
+                <p className="mt-1 text-sm text-muted-foreground">{e.description}</p>
               </div>
             </li>
           ))}
@@ -251,9 +262,7 @@ function ProfilePage() {
 
       {/* Job matches */}
       <section className="mt-10">
-        <h2 className="text-lg font-semibold text-navy">
-          Matched opportunities
-        </h2>
+        <h2 className="text-lg font-semibold text-navy">Matched opportunities</h2>
         <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
           {jobs.map((j) => (
             <JobCard key={j.id} job={j} onApply={() => setActiveJob(j)} />
@@ -272,13 +281,7 @@ function ProfilePage() {
   );
 }
 
-function SkillRow({
-  skill,
-  aiRisk,
-}: {
-  skill: SkillScore;
-  aiRisk?: SkillAIRisk;
-}) {
+function SkillRow({ skill, aiRisk }: { skill: SkillScore; aiRisk?: SkillAIRisk }) {
   const cfg = (() => {
     switch (skill.status) {
       case "confirmed":
@@ -359,9 +362,7 @@ function SkillRow({
           )}
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-foreground">
-            {skill.score}
-          </span>
+          <span className="text-sm font-semibold text-foreground">{skill.score}</span>
           <span
             className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${cfg.badge}`}
           >
@@ -372,16 +373,11 @@ function SkillRow({
       </div>
 
       <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-muted">
-        <div
-          className={`h-full ${cfg.bar}`}
-          style={{ width: `${skill.score}%` }}
-        />
+        <div className={`h-full ${cfg.bar}`} style={{ width: `${skill.score}%` }} />
       </div>
 
       <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-        {detail && (
-          <p className="text-xs text-muted-foreground">{detail}</p>
-        )}
+        {detail && <p className="text-xs text-muted-foreground">{detail}</p>}
         {skill.verifiedBy && (
           <span className="ml-auto rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
             via {skill.verifiedBy}
@@ -392,13 +388,7 @@ function SkillRow({
   );
 }
 
-function JobCard({
-  job,
-  onApply,
-}: {
-  job: JobMatch;
-  onApply: () => void;
-}) {
+function JobCard({ job, onApply }: { job: JobMatch; onApply: () => void }) {
   const typeLabel: Record<JobMatch["type"], string> = {
     formal: "Formal employment",
     "self-employment": "Self-employment",
@@ -411,13 +401,9 @@ function JobCard({
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="font-semibold text-foreground">{job.title}</h3>
-          {job.company && (
-            <p className="text-sm text-muted-foreground">{job.company}</p>
-          )}
+          {job.company && <p className="text-sm text-muted-foreground">{job.company}</p>}
         </div>
-        <Badge className="bg-navy/10 text-navy hover:bg-navy/10">
-          {typeLabel[job.type]}
-        </Badge>
+        <Badge className="bg-navy/10 text-navy hover:bg-navy/10">{typeLabel[job.type]}</Badge>
       </div>
 
       <div className="mt-2 inline-flex items-center gap-1 text-xs text-muted-foreground">
@@ -428,15 +414,10 @@ function JobCard({
       <div className="mt-3">
         <div className="flex items-center justify-between text-xs">
           <span className="text-muted-foreground">Match</span>
-          <span className="font-semibold text-foreground">
-            {job.matchScore}%
-          </span>
+          <span className="font-semibold text-foreground">{job.matchScore}%</span>
         </div>
         <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-muted">
-          <div
-            className="h-full bg-teal"
-            style={{ width: `${job.matchScore}%` }}
-          />
+          <div className="h-full bg-teal" style={{ width: `${job.matchScore}%` }} />
         </div>
       </div>
 
@@ -459,15 +440,9 @@ function JobCard({
         ))}
       </div>
 
-      <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-        {job.gapAnalysis}
-      </p>
+      <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{job.gapAnalysis}</p>
 
-      {job.wageRange && (
-        <p className="mt-2 text-xs font-medium text-foreground">
-          {job.wageRange}
-        </p>
-      )}
+      {job.wageRange && <p className="mt-2 text-xs font-medium text-foreground">{job.wageRange}</p>}
 
       <div className="mt-auto flex items-center justify-between pt-4">
         <Button

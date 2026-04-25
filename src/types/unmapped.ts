@@ -15,12 +15,7 @@ export interface CountryConfig {
 
 export type TrackType = "tech" | "trade" | "agriculture";
 
-export type VerificationStatus =
-  | "confirmed"
-  | "partial"
-  | "no_evidence"
-  | "challenged"
-  | "pending";
+export type VerificationStatus = "confirmed" | "partial" | "no_evidence" | "challenged" | "pending";
 
 export interface SkillScore {
   name: string;

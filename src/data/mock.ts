@@ -1,8 +1,4 @@
-import type {
-  CountryConfig,
-  CandidateProfile,
-  JobMatch,
-} from "@/types/unmapped";
+import type { CountryConfig, CandidateProfile, JobMatch } from "@/types/unmapped";
 
 export const COUNTRY_CONFIGS: Record<string, CountryConfig> = {
   GHA: {
@@ -142,10 +138,7 @@ export const MOCK_TRADE_CANDIDATE: CandidateProfile = {
       name: "Phone repair",
       score: 88,
       status: "confirmed",
-      evidence: [
-        "5 years running repair business",
-        "Community validator: market supervisor",
-      ],
+      evidence: ["5 years running repair business", "Community validator: market supervisor"],
       flags: [],
       verifiedBy: "community",
     },
@@ -187,8 +180,7 @@ export const MOCK_TRADE_CANDIDATE: CandidateProfile = {
       title: "Phone Repair Technician",
       context: "self-employed",
       duration: "2019–present",
-      description:
-        "Screen replacement, water damage repair, software flashing",
+      description: "Screen replacement, water damage repair, software flashing",
     },
     {
       title: "Market Trader",
@@ -280,8 +272,7 @@ export const MOCK_JOB_MATCHES_TECH: JobMatch[] = [
     matchStatus: "strong_match",
     matchedSkills: ["JavaScript", "React", "Node.js"],
     missingSkills: ["TypeScript"],
-    gapAnalysis:
-      "Strong JS foundation confirmed on GitHub. TypeScript learnable in ~3 weeks.",
+    gapAnalysis: "Strong JS foundation confirmed on GitHub. TypeScript learnable in ~3 weeks.",
     wageRange: "GHS 2,000–3,200/mo",
     sourceUrl: "#",
   },
@@ -295,8 +286,7 @@ export const MOCK_JOB_MATCHES_TECH: JobMatch[] = [
     matchStatus: "good_match",
     matchedSkills: ["React", "JavaScript"],
     missingSkills: ["AWS", "Docker"],
-    gapAnalysis:
-      "React partially verified. AWS claim flagged — recommend honest disclosure.",
+    gapAnalysis: "React partially verified. AWS claim flagged — recommend honest disclosure.",
     wageRange: "GHS 2,500–4,000/mo",
     sourceUrl: "#",
   },

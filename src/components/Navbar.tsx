@@ -18,9 +18,7 @@ export function Navbar() {
           <div className="flex h-8 w-8 items-center justify-center rounded-md bg-navy text-navy-foreground font-bold">
             U
           </div>
-          <span className="text-lg font-bold tracking-tight text-navy">
-            Unmapped
-          </span>
+          <span className="text-lg font-bold tracking-tight text-navy">Unmapped</span>
         </Link>
 
         <nav className="hidden items-center gap-6 md:flex">
@@ -36,26 +34,18 @@ export function Navbar() {
         <div className="flex items-center gap-2 sm:gap-3">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded-md border-border"
-              >
+              <Button variant="outline" size="sm" className="rounded-md border-border">
                 <span className="mr-1">{country.flag}</span>
                 <span className="hidden sm:inline">{country.name}</span>
                 <ChevronDown className="ml-1 h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setCountryCode("GHA")}>
-                🇬🇭 Ghana
-              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setCountryCode("GHA")}>🇬🇭 Ghana</DropdownMenuItem>
               <DropdownMenuItem onClick={() => setCountryCode("BGD")}>
                 🇧🇩 Bangladesh
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setCountryCode("NGA")}>
-                🇳🇬 Nigeria
-              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setCountryCode("NGA")}>🇳🇬 Nigeria</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 

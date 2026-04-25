@@ -69,9 +69,7 @@ function TradeOnboarding() {
       <div className="mt-8 rounded-xl border border-border bg-card p-6 sm:p-8">
         {step === 1 && (
           <>
-            <h2 className="text-xl font-semibold text-navy">
-              Tell us about your work
-            </h2>
+            <h2 className="text-xl font-semibold text-navy">Tell us about your work</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               No formal credentials needed — we work from your experience.
             </p>
@@ -91,21 +89,11 @@ function TradeOnboarding() {
                     <SelectValue placeholder="Select a trade" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="repair">
-                      Phone / electronics repair
-                    </SelectItem>
-                    <SelectItem value="tailoring">
-                      Tailoring & sewing
-                    </SelectItem>
-                    <SelectItem value="mechanic">
-                      Mechanics & auto repair
-                    </SelectItem>
-                    <SelectItem value="carpentry">
-                      Carpentry & woodwork
-                    </SelectItem>
-                    <SelectItem value="food">
-                      Food preparation & catering
-                    </SelectItem>
+                    <SelectItem value="repair">Phone / electronics repair</SelectItem>
+                    <SelectItem value="tailoring">Tailoring & sewing</SelectItem>
+                    <SelectItem value="mechanic">Mechanics & auto repair</SelectItem>
+                    <SelectItem value="carpentry">Carpentry & woodwork</SelectItem>
+                    <SelectItem value="food">Food preparation & catering</SelectItem>
                     <SelectItem value="trading">General trading</SelectItem>
                     <SelectItem value="beauty">Hair & beauty</SelectItem>
                     <SelectItem value="other">Other</SelectItem>
@@ -147,9 +135,7 @@ function TradeOnboarding() {
               <Field label="Country">
                 <Select
                   value={country.code}
-                  onValueChange={(v) =>
-                    setCountryCode(v as "GHA" | "BGD" | "NGA")
-                  }
+                  onValueChange={(v) => setCountryCode(v as "GHA" | "BGD" | "NGA")}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -175,29 +161,17 @@ function TradeOnboarding() {
         )}
 
         {step === 2 && (
-          <ChatInterview
-            accent="sky"
-            questions={TRADE_QUESTIONS}
-            onComplete={finish}
-          />
+          <ChatInterview accent="sky" questions={TRADE_QUESTIONS} onComplete={finish} />
         )}
       </div>
     </main>
   );
 }
 
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-sm font-medium text-foreground">
-        {label}
-      </span>
+      <span className="mb-1 block text-sm font-medium text-foreground">{label}</span>
       {children}
     </label>
   );

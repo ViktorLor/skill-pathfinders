@@ -55,9 +55,7 @@ function AgriOnboarding() {
   const { country, setCountryCode } = useCountry();
 
   const toggleCrop = (c: string) => {
-    setCrops((prev) =>
-      prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c],
-    );
+    setCrops((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]));
   };
 
   const finish = () => {
@@ -90,9 +88,7 @@ function AgriOnboarding() {
       <div className="mt-8 rounded-xl border border-border bg-card p-6 sm:p-8">
         {step === 1 && (
           <>
-            <h2 className="text-xl font-semibold text-navy">
-              Your farming context
-            </h2>
+            <h2 className="text-xl font-semibold text-navy">Your farming context</h2>
 
             <div className="mt-5 space-y-4">
               <Field label="Your name">
@@ -114,10 +110,7 @@ function AgriOnboarding() {
                           : "border-border bg-card hover:bg-muted"
                       }`}
                     >
-                      <Checkbox
-                        checked={crops.includes(c)}
-                        onCheckedChange={() => toggleCrop(c)}
-                      />
+                      <Checkbox checked={crops.includes(c)} onCheckedChange={() => toggleCrop(c)} />
                       {c}
                     </label>
                   ))}
@@ -157,9 +150,7 @@ function AgriOnboarding() {
               <Field label="Country">
                 <Select
                   value={country.code}
-                  onValueChange={(v) =>
-                    setCountryCode(v as "GHA" | "BGD" | "NGA")
-                  }
+                  onValueChange={(v) => setCountryCode(v as "GHA" | "BGD" | "NGA")}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -185,29 +176,17 @@ function AgriOnboarding() {
         )}
 
         {step === 2 && (
-          <ChatInterview
-            accent="greenT"
-            questions={AGRI_QUESTIONS}
-            onComplete={finish}
-          />
+          <ChatInterview accent="greenT" questions={AGRI_QUESTIONS} onComplete={finish} />
         )}
       </div>
     </main>
   );
 }
 
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-sm font-medium text-foreground">
-        {label}
-      </span>
+      <span className="mb-1 block text-sm font-medium text-foreground">{label}</span>
       {children}
     </label>
   );

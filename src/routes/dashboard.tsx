@@ -17,8 +17,7 @@ export const Route = createFileRoute("/dashboard")({
       { title: "Regional Skills Intelligence Dashboard · Unmapped" },
       {
         name: "description",
-        content:
-          "Live policy view of verified youth skills across Ghana, Bangladesh and Nigeria.",
+        content: "Live policy view of verified youth skills across Ghana, Bangladesh and Nigeria.",
       },
     ],
   }),
@@ -33,20 +32,8 @@ const TRACK_DISTRIBUTION = [
 
 const SKILLS = {
   tech: ["JavaScript", "React", "Python", "Node.js", "SQL"],
-  trade: [
-    "Phone repair",
-    "Customer service",
-    "Inventory",
-    "Basic accounting",
-    "Tailoring",
-  ],
-  agri: [
-    "Crop cultivation",
-    "Irrigation",
-    "Pest control",
-    "Cooperative mgmt",
-    "Record keeping",
-  ],
+  trade: ["Phone repair", "Customer service", "Inventory", "Basic accounting", "Tailoring"],
+  agri: ["Crop cultivation", "Irrigation", "Pest control", "Cooperative mgmt", "Record keeping"],
 };
 
 const UNEMP_BY_SECTOR = [
@@ -96,12 +83,9 @@ function DashboardPage() {
     <main className="mx-auto max-w-7xl px-4 pb-20 pt-10 sm:px-6">
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-2xl font-bold text-navy">
-            Regional Skills Intelligence Dashboard
-          </h1>
+          <h1 className="text-2xl font-bold text-navy">Regional Skills Intelligence Dashboard</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Verified youth skills + econometric signals from ILO &amp; World
-            Bank.
+            Verified youth skills + econometric signals from ILO &amp; World Bank.
           </p>
         </div>
         <Select
@@ -147,9 +131,7 @@ function DashboardPage() {
 
       {/* Track distribution */}
       <section className="mt-8 rounded-xl border border-border bg-card p-6">
-        <h2 className="text-base font-semibold text-navy">
-          Track distribution
-        </h2>
+        <h2 className="text-base font-semibold text-navy">Track distribution</h2>
         <div className="mt-4 flex h-3 w-full overflow-hidden rounded-full bg-muted">
           {TRACK_DISTRIBUTION.map((t) => (
             <div
@@ -172,21 +154,9 @@ function DashboardPage() {
 
       {/* Top skills */}
       <section className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-3">
-        <SkillsCard
-          title="Top tech skills"
-          color="border-navy"
-          skills={SKILLS.tech}
-        />
-        <SkillsCard
-          title="Top trade skills"
-          color="border-sky"
-          skills={SKILLS.trade}
-        />
-        <SkillsCard
-          title="Top agri skills"
-          color="border-greenT"
-          skills={SKILLS.agri}
-        />
+        <SkillsCard title="Top tech skills" color="border-navy" skills={SKILLS.tech} />
+        <SkillsCard title="Top trade skills" color="border-sky" skills={SKILLS.trade} />
+        <SkillsCard title="Top agri skills" color="border-greenT" skills={SKILLS.agri} />
       </section>
 
       {/* Econometrics */}
@@ -208,8 +178,8 @@ function DashboardPage() {
       </section>
 
       <p className="mt-6 text-xs text-muted-foreground">
-        Data represents verified profiles on Unmapped + ILO/World Bank
-        econometric signals. Updated monthly.
+        Data represents verified profiles on Unmapped + ILO/World Bank econometric signals. Updated
+        monthly.
       </p>
     </main>
   );
@@ -233,31 +203,19 @@ function Metric({
         <span>{label}</span>
       </div>
       <div className="mt-2 text-xl font-bold text-navy">{value}</div>
-      {sub && (
-        <div className="mt-0.5 text-xs text-muted-foreground">{sub}</div>
-      )}
+      {sub && <div className="mt-0.5 text-xs text-muted-foreground">{sub}</div>}
     </div>
   );
 }
 
-function SkillsCard({
-  title,
-  color,
-  skills,
-}: {
-  title: string;
-  color: string;
-  skills: string[];
-}) {
+function SkillsCard({ title, color, skills }: { title: string; color: string; skills: string[] }) {
   return (
     <div className={`rounded-xl border-l-4 ${color} bg-card p-5 shadow-sm`}>
       <h3 className="text-sm font-semibold text-navy">{title}</h3>
       <ol className="mt-3 space-y-1.5 text-sm text-foreground">
         {skills.map((s, i) => (
           <li key={s} className="flex items-baseline gap-2">
-            <span className="text-xs font-mono text-muted-foreground">
-              {i + 1}.
-            </span>
+            <span className="text-xs font-mono text-muted-foreground">{i + 1}.</span>
             {s}
           </li>
         ))}
@@ -301,9 +259,7 @@ function BarChart({
           </div>
         ))}
       </div>
-      <p className="mt-4 text-[10px] text-muted-foreground">
-        Source: ILO ILOSTAT + World Bank WDI
-      </p>
+      <p className="mt-4 text-[10px] text-muted-foreground">Source: ILO ILOSTAT + World Bank WDI</p>
     </div>
   );
 }

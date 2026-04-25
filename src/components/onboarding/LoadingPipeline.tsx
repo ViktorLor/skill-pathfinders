@@ -9,13 +9,7 @@ const accentMap: Record<Accent, string> = {
   greenT: "text-greenT",
 };
 
-export function LoadingPipeline({
-  stages,
-  accent,
-}: {
-  stages: string[];
-  accent: Accent;
-}) {
+export function LoadingPipeline({ stages, accent }: { stages: string[]; accent: Accent }) {
   const [stage, setStage] = useState(0);
 
   useEffect(() => {
@@ -26,12 +20,8 @@ export function LoadingPipeline({
 
   return (
     <main className="mx-auto flex min-h-[70vh] max-w-xl flex-col items-center justify-center px-4 py-10 text-center">
-      <h2 className="text-xl font-semibold text-navy">
-        Building your Skill Passport
-      </h2>
-      <p className="mt-1 text-sm text-muted-foreground">
-        This usually takes a few seconds.
-      </p>
+      <h2 className="text-xl font-semibold text-navy">Building your Skill Passport</h2>
+      <p className="mt-1 text-sm text-muted-foreground">This usually takes a few seconds.</p>
 
       <ul className="mt-8 w-full space-y-3 text-left">
         {stages.map((s, i) => {
@@ -45,17 +35,13 @@ export function LoadingPipeline({
               {done ? (
                 <CheckCircle2 className={`h-5 w-5 ${accentMap[accent]}`} />
               ) : active ? (
-                <Loader2
-                  className={`h-5 w-5 animate-spin ${accentMap[accent]}`}
-                />
+                <Loader2 className={`h-5 w-5 animate-spin ${accentMap[accent]}`} />
               ) : (
                 <div className="h-5 w-5 rounded-full border border-border" />
               )}
               <span
                 className={`text-sm ${
-                  done || active
-                    ? "text-foreground"
-                    : "text-muted-foreground"
+                  done || active ? "text-foreground" : "text-muted-foreground"
                 }`}
               >
                 {s}
