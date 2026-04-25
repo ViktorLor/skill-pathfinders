@@ -5,7 +5,13 @@ import {
   getCandidateById,
   getJobMatchesForTrack,
 } from "@/data/mock";
-import type { CandidateSkillProfile, JobMatch, SkillItem, SkillScore, TrackType } from "@/types/unmapped";
+import type {
+  CandidateSkillProfile,
+  JobMatch,
+  SkillItem,
+  SkillScore,
+  TrackType,
+} from "@/types/unmapped";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -61,6 +67,9 @@ export const Route = createFileRoute("/profile/$id")({
 const loadProfileSnapshot = createServerFn({ method: "POST" })
   .inputValidator((data: { profileId: string }) => data)
   .handler(async ({ data }) => readCandidateSkillProfileJson(data.profileId));
+
+const ESCO_OCCUPATION_BROWSER_URL = "https://esco.ec.europa.eu/en/classification/occupation-main";
+const ISCO_08_BROWSER_URL = "https://isco.ilo.org/en/isco-08/codelist/";
 
 const trackMeta: Record<
   TrackType,
@@ -160,6 +169,7 @@ function ProfilePage() {
   const meta = trackMeta[candidate.track];
   const jobs = getJobMatchesForTrack(candidate.track);
   const riskProfile = getRiskProfileForCandidate(candidate.id);
+  const demoOccupation = parseDemoOccupation(candidate.escoOccupation);
   const initials = candidate.name
     .split(" ")
     .map((n) => n[0])
@@ -218,6 +228,13 @@ function ProfilePage() {
           </div>
         </div>
       </section>
+
+      <TaxonomySection
+        escoTitle={demoOccupation?.title}
+        escoUri={undefined}
+        iscoCode={demoOccupation?.code}
+        iscoTitle={demoOccupation?.title}
+      />
 
       {/* Econometric signals */}
       <section className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 rounded-lg bg-sky/10 px-4 py-3 text-xs text-foreground">
@@ -373,6 +390,14 @@ function DynamicProfilePage({ snapshot }: { snapshot: ProfileSnapshot }) {
         </div>
       </section>
 
+      <TaxonomySection
+        escoTitle={profile.occupation.escoOccupationTitle}
+        escoUri={profile.occupation.escoOccupationUri}
+        iscoCode={profile.occupation.iscoCode}
+        iscoTitle={profile.occupation.iscoTitle}
+        alternatives={profile.occupation.alternativeOccupationMatches}
+      />
+
       <section className="mt-8">
         <h2 className="text-lg font-semibold text-navy">Skills from profile</h2>
         <div className="mt-4 space-y-3">
@@ -430,6 +455,143 @@ function DynamicProfilePage({ snapshot }: { snapshot: ProfileSnapshot }) {
       )}
     </main>
   );
+}
+
+function TaxonomySection({
+  escoTitle,
+  escoUri,
+  iscoCode,
+  iscoTitle,
+  alternatives = [],
+}: {
+  escoTitle?: string;
+  escoUri?: string;
+  iscoCode?: string;
+  iscoTitle?: string;
+  alternatives?: CandidateSkillProfile["occupation"]["alternativeOccupationMatches"];
+}) {
+  const hasPrimary = Boolean(escoTitle || escoUri || iscoCode || iscoTitle);
+
+  return (
+    <section className="mt-4 rounded-xl border border-border bg-card p-5">
+      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-navy">Official occupation classification</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            The candidate occupation is shown against ESCO and ISCO-08 where a mapping is available.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <OfficialLink href={ESCO_OCCUPATION_BROWSER_URL} label="ESCO browser" />
+          <OfficialLink href={ISCO_08_BROWSER_URL} label="ISCO-08 browser" />
+        </div>
+      </div>
+
+      <div className="mt-5 grid gap-4 md:grid-cols-2">
+        <TaxonomyCard
+          label="ESCO occupation"
+          title={escoTitle || "Not mapped yet"}
+          code={escoUri}
+          href={escoUri && isHttpUrl(escoUri) ? escoUri : ESCO_OCCUPATION_BROWSER_URL}
+          linkLabel={escoUri ? "Open ESCO URI" : "Open ESCO occupations"}
+        />
+        <TaxonomyCard
+          label="ISCO-08 occupation group"
+          title={iscoTitle || "Not mapped yet"}
+          code={iscoCode}
+          href={ISCO_08_BROWSER_URL}
+          linkLabel="Open official ISCO-08 list"
+        />
+      </div>
+
+      {!hasPrimary && (
+        <p className="mt-4 rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground">
+          No official ESCO or ISCO mapping has been saved for this profile yet.
+        </p>
+      )}
+
+      {alternatives.length > 0 && (
+        <div className="mt-5">
+          <h3 className="text-sm font-semibold text-foreground">Alternative occupation matches</h3>
+          <div className="mt-2 grid gap-2">
+            {alternatives.slice(0, 3).map((match) => (
+              <div
+                key={`${match.title}-${match.iscoCode ?? match.escoUri ?? match.reason}`}
+                className="rounded-md bg-muted px-3 py-2 text-sm"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="font-medium text-foreground">{match.title}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {Math.round(match.confidence * 100)}% confidence
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">{match.reason}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function TaxonomyCard({
+  label,
+  title,
+  code,
+  href,
+  linkLabel,
+}: {
+  label: string;
+  title: string;
+  code?: string;
+  href: string;
+  linkLabel: string;
+}) {
+  return (
+    <div className="rounded-lg border border-border bg-background p-4">
+      <div className="text-xs font-medium uppercase text-muted-foreground">{label}</div>
+      <div className="mt-2 font-semibold text-foreground">{title}</div>
+      {code && <div className="mt-1 break-all text-xs text-muted-foreground">{code}</div>}
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-navy hover:text-teal"
+      >
+        {linkLabel}
+        <ExternalLink className="h-3 w-3" />
+      </a>
+    </div>
+  );
+}
+
+function OfficialLink({ href, label }: { href: string; label: string }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
+    >
+      {label}
+      <ExternalLink className="h-3 w-3" />
+    </a>
+  );
+}
+
+function isHttpUrl(value: string) {
+  return value.startsWith("http://") || value.startsWith("https://");
+}
+
+function parseDemoOccupation(value?: string) {
+  if (!value) return null;
+
+  const [code, ...titleParts] = value.split("·").map((part) => part.trim());
+  return {
+    code: /^\d{1,4}$/.test(code) ? code : undefined,
+    title: titleParts.join(" · ") || value,
+  };
 }
 
 function DynamicSkillRow({ skill }: { skill: SkillItem }) {

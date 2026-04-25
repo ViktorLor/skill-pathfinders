@@ -1,7 +1,14 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { ArrowRight, BriefcaseBusiness, CheckCircle2, FileText, Loader2 } from "lucide-react";
+import {
+  ArrowRight,
+  BriefcaseBusiness,
+  CheckCircle2,
+  ExternalLink,
+  FileText,
+  Loader2,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { readCandidateSkillProfileJson, type ProfileSnapshot } from "@/services/profileHandler";
@@ -20,6 +27,9 @@ export const Route = createFileRoute("/onboard")({
 const loadProfileSnapshot = createServerFn({ method: "POST" })
   .inputValidator((data: { profileId: string }) => data)
   .handler(async ({ data }) => readCandidateSkillProfileJson(data.profileId));
+
+const ESCO_OCCUPATION_BROWSER_URL = "https://esco.ec.europa.eu/en/classification/occupation-main";
+const ISCO_08_BROWSER_URL = "https://isco.ilo.org/en/isco-08/codelist/";
 
 function DynamicOnboarding() {
   const { profileId } = Route.useSearch();
@@ -143,6 +153,25 @@ function DynamicOnboarding() {
           </h2>
           <div className="mt-4 space-y-3 text-sm">
             <Fact label="Occupation" value={profile.occupation.escoOccupationTitle || profile.occupation.iscoTitle || "Not mapped yet"} />
+            <LinkedFact
+              label="ESCO"
+              value={profile.occupation.escoOccupationTitle || "Open official ESCO occupations"}
+              href={
+                profile.occupation.escoOccupationUri &&
+                isHttpUrl(profile.occupation.escoOccupationUri)
+                  ? profile.occupation.escoOccupationUri
+                  : ESCO_OCCUPATION_BROWSER_URL
+              }
+            />
+            <LinkedFact
+              label="ISCO-08"
+              value={
+                profile.occupation.iscoCode
+                  ? `${profile.occupation.iscoCode} ${profile.occupation.iscoTitle ?? ""}`.trim()
+                  : "Open official ISCO-08 list"
+              }
+              href={ISCO_08_BROWSER_URL}
+            />
             <Fact label="Experience" value={formatYears(profile.experience.totalYears)} />
             <Fact label="Industries" value={profile.experience.industries.join(", ") || "Not captured"} />
             <Fact label="Education" value={profile.education.highestLevel || "Not captured"} />
@@ -178,6 +207,27 @@ function Fact({ label, value }: { label: string; value: string }) {
       <div className="mt-1 text-foreground">{value}</div>
     </div>
   );
+}
+
+function LinkedFact({ label, value, href }: { label: string; value: string; href: string }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="block rounded-md bg-muted px-3 py-2 hover:bg-muted/80"
+    >
+      <div className="text-[11px] font-medium uppercase text-muted-foreground">{label}</div>
+      <div className="mt-1 inline-flex items-center gap-1 text-foreground">
+        {value}
+        <ExternalLink className="h-3 w-3" />
+      </div>
+    </a>
+  );
+}
+
+function isHttpUrl(value: string) {
+  return value.startsWith("http://") || value.startsWith("https://");
 }
 
 function getAllSkills(profile: CandidateSkillProfile) {
