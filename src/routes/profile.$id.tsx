@@ -1,4 +1,4 @@
-import { createFileRoute, useParams, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useParams, Link } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import {
@@ -25,6 +25,8 @@ import {
   ExternalLink,
   Bot,
   Shield,
+  RefreshCcw,
+  Loader2,
 } from "lucide-react";
 import { CoverLetterModal } from "@/components/profile/CoverLetterModal";
 import { AIRiskLens } from "@/components/profile/AIRiskLens";
@@ -32,7 +34,11 @@ import {
   getRiskProfileForCandidate,
   type SkillAIRisk,
 } from "@/data/aiRisk";
-import { readCandidateSkillProfileJson, type ProfileSnapshot } from "@/services/profileHandler";
+import {
+  deleteCandidateSkillProfileJson,
+  readCandidateSkillProfileJson,
+  type ProfileSnapshot,
+} from "@/services/profileHandler";
 
 export const Route = createFileRoute("/profile/$id")({
   head: ({ params }) => {
@@ -67,6 +73,10 @@ export const Route = createFileRoute("/profile/$id")({
 const loadProfileSnapshot = createServerFn({ method: "POST" })
   .inputValidator((data: { profileId: string }) => data)
   .handler(async ({ data }) => readCandidateSkillProfileJson(data.profileId));
+
+const deleteProfileSnapshot = createServerFn({ method: "POST" })
+  .inputValidator((data: { profileId: string; accountId?: string }) => data)
+  .handler(async ({ data }) => deleteCandidateSkillProfileJson(data.profileId, data.accountId));
 
 const ESCO_OCCUPATION_BROWSER_URL = "https://esco.ec.europa.eu/en/classification/occupation-main";
 const ISCO_08_BROWSER_URL = "https://isco.ilo.org/en/isco-08/codelist/";
@@ -339,14 +349,42 @@ function ProfilePage() {
 }
 
 function DynamicProfilePage({ snapshot }: { snapshot: ProfileSnapshot }) {
+  const navigate = useNavigate();
   const profile = snapshot.profile;
   const skills = Object.values(profile.skills).flat();
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
   const initials = (profile.profile.roleName || "Candidate")
     .split(" ")
     .map((part) => part[0])
     .join("")
     .slice(0, 2)
     .toUpperCase();
+
+  const retakeQuestionnaire = async () => {
+    const confirmed = window.confirm(
+      "Retake the questionnaire? This will delete your saved profile data and SQL entry.",
+    );
+    if (!confirmed) return;
+
+    setIsDeleting(true);
+    setDeleteError("");
+
+    try {
+      const accountId = window.localStorage.getItem("accountId") || undefined;
+      await deleteProfileSnapshot({
+        data: {
+          profileId: snapshot.profileId,
+          accountId,
+        },
+      });
+      navigate({ to: "/" });
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : "Could not delete the saved profile.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   return (
     <main className="mx-auto max-w-5xl px-4 pb-20 pt-8 sm:px-6">
@@ -386,12 +424,33 @@ function DynamicProfilePage({ snapshot }: { snapshot: ProfileSnapshot }) {
             <div className="mt-2 rounded-md bg-teal/10 px-3 py-1 text-sm font-semibold capitalize text-teal">
               {snapshot.status}
             </div>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={retakeQuestionnaire}
+              disabled={isDeleting}
+              className="mt-4 rounded-md"
+            >
+              {isDeleting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCcw className="h-4 w-4" />
+              )}
+              Retake questionnaire
+            </Button>
           </div>
         </div>
+
+        {deleteError && (
+          <div className="mt-4 rounded-md border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+            {deleteError}
+          </div>
+        )}
       </section>
 
       <TaxonomySection
         escoTitle={profile.occupation.escoOccupationTitle}
+        escoCode={profile.occupation.escoOccupationCode}
         escoUri={profile.occupation.escoOccupationUri}
         iscoCode={profile.occupation.iscoCode}
         iscoTitle={profile.occupation.iscoTitle}
@@ -459,18 +518,21 @@ function DynamicProfilePage({ snapshot }: { snapshot: ProfileSnapshot }) {
 
 function TaxonomySection({
   escoTitle,
+  escoCode,
   escoUri,
   iscoCode,
   iscoTitle,
   alternatives = [],
 }: {
   escoTitle?: string;
+  escoCode?: string;
   escoUri?: string;
   iscoCode?: string;
   iscoTitle?: string;
   alternatives?: CandidateSkillProfile["occupation"]["alternativeOccupationMatches"];
 }) {
   const hasPrimary = Boolean(escoTitle || escoUri || iscoCode || iscoTitle);
+  const displayEscoCode = escoCode || deriveEscoCode(escoUri);
 
   return (
     <section className="mt-4 rounded-xl border border-border bg-card p-5">
@@ -491,9 +553,9 @@ function TaxonomySection({
         <TaxonomyCard
           label="ESCO occupation"
           title={escoTitle || "Not mapped yet"}
-          code={escoUri}
+          code={displayEscoCode}
           href={escoUri && isHttpUrl(escoUri) ? escoUri : ESCO_OCCUPATION_BROWSER_URL}
-          linkLabel={escoUri ? "Open ESCO URI" : "Open ESCO occupations"}
+          linkLabel="Open official ESCO"
         />
         <TaxonomyCard
           label="ISCO-08 occupation group"
@@ -582,6 +644,13 @@ function OfficialLink({ href, label }: { href: string; label: string }) {
 
 function isHttpUrl(value: string) {
   return value.startsWith("http://") || value.startsWith("https://");
+}
+
+function deriveEscoCode(uri?: string) {
+  if (!uri) return undefined;
+
+  const parts = uri.split(/[\/#]/).filter(Boolean);
+  return parts.at(-1);
 }
 
 function parseDemoOccupation(value?: string) {

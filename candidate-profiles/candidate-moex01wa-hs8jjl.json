@@ -1,0 +1,333 @@
+{
+  "profileId": "candidate-moex01wa-hs8jjl",
+  "profile": {
+    "profile": {
+      "roleName": "Software Developer / Application Support Specialist",
+      "normalizedRoleName": "software developer",
+      "summary": "Candidate has experience in software development with a focus on Java Spring and Angular, full-stack application development, application support and incident management, automation in accounting and inventory management, and online marketing. Currently pursuing a BSc in Artificial Intelligence with practical experience in support and software projects. Also engages in voluntary youth work and student representation.",
+      "seniority": "junior",
+      "track": "tech",
+      "confidence": "high"
+    },
+    "occupation": {
+      "alternativeOccupationMatches": [],
+      "iscoCode": "2512",
+      "iscoTitle": "Software Developers",
+      "escoOccupationCode": "sfw_developer",
+      "escoOccupationUri": "http://data.europa.eu/esco/occupation/sfw_developer",
+      "escoOccupationTitle": "Software Developer"
+    },
+    "experience": {
+      "hasJob": true,
+      "industries": [
+        "software development",
+        "education",
+        "accounting",
+        "marketing"
+      ],
+      "jobTitles": [
+        "Support Application Care",
+        "Accountant and Management"
+      ],
+      "companies": [
+        "XXXLdigital",
+        "Apapika",
+        "Kindergarten Bunter Zug"
+      ],
+      "responsibilities": [
+        "issue analysis and troubleshooting",
+        "user support and incident management",
+        "system maintenance and quality assurance",
+        "automation of quality control and quantity checks",
+        "integrated POS with accounting programs",
+        "developed management and inventory systems",
+        "online marketing strategy development",
+        "bookkeeping",
+        "management of kindergarten operations"
+      ],
+      "achievements": [
+        "developed medical practice management system compliant with FHIR",
+        "led development teams for logistics and storage management systems",
+        "automated financial and inventory processes",
+        "increased kindergarten visibility through website launch"
+      ],
+      "totalYears": 7,
+      "relevantYears": 3
+    },
+    "education": {
+      "degrees": [
+        "BSc Artificial Intelligence (ongoing)",
+        "Bachelor in Software & Information Engineering (transferred)",
+        "Higher technical institute diploma in Medical Informatics"
+      ],
+      "fieldsOfStudy": [
+        "Artificial Intelligence",
+        "Software & Information Engineering",
+        "Medical Informatics"
+      ],
+      "certifications": [
+        "Data Protection Officer (DPO)",
+        "Online Marketing diploma",
+        "ITILv4 Foundation"
+      ],
+      "trainings": [],
+      "highestLevel": "bachelor"
+    },
+    "skills": {
+      "technical": [
+        {
+          "name": "Java Spring",
+          "normalizedName": "java spring",
+          "category": "technical",
+          "proficiency": "intermediate",
+          "evidence": [
+            "Medical Practice - Management System design and development using Java Spring and Angular"
+          ],
+          "escoSkillUri": "urn:esco:skill:java_spring_programming",
+          "escoPreferredLabel": "Java Spring programming",
+          "escoSkillType": "skill/competence",
+          "confidence": "high"
+        },
+        {
+          "name": "Angular",
+          "normalizedName": "angular",
+          "category": "technical",
+          "proficiency": "intermediate",
+          "evidence": [
+            "Led development teams using Angular for logistics and storage management systems, and medical practice management system"
+          ],
+          "escoSkillUri": "urn:esco:skill:angular",
+          "escoPreferredLabel": "Angular",
+          "escoSkillType": "skill/competence",
+          "confidence": "high"
+        },
+        {
+          "name": "NestJS",
+          "normalizedName": "nestjs",
+          "category": "technical",
+          "proficiency": "basic",
+          "evidence": [
+            "Led a team in developing logistics web application using NestJS"
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "",
+          "escoSkillType": "unknown",
+          "confidence": "medium"
+        },
+        {
+          "name": "Full-stack application development",
+          "normalizedName": "full stack development",
+          "category": "technical",
+          "proficiency": "intermediate",
+          "evidence": [
+            "Hands-on experience developing full-stack applications",
+            "Projects involving front-end and back-end technologies"
+          ],
+          "escoSkillUri": "urn:esco:skill:full_stack_software_development",
+          "escoPreferredLabel": "Full stack software development",
+          "escoSkillType": "skill/competence",
+          "confidence": "high"
+        },
+        {
+          "name": "Issue Analysis & Troubleshooting",
+          "normalizedName": "issue analysis and troubleshooting",
+          "category": "technical",
+          "proficiency": "intermediate",
+          "evidence": [
+            "Support Application Care - investigating and resolving technical problems"
+          ],
+          "escoSkillUri": "urn:esco:skill:troubleshooting",
+          "escoPreferredLabel": "Troubleshooting",
+          "escoSkillType": "skill/competence",
+          "confidence": "high"
+        }
+      ],
+      "tools": [
+        {
+          "name": "Point-of-sale (POS) system",
+          "normalizedName": "pos system",
+          "category": "tool",
+          "proficiency": "basic",
+          "evidence": [
+            "Integrated POS system with automated accounting program"
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "",
+          "escoSkillType": "unknown",
+          "confidence": "medium"
+        }
+      ],
+      "domain": [
+        {
+          "name": "Artificial Intelligence",
+          "normalizedName": "artificial intelligence",
+          "category": "technical",
+          "proficiency": "basic",
+          "evidence": [
+            "Pursuing BSc Artificial Intelligence focusing on machine learning and data science"
+          ],
+          "escoSkillUri": "urn:esco:skill:artificial_intelligence",
+          "escoPreferredLabel": "Artificial Intelligence",
+          "escoSkillType": "knowledge",
+          "confidence": "medium"
+        },
+        {
+          "name": "E-Health development",
+          "normalizedName": "e-health development",
+          "category": "technical",
+          "proficiency": "basic",
+          "evidence": [
+            "Medical Informatics diploma focused on E-Health development and standards"
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "",
+          "escoSkillType": "knowledge",
+          "confidence": "medium"
+        }
+      ],
+      "business": [
+        {
+          "name": "Online Marketing Strategy",
+          "normalizedName": "online marketing strategy",
+          "category": "business",
+          "proficiency": "intermediate",
+          "evidence": [
+            "Developed and executed online marketing strategies, SEO, and SEA"
+          ],
+          "escoSkillUri": "urn:esco:skill:online_marketing",
+          "escoPreferredLabel": "Online Marketing",
+          "escoSkillType": "skill/competence",
+          "confidence": "high"
+        }
+      ],
+      "soft": [
+        {
+          "name": "Team Leadership",
+          "normalizedName": "team leadership",
+          "category": "soft",
+          "proficiency": "intermediate",
+          "evidence": [
+            "Led teams in development of logistics and storage management systems"
+          ],
+          "escoSkillUri": "urn:esco:skill:leadership",
+          "escoPreferredLabel": "Leadership",
+          "escoSkillType": "transversal",
+          "confidence": "high"
+        },
+        {
+          "name": "Project Coordination",
+          "normalizedName": "project coordination",
+          "category": "soft",
+          "proficiency": "intermediate",
+          "evidence": [
+            "Student representative coordinating projects and representing interests"
+          ],
+          "escoSkillUri": "urn:esco:skill:project_coordination",
+          "escoPreferredLabel": "Project coordination",
+          "escoSkillType": "transversal",
+          "confidence": "medium"
+        }
+      ],
+      "languages": [
+        {
+          "name": "German",
+          "normalizedName": "german",
+          "category": "language",
+          "proficiency": "advanced",
+          "evidence": [
+            "German (C2) language certificate"
+          ],
+          "escoSkillUri": "urn:esco:language:deu",
+          "escoPreferredLabel": "German",
+          "escoSkillType": "language",
+          "confidence": "high"
+        },
+        {
+          "name": "English",
+          "normalizedName": "english",
+          "category": "language",
+          "proficiency": "advanced",
+          "evidence": [
+            "English (C1) language certificate"
+          ],
+          "escoSkillUri": "urn:esco:language:eng",
+          "escoPreferredLabel": "English",
+          "escoSkillType": "language",
+          "confidence": "high"
+        },
+        {
+          "name": "Arabic",
+          "normalizedName": "arabic",
+          "category": "language",
+          "proficiency": "intermediate",
+          "evidence": [
+            "Arabic (B1) language certificate"
+          ],
+          "escoSkillUri": "urn:esco:language:ara",
+          "escoPreferredLabel": "Arabic",
+          "escoSkillType": "language",
+          "confidence": "medium"
+        },
+        {
+          "name": "Turkish",
+          "normalizedName": "turkish",
+          "category": "language",
+          "proficiency": "basic",
+          "evidence": [
+            "Turkish (A1) language certificate"
+          ],
+          "escoSkillUri": "urn:esco:language:tur",
+          "escoPreferredLabel": "Turkish",
+          "escoSkillType": "language",
+          "confidence": "medium"
+        }
+      ]
+    },
+    "evidence": [
+      {
+        "sentence": "Designed and developed a cutting-edge management system for medical practices, ensuring compliance with the FHIR standard. Utilized Java Spring and Angular to deliver a scalable and efficient solution."
+      },
+      {
+        "sentence": "Led a team of three in the development of an innovative logistics web application using Angular and NestJS, optimizing operational workflows."
+      },
+      {
+        "sentence": "Directed a team of five in conceptualizing and developing a storage management system, leveraging Angular and Java Spring to enhance inventory processes and efficiency."
+      },
+      {
+        "sentence": "Crafted a comprehensive online marketing strategy for a tech startup in Austria, driving brand growth and online engagement through tailored digital solutions."
+      },
+      {
+        "sentence": "Issue Analysis & Troubleshooting: Investigating technical problems, reproducing errors, and resolving common application and system issues (mix of Level 1 and Level 2 support)."
+      }
+    ],
+    "automationAndReskilling": {
+      "riskDrivers": [
+        "Repetitive support tasks",
+        "Routine bookkeeping and management-related automation potential"
+      ],
+      "resilientSkills": [
+        "Advanced programming skills",
+        "Team leadership",
+        "Problem-solving",
+        "Project coordination"
+      ],
+      "missingRecommendedSkills": [
+        "Advanced AI and machine learning",
+        "Cloud computing skills",
+        "DevOps practices"
+      ],
+      "recommendedLearningSkills": [
+        "Artificial Intelligence specialization",
+        "Cloud technologies",
+        "Advanced software architecture"
+      ],
+      "automationRiskOccupationCode": "2512",
+      "automationRiskScore": 30
+    },
+    "nextQuestion": "What is your current preferred job role or target job title in your career?",
+    "isComplete": false
+  },
+  "status": "draft",
+  "questionsAnswered": 0,
+  "savedAt": "2026-04-25T22:32:39.263Z"
+}

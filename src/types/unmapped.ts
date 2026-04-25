@@ -54,6 +54,7 @@ export interface CandidateSkillProfile {
   occupation: {
     iscoCode?: string;
     iscoTitle?: string;
+    escoOccupationCode?: string;
     escoOccupationUri?: string;
     escoOccupationTitle?: string;
     alternativeOccupationMatches: Array<{
@@ -65,6 +66,7 @@ export interface CandidateSkillProfile {
     }>;
   };
   experience: {
+    hasJob?: boolean;
     totalYears?: number;
     relevantYears?: number;
     industries: string[];

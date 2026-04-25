@@ -1,10 +1,23 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
-import { useState } from "react";
-import { ArrowRight, CheckCircle2, FileText, Loader2, MessageCircle } from "lucide-react";
+import type { FormEvent } from "react";
+import { useEffect, useState } from "react";
+import {
+  ArrowRight,
+  CheckCircle2,
+  FileText,
+  Loader2,
+  LogIn,
+  MessageCircle,
+  UserPlus,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { createAccount, verifyAccountLogin } from "@/services/accounts.server";
+import { findLatestAccountProfile } from "@/services/profileAccounts.server";
 import { saveCandidateSkillProfileJson } from "@/services/profileHandler";
 import type { CandidateSkillProfile } from "@/types/unmapped";
 
@@ -47,9 +60,15 @@ type ProfileInterviewInput = {
 
 type SaveProfileInput = {
   profileId: string;
+  accountId?: string;
   profile: CandidateSkillProfile;
   status: "draft" | "complete";
   questionsAnswered: number;
+};
+
+type AccountSession = {
+  id: string;
+  email: string;
 };
 
 const analyzeCv = createServerFn({ method: "POST" })
@@ -140,14 +159,26 @@ const saveProfileJson = createServerFn({ method: "POST" })
     return saveCandidateSkillProfileJson(data);
   });
 
+const registerAccount = createServerFn({ method: "POST" })
+  .inputValidator((data: { email: string; password: string }) => data)
+  .handler(async ({ data }) => createAccount(data));
+
+const loginAccount = createServerFn({ method: "POST" })
+  .inputValidator((data: { email: string; password: string }) => data)
+  .handler(async ({ data }) => verifyAccountLogin(data));
+
+const loadLatestAccountProfile = createServerFn({ method: "POST" })
+  .inputValidator((data: { accountId: string }) => data)
+  .handler(async ({ data }) => findLatestAccountProfile(data.accountId));
+
 const profileSystemPrompt = `
 You create structured CandidateSkillProfile JSON for employment matching.
-Use only evidence from the CV and interview answers. Do not invent employers, degrees, certifications, taxonomies, or years.
+Use only evidence from the CV if provided and the interview answers. Do not invent employers, degrees, certifications, taxonomies, or years.
 Return JSON with this shape:
 {
   "profile": { "roleName": string, "normalizedRoleName": string, "summary": string, "seniority": "entry|junior|mid|senior|lead|manager|executive|unknown", "track": "tech|trade|agriculture|other", "confidence": "high|medium|low" },
-  "occupation": { "iscoCode": string, "iscoTitle": string, "escoOccupationUri": string, "escoOccupationTitle": string, "alternativeOccupationMatches": [] },
-  "experience": { "totalYears": number, "relevantYears": number, "industries": [], "jobTitles": [], "companies": [], "responsibilities": [], "achievements": [] },
+  "occupation": { "iscoCode": string, "iscoTitle": string, "escoOccupationCode": string, "escoOccupationUri": string, "escoOccupationTitle": string, "alternativeOccupationMatches": [] },
+  "experience": { "hasJob": boolean, "totalYears": number, "relevantYears": number, "industries": [], "jobTitles": [], "companies": [], "responsibilities": [], "achievements": [] },
   "education": { "highestLevel": string, "degrees": [], "fieldsOfStudy": [], "certifications": [], "trainings": [] },
   "skills": { "technical": [], "tools": [], "domain": [], "business": [], "soft": [], "languages": [] },
   "evidence": [],
@@ -156,7 +187,8 @@ Return JSON with this shape:
   "isComplete": boolean
 }
 Each skill item must include name, normalizedName, category, evidence, and confidence. Add proficiency or yearsExperience only when supported.
-Ask one natural chatbot question at a time. Prioritize missing role, seniority, years, responsibilities, achievements, education/certifications, tools, languages, and learning goals.
+Always include escoOccupationCode when an ESCO occupation is mapped. Use the ESCO concept identifier or notation, not the full URL. Keep escoOccupationUri only for internal linking.
+Ask one natural chatbot question at a time. If there is no CV, start by discovering the person's target work, whether they currently have a job, past practical experience, tools, tasks, languages, education/training, and learning goals. Prioritize missing role, ISCO code/title, current job status, years, responsibilities, achievements, education/certifications, tools, languages, and learning goals.
 Set isComplete true when the profile is useful for matching or after 5 answered questions.
 `;
 
@@ -285,8 +317,11 @@ function withProfileDefaults(profile: CandidateSkillProfile): CandidateSkillProf
     occupation: {
       alternativeOccupationMatches: [],
       ...profile.occupation,
+      iscoCode: normalizeRequiredText(profile.occupation.iscoCode, "unknown"),
+      iscoTitle: normalizeRequiredText(profile.occupation.iscoTitle, "Unknown occupation"),
     },
     experience: {
+      hasJob: false,
       industries: [],
       jobTitles: [],
       companies: [],
@@ -360,6 +395,10 @@ function extractResponseText(result: OpenAIResponseResult) {
 }
 
 function LandingPage() {
+  const [account, setAccount] = useState<AccountSession | null>(null);
+  const [authStatus, setAuthStatus] = useState("");
+  const [authError, setAuthError] = useState("");
+  const [isCheckingAccountProfile, setIsCheckingAccountProfile] = useState(false);
   const [cvFile, setCvFile] = useState<File | null>(null);
   const [profileId, setProfileId] = useState(() => createProfileId());
   const [profile, setProfile] = useState<CandidateSkillProfile | null>(null);
@@ -379,6 +418,60 @@ function LandingPage() {
     : Math.min(100, Math.round((questionCount / MAX_INTERVIEW_QUESTIONS) * 100));
   const latestQuestion = [...messages].reverse().find((message) => message.role === "assistant")?.text;
 
+  useEffect(() => {
+    const storedAccountId = window.localStorage.getItem("accountId");
+    const storedAccountEmail = window.localStorage.getItem("accountEmail");
+
+    if (!storedAccountId || !storedAccountEmail) return;
+
+    const storedAccount = { id: storedAccountId, email: storedAccountEmail };
+    setAccount(storedAccount);
+    void redirectToExistingProfile(storedAccount);
+  }, []);
+
+  const redirectToExistingProfile = async (nextAccount: AccountSession) => {
+    setIsCheckingAccountProfile(true);
+    setAuthStatus("");
+    setAuthError("");
+
+    try {
+      const latestProfile = await loadLatestAccountProfile({
+        data: { accountId: nextAccount.id },
+      });
+
+      if (latestProfile?.profileId) {
+        navigate({ to: "/profile/$id", params: { id: latestProfile.profileId } });
+        return;
+      }
+
+      setAuthStatus(`Signed in as ${nextAccount.email}. You can start a new questionnaire.`);
+    } catch (err) {
+      setAuthError(err instanceof Error ? err.message : "Could not check saved profile data.");
+    } finally {
+      setIsCheckingAccountProfile(false);
+    }
+  };
+
+  const saveAccountSession = (nextAccount: AccountSession) => {
+    window.localStorage.setItem("accountId", nextAccount.id);
+    window.localStorage.setItem("accountEmail", nextAccount.email);
+    setAccount(nextAccount);
+  };
+
+  const clearAccountSession = () => {
+    window.localStorage.removeItem("accountId");
+    window.localStorage.removeItem("accountEmail");
+    setAccount(null);
+    setAuthStatus("");
+    setAuthError("");
+  };
+
+  const handleAuthenticated = async (nextAccount: AccountSession, status: string) => {
+    saveAccountSession(nextAccount);
+    setAuthStatus(status);
+    await redirectToExistingProfile(nextAccount);
+  };
+
   const persistProfile = async (
     nextProfile: CandidateSkillProfile,
     status: "draft" | "complete",
@@ -387,16 +480,22 @@ function LandingPage() {
     const result = await saveProfileJson({
       data: {
         profileId,
+        accountId: account?.id,
         profile: nextProfile,
         status,
         questionsAnswered,
       },
     });
     setSavedPath(result.path);
+    return result;
   };
 
   const submitCv = async () => {
     if (!cvFile) return;
+    if (!account) {
+      setAuthError("Please register or log in before adding questionnaire data.");
+      return;
+    }
 
     const nextProfileId = createProfileId();
     setProfileId(nextProfileId);
@@ -423,12 +522,17 @@ function LandingPage() {
       const saveResult = await saveProfileJson({
         data: {
           profileId: nextProfileId,
+          accountId: account.id,
           profile: result.profile,
           status: result.isComplete ? "complete" : "draft",
           questionsAnswered: 0,
         },
       });
       setSavedPath(saveResult.path);
+
+      if (result.isComplete) {
+        navigate({ to: "/profile/$id", params: { id: nextProfileId } });
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not analyze the CV.");
     } finally {
@@ -436,12 +540,38 @@ function LandingPage() {
     }
   };
 
+  const startNoCvInterview = async () => {
+    if (!account) {
+      setAuthError("Please register or log in before adding questionnaire data.");
+      return;
+    }
+
+    const nextProfileId = createProfileId();
+    setProfileId(nextProfileId);
+    setCvFile(null);
+    setProfile(createEmptySkillProfile());
+    setMessages([
+      {
+        role: "assistant",
+        text:
+          "What kind of work would you like to do, and what practical tasks have you already done at work, school, home, in business, or in your community?",
+      },
+    ]);
+    setAnswers([]);
+    setChatInput("");
+    setIsComplete(false);
+    setSavedPath("");
+    setError("");
+    window.requestAnimationFrame(() => {
+      document.getElementById("profile-builder")?.scrollIntoView({ behavior: "smooth" });
+    });
+  };
+
   const submitInterviewAnswer = async () => {
     const answer = chatInput.trim();
     if (!answer || !profile || !latestQuestion) return;
 
     const nextAnswers = [...answers, { question: latestQuestion, answer }];
-    const limitedOut = nextAnswers.length >= MAX_INTERVIEW_QUESTIONS;
 
     setChatInput("");
     setAnswers(nextAnswers);
@@ -450,16 +580,14 @@ function LandingPage() {
     setError("");
 
     try {
-      const result = limitedOut
-        ? { profile, nextQuestion: "", isComplete: true }
-        : await updateProfileFromAnswer({
-            data: {
-              profile,
-              answers: nextAnswers,
-            },
-          });
+      const result = await updateProfileFromAnswer({
+        data: {
+          profile,
+          answers: nextAnswers,
+        },
+      });
 
-      const complete = result.isComplete || limitedOut;
+      const complete = result.isComplete || nextAnswers.length >= MAX_INTERVIEW_QUESTIONS;
       setProfile(result.profile);
       setIsComplete(complete);
       setMessages((current) =>
@@ -468,6 +596,10 @@ function LandingPage() {
           : [...current, { role: "assistant", text: result.nextQuestion }],
       );
       await persistProfile(result.profile, complete ? "complete" : "draft", nextAnswers.length);
+
+      if (complete) {
+        navigate({ to: "/profile/$id", params: { id: profileId } });
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not update the profile.");
     } finally {
@@ -475,12 +607,21 @@ function LandingPage() {
     }
   };
 
-  const continueToDynamicOnboarding = () => {
-    navigate({ to: "/onboard", search: { profileId } });
+  const openCandidateProfile = () => {
+    navigate({ to: "/profile/$id", params: { id: profileId } });
   };
 
   return (
     <main className="mx-auto max-w-7xl px-4 pb-24 pt-12 sm:px-6 sm:pt-20">
+      <AuthStartPanel
+        account={account}
+        authStatus={authStatus}
+        authError={authError}
+        isCheckingAccountProfile={isCheckingAccountProfile}
+        onAuthenticated={handleAuthenticated}
+        onLogout={clearAccountSession}
+      />
+
       <section className="mx-auto max-w-3xl text-center">
         <span className="inline-flex items-center rounded-full bg-navy/5 px-3 py-1 text-xs font-medium text-navy">
           A skill passport for unmapped youth
@@ -489,19 +630,20 @@ function LandingPage() {
           Your skills, seen. <span className="text-teal">Your opportunity, found.</span>
         </h1>
         <p className="mx-auto mt-5 max-w-2xl text-base text-muted-foreground sm:text-lg">
-          Upload a CV and we will turn it into a structured skill profile, then ask one question at
-          a time to fill the gaps.
+          Upload a CV or answer profile questions, and we will turn your experience into a
+          structured skill profile.
         </p>
         <div className="mt-8 flex justify-center">
           <Button
-            asChild
             size="lg"
+            onClick={startNoCvInterview}
+            disabled={!account || isCheckingAccountProfile}
             className="rounded-md bg-navy text-navy-foreground hover:bg-navy/90"
           >
-            <a href="#profile-builder">
-              Build Your Skill Passport
+            <>
+              If you do not have a written CV, please proceed here.
               <ArrowRight className="ml-2 h-4 w-4" />
-            </a>
+            </>
           </Button>
         </div>
       </section>
@@ -513,10 +655,10 @@ function LandingPage() {
               <FileText className="h-6 w-6" />
             </div>
             <div>
-              <h2 className="text-2xl font-semibold text-navy">Upload your CV</h2>
+              <h2 className="text-2xl font-semibold text-navy">Build your skill profile</h2>
               <p className="mt-2 text-sm text-muted-foreground">
-                PDF and TXT files are supported. The hidden track is inferred, not chosen by the
-                user.
+                Upload a CV, or use the button above to answer questions if you do not have one.
+                The hidden track is inferred, not chosen by the user.
               </p>
             </div>
           </div>
@@ -541,7 +683,7 @@ function LandingPage() {
           <div className="mt-4 flex justify-end">
             <Button
               onClick={submitCv}
-              disabled={!cvFile || isAnalyzing || isSendingAnswer}
+              disabled={!account || !cvFile || isAnalyzing || isSendingAnswer}
               className="rounded-md bg-navy text-navy-foreground hover:bg-navy/90"
             >
               {isAnalyzing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -625,10 +767,10 @@ function LandingPage() {
               {isComplete && (
                 <div className="mt-4 flex justify-end">
                   <Button
-                    onClick={continueToDynamicOnboarding}
+                    onClick={openCandidateProfile}
                     className="rounded-md bg-navy text-navy-foreground hover:bg-navy/90"
                   >
-                    Review dynamic profile
+                    Open candidate profile
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </div>
@@ -646,6 +788,182 @@ function LandingPage() {
         <Stat value="ESCO" label="ready for taxonomy mapping" />
       </section>
     </main>
+  );
+}
+
+function AuthStartPanel({
+  account,
+  authStatus,
+  authError,
+  isCheckingAccountProfile,
+  onAuthenticated,
+  onLogout,
+}: {
+  account: AccountSession | null;
+  authStatus: string;
+  authError: string;
+  isCheckingAccountProfile: boolean;
+  onAuthenticated: (account: AccountSession, status: string) => Promise<void>;
+  onLogout: () => void;
+}) {
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [registerEmail, setRegisterEmail] = useState("");
+  const [registerPassword, setRegisterPassword] = useState("");
+  const [isSubmittingAuth, setIsSubmittingAuth] = useState(false);
+  const [localError, setLocalError] = useState("");
+
+  const submitLogin = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsSubmittingAuth(true);
+    setLocalError("");
+
+    try {
+      const nextAccount = await loginAccount({
+        data: { email: loginEmail, password: loginPassword },
+      });
+      setLoginPassword("");
+      await onAuthenticated(nextAccount, `Logged in as ${nextAccount.email}.`);
+    } catch (err) {
+      setLocalError(err instanceof Error ? err.message : "Could not log in.");
+    } finally {
+      setIsSubmittingAuth(false);
+    }
+  };
+
+  const submitRegister = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsSubmittingAuth(true);
+    setLocalError("");
+
+    try {
+      const nextAccount = await registerAccount({
+        data: { email: registerEmail, password: registerPassword },
+      });
+      setRegisterPassword("");
+      await onAuthenticated(nextAccount, `Account created for ${nextAccount.email}.`);
+    } catch (err) {
+      setLocalError(err instanceof Error ? err.message : "Could not create the account.");
+    } finally {
+      setIsSubmittingAuth(false);
+    }
+  };
+
+  return (
+    <section className="mx-auto mb-14 max-w-3xl rounded-lg border border-border bg-card p-6 shadow-sm sm:p-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-navy">Start with your account</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Register or log in before the questionnaire so your profile data is saved to your
+            account.
+          </p>
+        </div>
+        {account && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onLogout}
+            className="rounded-md"
+          >
+            Log out
+          </Button>
+        )}
+      </div>
+
+      {account ? (
+        <div className="mt-6 rounded-md border border-teal/20 bg-teal/10 px-4 py-3 text-sm text-foreground">
+          {isCheckingAccountProfile ? (
+            <span className="inline-flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Checking for your saved profile...
+            </span>
+          ) : (
+            authStatus || `Signed in as ${account.email}.`
+          )}
+        </div>
+      ) : (
+        <Tabs defaultValue="login" className="mt-6">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="login" className="gap-2">
+              <LogIn className="h-4 w-4" />
+              Login
+            </TabsTrigger>
+            <TabsTrigger value="register" className="gap-2">
+              <UserPlus className="h-4 w-4" />
+              Register
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="login" className="mt-5">
+            <form onSubmit={submitLogin} className="grid gap-4 sm:grid-cols-[1fr_1fr_auto]">
+              <Input
+                type="email"
+                value={loginEmail}
+                onChange={(event) => setLoginEmail(event.target.value)}
+                autoComplete="email"
+                placeholder="Email"
+                required
+              />
+              <Input
+                type="password"
+                value={loginPassword}
+                onChange={(event) => setLoginPassword(event.target.value)}
+                autoComplete="current-password"
+                placeholder="Password"
+                minLength={8}
+                required
+              />
+              <Button
+                type="submit"
+                disabled={isSubmittingAuth}
+                className="rounded-md bg-navy text-navy-foreground hover:bg-navy/90"
+              >
+                {isSubmittingAuth && <Loader2 className="h-4 w-4 animate-spin" />}
+                Login
+              </Button>
+            </form>
+          </TabsContent>
+
+          <TabsContent value="register" className="mt-5">
+            <form onSubmit={submitRegister} className="grid gap-4 sm:grid-cols-[1fr_1fr_auto]">
+              <Input
+                type="email"
+                value={registerEmail}
+                onChange={(event) => setRegisterEmail(event.target.value)}
+                autoComplete="email"
+                placeholder="Email"
+                required
+              />
+              <Input
+                type="password"
+                value={registerPassword}
+                onChange={(event) => setRegisterPassword(event.target.value)}
+                autoComplete="new-password"
+                placeholder="Password"
+                minLength={8}
+                required
+              />
+              <Button
+                type="submit"
+                disabled={isSubmittingAuth}
+                className="rounded-md bg-navy text-navy-foreground hover:bg-navy/90"
+              >
+                {isSubmittingAuth && <Loader2 className="h-4 w-4 animate-spin" />}
+                Register
+              </Button>
+            </form>
+          </TabsContent>
+        </Tabs>
+      )}
+
+      {(localError || authError) && (
+        <div className="mt-4 rounded-md border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          {localError || authError}
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -668,11 +986,11 @@ function ProfileSummary({
     <aside className="rounded-lg border border-border bg-card p-6 shadow-sm">
       <div className="text-xs font-medium uppercase text-muted-foreground">Live profile</div>
       <h2 className="mt-2 text-xl font-semibold text-navy">
-        {profile?.profile.roleName || "Waiting for CV"}
+        {profile?.profile.roleName || "Waiting for profile"}
       </h2>
       <p className="mt-2 text-sm text-muted-foreground">
         {profile?.profile.summary ||
-          "The structured profile will appear here as soon as the CV is scanned."}
+          "The structured profile will appear here as soon as a CV is scanned or the profile questions begin."}
       </p>
 
       {profile && (
@@ -754,4 +1072,56 @@ function Stat({ value, label }: { value: string; label: string }) {
 
 function createProfileId() {
   return `candidate-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function createEmptySkillProfile(): CandidateSkillProfile {
+  return {
+    profile: {
+      roleName: "New skill profile",
+      normalizedRoleName: "",
+      summary: "Answer the profile questions to build a structured skill profile.",
+      seniority: "unknown",
+      track: "other",
+      confidence: "low",
+    },
+    occupation: {
+      iscoCode: "unknown",
+      iscoTitle: "Unknown occupation",
+      alternativeOccupationMatches: [],
+    },
+    experience: {
+      hasJob: false,
+      industries: [],
+      jobTitles: [],
+      companies: [],
+      responsibilities: [],
+      achievements: [],
+    },
+    education: {
+      degrees: [],
+      fieldsOfStudy: [],
+      certifications: [],
+      trainings: [],
+    },
+    skills: {
+      technical: [],
+      tools: [],
+      domain: [],
+      business: [],
+      soft: [],
+      languages: [],
+    },
+    evidence: [],
+    automationAndReskilling: {
+      riskDrivers: [],
+      resilientSkills: [],
+      missingRecommendedSkills: [],
+      recommendedLearningSkills: [],
+    },
+  };
+}
+
+function normalizeRequiredText(value: string | undefined, fallback: string) {
+  const normalized = value?.trim();
+  return normalized || fallback;
 }

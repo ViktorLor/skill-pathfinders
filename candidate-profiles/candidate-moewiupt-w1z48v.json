@@ -1,0 +1,118 @@
+{
+  "profileId": "candidate-moewiupt-w1z48v",
+  "profile": {
+    "profile": {
+      "roleName": "Sewing Worker",
+      "normalizedRoleName": "sewing worker",
+      "summary": "Experienced in sewing and repairing clothing, including jeans and socks, providing support to the local community with various garment repairs using a sewing machine and hand sewing tools. Has approximately 21 years of experience in sewing work since childhood, learned informally from family. Currently looking to find a job in this field.",
+      "seniority": "entry",
+      "track": "trade",
+      "confidence": "high"
+    },
+    "occupation": {
+      "alternativeOccupationMatches": []
+    },
+    "experience": {
+      "industries": [],
+      "jobTitles": [
+        "Sewer"
+      ],
+      "companies": [],
+      "responsibilities": [
+        "Repairing jeans, sewing new socks, and other garment repairs using sewing machine and hand sewing needles."
+      ],
+      "achievements": [],
+      "totalYears": 21,
+      "relevantYears": 21
+    },
+    "education": {
+      "degrees": [],
+      "fieldsOfStudy": [],
+      "certifications": [],
+      "trainings": []
+    },
+    "skills": {
+      "technical": [
+        {
+          "name": "Sewing",
+          "normalizedName": "sewing",
+          "category": "technical",
+          "proficiency": "basic",
+          "evidence": [
+            "repairing jeans and socks",
+            "using a sewing machine and needles for garment repair"
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "",
+          "escoSkillType": "skill/competence",
+          "confidence": "high"
+        }
+      ],
+      "tools": [
+        {
+          "name": "Sewing Machine",
+          "normalizedName": "sewing machine",
+          "category": "tool",
+          "proficiency": "basic",
+          "evidence": [
+            "I have a sewing machine and needles and ofcourse the materials"
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "",
+          "escoSkillType": "skill/competence",
+          "confidence": "high"
+        },
+        {
+          "name": "Hand Sewing Needles",
+          "normalizedName": "hand sewing needles",
+          "category": "tool",
+          "proficiency": "basic",
+          "evidence": [
+            "I have a sewing machine and needles and ofcourse the materials"
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "",
+          "escoSkillType": "skill/competence",
+          "confidence": "high"
+        }
+      ],
+      "domain": [],
+      "business": [],
+      "soft": [],
+      "languages": []
+    },
+    "evidence": [
+      {
+        "question": "What kind of work would you like to do, and what practical tasks have you already done at work, school, home, in business, or in your community?",
+        "answer": "I work as a sewer in the local neighbarhood. I help people if their jeans are broken, they need new socks or anything else."
+      },
+      {
+        "question": "Can you tell me about any tools, machines, or equipment you have used for sewing or garment repair?",
+        "answer": "I have a sewing machine and needles and ofcourse the materials."
+      },
+      {
+        "question": "How many years of experience do you have working as a sewer or doing garment repairs?",
+        "answer": "I am doing it my whole life. I am now 21 years old"
+      },
+      {
+        "question": "Have you received any formal education, training, or certification related to sewing or garment repair?",
+        "answer": "No, my mom taught me"
+      },
+      {
+        "question": "What would you like to improve or learn next in your sewing skills or related work?",
+        "answer": "I want to find a job"
+      }
+    ],
+    "automationAndReskilling": {
+      "riskDrivers": [],
+      "resilientSkills": [],
+      "missingRecommendedSkills": [],
+      "recommendedLearningSkills": []
+    },
+    "nextQuestion": "What type of job or workplace would you like to work in as a sewer? For example, a factory, a tailor shop, or as a self-employed person?",
+    "isComplete": false
+  },
+  "status": "complete",
+  "questionsAnswered": 5,
+  "savedAt": "2026-04-25T22:20:54.145Z"
+}
