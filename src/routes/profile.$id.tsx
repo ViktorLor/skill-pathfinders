@@ -405,12 +405,24 @@ function DynamicProfilePage({ snapshot }: { snapshot: ProfileSnapshot }) {
               <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
                 {profile.profile.summary}
               </p>
+              {profile.location && (
+                <p className="mt-2 inline-flex items-center gap-1 text-sm text-muted-foreground">
+                  <MapPin className="h-3.5 w-3.5" />
+                  {profile.location}
+                </p>
+              )}
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <span className="rounded-md bg-navy/10 px-2.5 py-1 text-xs font-medium capitalize text-navy">
                   {profile.profile.track}
                 </span>
                 <span className="rounded-md bg-muted px-2.5 py-1 text-xs font-medium capitalize text-foreground">
                   {profile.profile.seniority}
+                </span>
+                <span className="rounded-md bg-muted px-2.5 py-1 text-xs font-medium text-foreground">
+                  Employed: {profile.experience.hasJob ? "Yes" : "No"}
+                </span>
+                <span className="rounded-md bg-muted px-2.5 py-1 text-xs font-medium text-foreground">
+                  Relocate: {profile.willingToRelocate ? "Yes" : "No"}
                 </span>
                 {(profile.occupation.escoOccupationTitle || profile.occupation.iscoTitle) && (
                   <span className="rounded-md bg-muted px-2.5 py-1 text-xs font-medium text-foreground">

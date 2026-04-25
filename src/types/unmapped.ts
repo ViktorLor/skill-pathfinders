@@ -43,6 +43,9 @@ export interface SkillItem {
 }
 
 export interface CandidateSkillProfile {
+  location?: string;
+  country?: string;
+  willingToRelocate?: boolean;
   profile: {
     roleName: string;
     normalizedRoleName: string;

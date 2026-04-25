@@ -8,12 +8,20 @@ import {
   FileText,
   Loader2,
   LogIn,
+  MapPin,
   MessageCircle,
   UserPlus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -42,6 +50,24 @@ export const Route = createFileRoute("/")({
 });
 
 const MAX_INTERVIEW_QUESTIONS = 5;
+
+const LOCATION_OPTIONS = [
+  { value: "accra-gha", label: "Accra, Ghana", country: "Ghana" },
+  { value: "kumasi-gha", label: "Kumasi, Ghana", country: "Ghana" },
+  { value: "sunyani-gha", label: "Sunyani, Ghana", country: "Ghana" },
+  { value: "lagos-nga", label: "Lagos, Nigeria", country: "Nigeria" },
+  { value: "abuja-nga", label: "Abuja, Nigeria", country: "Nigeria" },
+  { value: "dhaka-bgd", label: "Dhaka, Bangladesh", country: "Bangladesh" },
+  { value: "chattogram-bgd", label: "Chattogram, Bangladesh", country: "Bangladesh" },
+  { value: "remote-flexible", label: "Remote / flexible", country: "Remote / flexible" },
+] as const;
+
+type FixedProfileFields = {
+  location: string;
+  country: string;
+  currentlyEmployed: boolean;
+  willingToRelocate: boolean;
+};
 
 type InterviewMessage = {
   role: "assistant" | "user";
@@ -320,10 +346,16 @@ type RawCandidateProfile = {
   skills?: Partial<CandidateSkillProfile["skills"]>;
   evidence?: CandidateSkillProfile["evidence"];
   automationAndReskilling?: Partial<NonNullable<CandidateSkillProfile["automationAndReskilling"]>>;
+  location?: string;
+  country?: string;
+  willingToRelocate?: boolean;
 };
 
 function withProfileDefaults(profile: RawCandidateProfile): CandidateSkillProfile {
   return {
+    location: normalizeOptionalText(profile.location),
+    country: normalizeOptionalText(profile.country),
+    willingToRelocate: profile.willingToRelocate,
     profile: profile.profile,
     occupation: {
       alternativeOccupationMatches: [],
@@ -411,6 +443,9 @@ function LandingPage() {
   const [authError, setAuthError] = useState("");
   const [isCheckingAccountProfile, setIsCheckingAccountProfile] = useState(false);
   const [cvFile, setCvFile] = useState<File | null>(null);
+  const [selectedLocation, setSelectedLocation] = useState("");
+  const [currentlyEmployed, setCurrentlyEmployed] = useState("");
+  const [willingToRelocate, setWillingToRelocate] = useState("");
   const [profileId, setProfileId] = useState(() => createProfileId());
   const [profile, setProfile] = useState<CandidateSkillProfile | null>(null);
   const [messages, setMessages] = useState<InterviewMessage[]>([]);
@@ -428,6 +463,16 @@ function LandingPage() {
     ? 100
     : Math.min(100, Math.round((questionCount / MAX_INTERVIEW_QUESTIONS) * 100));
   const latestQuestion = [...messages].reverse().find((message) => message.role === "assistant")?.text;
+  const selectedLocationOption = LOCATION_OPTIONS.find((option) => option.value === selectedLocation);
+  const fixedFields =
+    selectedLocationOption && currentlyEmployed && willingToRelocate
+      ? {
+          location: selectedLocationOption.label,
+          country: selectedLocationOption.country,
+          currentlyEmployed: currentlyEmployed === "yes",
+          willingToRelocate: willingToRelocate === "yes",
+        }
+      : null;
 
   useEffect(() => {
     const storedAccount = getStoredAccountSession();
@@ -502,6 +547,10 @@ function LandingPage() {
       setAuthError("Please register or log in before adding questionnaire data.");
       return;
     }
+    if (!fixedFields) {
+      setError("Please answer location, employment, and relocation before scanning the CV.");
+      return;
+    }
 
     const nextProfileId = createProfileId();
     setProfileId(nextProfileId);
@@ -517,7 +566,8 @@ function LandingPage() {
       const data = new FormData();
       data.append("cv", cvFile);
       const result = await analyzeCv({ data });
-      setProfile(result.profile);
+      const fixedProfile = applyFixedProfileFields(result.profile, fixedFields);
+      setProfile(fixedProfile);
       setIsComplete(result.isComplete);
       setMessages(
         result.isComplete
@@ -529,7 +579,7 @@ function LandingPage() {
         data: {
           profileId: nextProfileId,
           accountId: account.id,
-          profile: result.profile,
+          profile: fixedProfile,
           status: result.isComplete ? "complete" : "draft",
           questionsAnswered: 0,
         },
@@ -551,11 +601,15 @@ function LandingPage() {
       setAuthError("Please register or log in before adding questionnaire data.");
       return;
     }
+    if (!fixedFields) {
+      setError("Please answer location, employment, and relocation before starting the questionnaire.");
+      return;
+    }
 
     const nextProfileId = createProfileId();
     setProfileId(nextProfileId);
     setCvFile(null);
-    setProfile(createEmptySkillProfile());
+    setProfile(createEmptySkillProfile(fixedFields));
     setMessages([
       {
         role: "assistant",
@@ -594,14 +648,15 @@ function LandingPage() {
       });
 
       const complete = result.isComplete || nextAnswers.length >= MAX_INTERVIEW_QUESTIONS;
-      setProfile(result.profile);
+      const fixedProfile = applyFixedProfileFields(result.profile, readFixedProfileFields(profile));
+      setProfile(fixedProfile);
       setIsComplete(complete);
       setMessages((current) =>
         complete
           ? [...current, { role: "assistant", text: "Done. I saved the completed skill profile." }]
           : [...current, { role: "assistant", text: result.nextQuestion }],
       );
-      await persistProfile(result.profile, complete ? "complete" : "draft", nextAnswers.length);
+      await persistProfile(fixedProfile, complete ? "complete" : "draft", nextAnswers.length);
 
       if (complete) {
         navigate({ to: "/profile/$id", params: { id: profileId } });
@@ -674,12 +729,84 @@ function LandingPage() {
               />
             </label>
 
+            <div className="mt-4">
+              <label className="mb-2 flex items-center gap-2 text-sm font-medium text-foreground">
+                <MapPin className="h-4 w-4 text-muted-foreground" />
+                Location
+              </label>
+              <Select
+                value={selectedLocation}
+                onValueChange={(value) => {
+                  setSelectedLocation(value);
+                  setError("");
+                }}
+                disabled={isAnalyzing || isSendingAnswer || Boolean(profile)}
+              >
+                <SelectTrigger className="h-11 bg-background">
+                  <SelectValue placeholder="Choose your location" />
+                </SelectTrigger>
+                <SelectContent>
+                  {LOCATION_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-foreground">
+                  Are you currently employed?
+                </label>
+                <Select
+                  value={currentlyEmployed}
+                  onValueChange={(value) => {
+                    setCurrentlyEmployed(value);
+                    setError("");
+                  }}
+                  disabled={isAnalyzing || isSendingAnswer || Boolean(profile)}
+                >
+                  <SelectTrigger className="h-11 bg-background">
+                    <SelectValue placeholder="Choose one" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="yes">Yes</SelectItem>
+                    <SelectItem value="no">No</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-foreground">
+                  Are you willing to relocate for a job?
+                </label>
+                <Select
+                  value={willingToRelocate}
+                  onValueChange={(value) => {
+                    setWillingToRelocate(value);
+                    setError("");
+                  }}
+                  disabled={isAnalyzing || isSendingAnswer || Boolean(profile)}
+                >
+                  <SelectTrigger className="h-11 bg-background">
+                    <SelectValue placeholder="Choose one" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="yes">Yes</SelectItem>
+                    <SelectItem value="no">No</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
             <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
               <Button
                 type="button"
                 variant="outline"
                 onClick={startNoCvInterview}
-                disabled={isCheckingAccountProfile || isAnalyzing || isSendingAnswer}
+                disabled={isCheckingAccountProfile || isAnalyzing || isSendingAnswer || !fixedFields}
                 className="rounded-md"
               >
                 No written CV
@@ -687,7 +814,7 @@ function LandingPage() {
               </Button>
               <Button
                 onClick={submitCv}
-                disabled={!cvFile || isAnalyzing || isSendingAnswer}
+                disabled={!cvFile || !fixedFields || isAnalyzing || isSendingAnswer}
                 className="rounded-md bg-navy text-navy-foreground hover:bg-navy/90"
               >
                 {isAnalyzing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -1001,6 +1128,10 @@ function ProfileSummary({
       {profile && (
         <>
           <div className="mt-5 grid grid-cols-2 gap-3 text-sm">
+            <SummaryField label="Location" value={profile.location ?? "Unknown"} />
+            <SummaryField label="Country" value={profile.country ?? "Unknown"} />
+            <SummaryField label="Employed" value={formatBoolean(profile.experience.hasJob)} />
+            <SummaryField label="Relocate" value={formatBoolean(profile.willingToRelocate)} />
             <SummaryField label="Track" value={profile.profile.track} />
             <SummaryField label="Confidence" value={profile.profile.confidence} />
             <SummaryField label="Seniority" value={profile.profile.seniority} />
@@ -1079,8 +1210,11 @@ function createProfileId() {
   return `candidate-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-function createEmptySkillProfile(): CandidateSkillProfile {
+function createEmptySkillProfile(fixedFields: FixedProfileFields): CandidateSkillProfile {
   return {
+    location: fixedFields.location,
+    country: fixedFields.country,
+    willingToRelocate: fixedFields.willingToRelocate,
     profile: {
       roleName: "New skill profile",
       normalizedRoleName: "",
@@ -1095,7 +1229,7 @@ function createEmptySkillProfile(): CandidateSkillProfile {
       alternativeOccupationMatches: [],
     },
     experience: {
-      hasJob: false,
+      hasJob: fixedFields.currentlyEmployed,
       industries: [],
       jobTitles: [],
       companies: [],
@@ -1129,4 +1263,38 @@ function createEmptySkillProfile(): CandidateSkillProfile {
 function normalizeRequiredText(value: string | undefined, fallback: string) {
   const normalized = value?.trim();
   return normalized || fallback;
+}
+
+function normalizeOptionalText(value: string | undefined) {
+  const normalized = value?.trim();
+  return normalized || undefined;
+}
+
+function applyFixedProfileFields(
+  profile: CandidateSkillProfile,
+  fixedFields: FixedProfileFields,
+): CandidateSkillProfile {
+  return {
+    ...profile,
+    location: fixedFields.location,
+    country: fixedFields.country,
+    willingToRelocate: fixedFields.willingToRelocate,
+    experience: {
+      ...profile.experience,
+      hasJob: fixedFields.currentlyEmployed,
+    },
+  };
+}
+
+function readFixedProfileFields(profile: CandidateSkillProfile): FixedProfileFields {
+  return {
+    location: normalizeRequiredText(profile.location, "Unknown"),
+    country: normalizeRequiredText(profile.country, "Unknown"),
+    currentlyEmployed: Boolean(profile.experience.hasJob),
+    willingToRelocate: Boolean(profile.willingToRelocate),
+  };
+}
+
+function formatBoolean(value: boolean | undefined) {
+  return value ? "Yes" : "No";
 }

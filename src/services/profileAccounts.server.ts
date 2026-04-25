@@ -7,6 +7,10 @@ type AnalyticsFields = {
   iscoTitle: string;
   yearsExperience: number;
   hasJob: boolean;
+  location: string;
+  country: string;
+  currentlyEmployed: boolean;
+  willingToRelocate: boolean;
   skillsJson: string;
   profileJson: string;
 };
@@ -26,6 +30,10 @@ export async function saveAccountProfileSnapshot(snapshot: ProfileSnapshot) {
         isco_title,
         years_experience,
         has_job,
+        location,
+        country,
+        currently_employed,
+        willing_to_relocate,
         skills_json,
         profile_json,
         status,
@@ -33,13 +41,17 @@ export async function saveAccountProfileSnapshot(snapshot: ProfileSnapshot) {
         created_at,
         updated_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(profile_id) DO UPDATE SET
         account_id = excluded.account_id,
         isco_code = excluded.isco_code,
         isco_title = excluded.isco_title,
         years_experience = excluded.years_experience,
         has_job = excluded.has_job,
+        location = excluded.location,
+        country = excluded.country,
+        currently_employed = excluded.currently_employed,
+        willing_to_relocate = excluded.willing_to_relocate,
         skills_json = excluded.skills_json,
         profile_json = excluded.profile_json,
         status = excluded.status,
@@ -52,6 +64,10 @@ export async function saveAccountProfileSnapshot(snapshot: ProfileSnapshot) {
     analytics.iscoTitle,
     analytics.yearsExperience,
     analytics.hasJob ? 1 : 0,
+    analytics.location,
+    analytics.country,
+    analytics.currentlyEmployed ? 1 : 0,
+    analytics.willingToRelocate ? 1 : 0,
     analytics.skillsJson,
     analytics.profileJson,
     snapshot.status,
@@ -136,6 +152,10 @@ async function ensureAccountProfilesTable(db: ReturnType<typeof getLocalDatabase
         isco_title TEXT NOT NULL,
         years_experience REAL NOT NULL,
         has_job INTEGER NOT NULL,
+        location TEXT NOT NULL DEFAULT '',
+        country TEXT NOT NULL DEFAULT '',
+        currently_employed INTEGER NOT NULL DEFAULT 0,
+        willing_to_relocate INTEGER NOT NULL DEFAULT 0,
         skills_json TEXT NOT NULL,
         profile_json TEXT NOT NULL,
         status TEXT NOT NULL,
@@ -144,6 +164,11 @@ async function ensureAccountProfilesTable(db: ReturnType<typeof getLocalDatabase
         updated_at TEXT NOT NULL
       )`,
   );
+
+  ensureColumn(db, "account_skill_profiles", "location", "TEXT NOT NULL DEFAULT ''");
+  ensureColumn(db, "account_skill_profiles", "country", "TEXT NOT NULL DEFAULT ''");
+  ensureColumn(db, "account_skill_profiles", "currently_employed", "INTEGER NOT NULL DEFAULT 0");
+  ensureColumn(db, "account_skill_profiles", "willing_to_relocate", "INTEGER NOT NULL DEFAULT 0");
 
   db.exec(
     "CREATE INDEX IF NOT EXISTS idx_account_skill_profiles_isco ON account_skill_profiles (isco_code, isco_title)",
@@ -159,6 +184,10 @@ function getAnalyticsFields(profile: CandidateSkillProfile): AnalyticsFields {
     iscoTitle: normalizeRequired(profile.occupation.iscoTitle, "Unknown occupation"),
     yearsExperience: normalizeYears(profile.experience.totalYears),
     hasJob: Boolean(profile.experience.hasJob),
+    location: normalizeText(profile.location),
+    country: normalizeText(profile.country),
+    currentlyEmployed: Boolean(profile.experience.hasJob),
+    willingToRelocate: Boolean(profile.willingToRelocate),
     skillsJson: JSON.stringify(profile.skills),
     profileJson: JSON.stringify(profile),
   };
@@ -169,6 +198,22 @@ function normalizeRequired(value: string | undefined, fallback: string) {
   return normalized || fallback;
 }
 
+function normalizeText(value: string | undefined) {
+  return value?.trim() ?? "";
+}
+
 function normalizeYears(value: number | undefined) {
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+function ensureColumn(
+  db: ReturnType<typeof getLocalDatabase>,
+  table: string,
+  column: string,
+  definition: string,
+) {
+  const columns = db.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>;
+  if (columns.some((existingColumn) => existingColumn.name === column)) return;
+
+  db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
 }

@@ -1,0 +1,355 @@
+{
+  "profileId": "candidate-moez1lxp-xkjeog",
+  "accountId": "account-933ff5c9-5145-444f-a581-51c679ad4508",
+  "profile": {
+    "location": "Lagos, Nigeria",
+    "country": "Nigeria",
+    "willingToRelocate": true,
+    "profile": {
+      "roleName": "Software Application Engineer",
+      "normalizedRoleName": "software application engineer",
+      "summary": "Candidate aiming to transition into software application engineering, with foundational experience in software development projects using Java Spring, Angular, NestJS, and technical support in SaaS environments. Comfortable with React Native and Python and eager to improve AWS cloud computing skills. Holds technical education in medical informatics and artificial intelligence with certifications in data protection, online marketing, and ITILv4.",
+      "seniority": "junior",
+      "track": "tech",
+      "confidence": "high"
+    },
+    "occupation": {
+      "alternativeOccupationMatches": [],
+      "iscoCode": "2512",
+      "iscoTitle": "Software developers",
+      "escoOccupationCode": "2512",
+      "escoOccupationUri": "http://data.europa.eu/esco/occupation/2512",
+      "escoOccupationTitle": "Software developer"
+    },
+    "experience": {
+      "hasJob": false,
+      "industries": [
+        "Information Technology",
+        "Accounting",
+        "Medical Informatics",
+        "Education"
+      ],
+      "jobTitles": [
+        "SaaS Support Specialist",
+        "Support Application Care",
+        "Accountant and Management"
+      ],
+      "companies": [
+        "XXXLdigital",
+        "Apapika",
+        "Kindergarten Bunter Zug"
+      ],
+      "responsibilities": [
+        "Issue analysis, troubleshooting and technical support (Level 1 & 2)",
+        "User support and incident management",
+        "System maintenance and quality assurance",
+        "Accounting bookkeeping and management",
+        "Development and implementation of management programs and websites",
+        "Leadership and teamwork in software project development",
+        "Third level support including taking phone calls and managing support tickets"
+      ],
+      "achievements": [
+        "Designed and developed medical practice management system compliant with FHIR standard",
+        "Led development of logistics and storage management systems",
+        "Automated quality control and inventory management",
+        "Integrated POS with automated accounting program",
+        "Launched online presence for kindergarten"
+      ],
+      "totalYears": 2,
+      "relevantYears": 2
+    },
+    "education": {
+      "degrees": [
+        "BSc Artificial Intelligence (ongoing)",
+        "BSc Software & Information Engineering (transferred)",
+        "Higher Technical Institute Diploma in Medical Informatics"
+      ],
+      "fieldsOfStudy": [
+        "Artificial Intelligence",
+        "Software and Information Engineering",
+        "Medical Informatics"
+      ],
+      "certifications": [
+        "Data Protection Officer (DPO)",
+        "Online Marketing Diploma",
+        "ITILv4 Foundation"
+      ],
+      "trainings": [],
+      "highestLevel": "bachelor"
+    },
+    "skills": {
+      "technical": [
+        {
+          "name": "Java Spring",
+          "normalizedName": "java spring",
+          "category": "technical",
+          "proficiency": "intermediate",
+          "evidence": [
+            "Medical Practice - Management System project",
+            "Storage Management System project"
+          ],
+          "escoSkillType": "skill/competence",
+          "confidence": "high"
+        },
+        {
+          "name": "Angular",
+          "normalizedName": "angular",
+          "category": "technical",
+          "proficiency": "intermediate",
+          "evidence": [
+            "Medical Practice - Management System project",
+            "Goha’s Logistics Web Application project",
+            "Storage Management System project"
+          ],
+          "escoSkillType": "skill/competence",
+          "confidence": "high"
+        },
+        {
+          "name": "NestJS",
+          "normalizedName": "nestjs",
+          "category": "technical",
+          "proficiency": "intermediate",
+          "evidence": [
+            "Goha’s Logistics Web Application project"
+          ],
+          "escoSkillType": "skill/competence",
+          "confidence": "high"
+        },
+        {
+          "name": "Full-stack application development",
+          "normalizedName": "full-stack application development",
+          "category": "technical",
+          "proficiency": "intermediate",
+          "evidence": [
+            "Technical University of Vienna BSc studies and projects"
+          ],
+          "escoSkillType": "skill/competence",
+          "confidence": "medium"
+        },
+        {
+          "name": "Machine Learning",
+          "normalizedName": "machine learning",
+          "category": "technical",
+          "proficiency": "basic",
+          "evidence": [
+            "BSc Artificial Intelligence program focused on AI technologies like machine learning"
+          ],
+          "escoSkillType": "knowledge",
+          "confidence": "medium"
+        },
+        {
+          "name": "React Native",
+          "normalizedName": "react native",
+          "category": "technical",
+          "proficiency": "unknown",
+          "evidence": [
+            "Interview answer: comfortable with React Native"
+          ],
+          "escoSkillType": "skill/competence",
+          "confidence": "medium"
+        },
+        {
+          "name": "Python",
+          "normalizedName": "python",
+          "category": "technical",
+          "proficiency": "unknown",
+          "evidence": [
+            "Interview answer: comfortable with Python"
+          ],
+          "escoSkillType": "skill/competence",
+          "confidence": "medium"
+        },
+        {
+          "name": "AWS",
+          "normalizedName": "aws",
+          "category": "technical",
+          "proficiency": "basic",
+          "evidence": [
+            "Interview answer: interested to improve AWS knowledge, no current certification or training"
+          ],
+          "escoSkillType": "skill/competence",
+          "confidence": "medium"
+        }
+      ],
+      "tools": [
+        {
+          "name": "Point of Sale (POS) systems",
+          "normalizedName": "point of sale system",
+          "category": "tool",
+          "proficiency": "intermediate",
+          "evidence": [
+            "Integrated POS system with automated accounting program at Apapika"
+          ],
+          "escoSkillType": "skill/competence",
+          "confidence": "high"
+        }
+      ],
+      "domain": [
+        {
+          "name": "Medical Informatics",
+          "normalizedName": "medical informatics",
+          "category": "domain",
+          "proficiency": "intermediate",
+          "evidence": [
+            "Education at HTL Spengergasse",
+            "Medical Practice Management System project"
+          ],
+          "escoSkillType": "knowledge",
+          "confidence": "high"
+        }
+      ],
+      "business": [
+        {
+          "name": "Accounting and Bookkeeping",
+          "normalizedName": "accounting and bookkeeping",
+          "category": "business",
+          "proficiency": "intermediate",
+          "evidence": [
+            "Accountant and Management roles at Apapika and Kindergarten Bunter Zug"
+          ],
+          "escoSkillType": "skill/competence",
+          "confidence": "high"
+        },
+        {
+          "name": "Online Marketing Strategy",
+          "normalizedName": "online marketing strategy",
+          "category": "business",
+          "proficiency": "basic",
+          "evidence": [
+            "Online Marketing Diploma and project for tech startup"
+          ],
+          "escoSkillType": "skill/competence",
+          "confidence": "medium"
+        }
+      ],
+      "soft": [
+        {
+          "name": "Team Leadership",
+          "normalizedName": "team leadership",
+          "category": "soft",
+          "proficiency": "intermediate",
+          "evidence": [
+            "Led teams of 3 and 5 in software development projects"
+          ],
+          "escoSkillType": "skill/competence",
+          "confidence": "high"
+        },
+        {
+          "name": "Problem Solving",
+          "normalizedName": "problem solving",
+          "category": "soft",
+          "proficiency": "intermediate",
+          "evidence": [
+            "Issue analysis and troubleshooting in support role"
+          ],
+          "escoSkillType": "skill/competence",
+          "confidence": "high"
+        },
+        {
+          "name": "Communication",
+          "normalizedName": "communication",
+          "category": "soft",
+          "proficiency": "intermediate",
+          "evidence": [
+            "User support, incident management, and student representation"
+          ],
+          "escoSkillType": "skill/competence",
+          "confidence": "high"
+        }
+      ],
+      "languages": [
+        {
+          "name": "German",
+          "normalizedName": "german",
+          "category": "language",
+          "proficiency": "expert",
+          "evidence": [
+            "Language skills listed: German C2"
+          ],
+          "escoSkillType": "language",
+          "confidence": "high"
+        },
+        {
+          "name": "English",
+          "normalizedName": "english",
+          "category": "language",
+          "proficiency": "advanced",
+          "evidence": [
+            "Language skills listed: English C1"
+          ],
+          "escoSkillType": "language",
+          "confidence": "high"
+        },
+        {
+          "name": "Arabic",
+          "normalizedName": "arabic",
+          "category": "language",
+          "proficiency": "intermediate",
+          "evidence": [
+            "Language skills listed: Arabic B1"
+          ],
+          "escoSkillType": "language",
+          "confidence": "high"
+        },
+        {
+          "name": "Turkish",
+          "normalizedName": "turkish",
+          "category": "language",
+          "proficiency": "basic",
+          "evidence": [
+            "Language skills listed: Turkish A1"
+          ],
+          "escoSkillType": "language",
+          "confidence": "high"
+        }
+      ]
+    },
+    "evidence": [
+      {
+        "question": "Could you please describe your current employment status and your years of total professional experience?",
+        "answer": "I am currently unmplyoed .i had a job for 2 years as saas support specailist"
+      },
+      {
+        "question": "Could you describe some of the key tasks and responsibilities you had in your role as a SaaS support specialist?",
+        "answer": "I was responisble for third level support. taking phone calls, taking tickets, doing support"
+      },
+      {
+        "question": "What programming languages and frameworks are you most comfortable working with, and which ones would you like to improve or learn next?",
+        "answer": "React native, python, AWS. I would like to improve my aws knowledge"
+      },
+      {
+        "question": "Can you tell me about any professional certifications or trainings you have completed related to AWS or cloud computing?",
+        "answer": "No, nothing done"
+      },
+      {
+        "question": "What are your main career goals or the type of job roles you are aiming for next?",
+        "answer": "I want to transition into a software application engineer"
+      }
+    ],
+    "automationAndReskilling": {
+      "riskDrivers": [
+        "Routine support tasks",
+        "Accounting automation potential"
+      ],
+      "resilientSkills": [
+        "Software development",
+        "Team leadership",
+        "Problem solving"
+      ],
+      "missingRecommendedSkills": [
+        "Cloud computing",
+        "Advanced machine learning"
+      ],
+      "recommendedLearningSkills": [
+        "Cloud platforms (AWS, Azure)",
+        "Advanced data science",
+        "DevOps practices"
+      ],
+      "automationRiskOccupationCode": "2512",
+      "automationRiskScore": 45
+    }
+  },
+  "status": "complete",
+  "questionsAnswered": 5,
+  "savedAt": "2026-04-25T23:32:32.121Z"
+}
