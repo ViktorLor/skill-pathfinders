@@ -1,4 +1,4 @@
-import { Bot, Shield, Sparkles, TrendingUp } from "lucide-react";
+import { Bot, Shield, Sparkles, TrendingDown, TrendingUp } from "lucide-react";
 import type { SkillRiskProfile, AIRiskLevel } from "@/data/aiRisk";
 
 const levelStyles: Record<
@@ -19,6 +19,27 @@ const levelStyles: Record<
     bar: "bg-danger",
     chip: "bg-danger/10 text-danger",
     label: "High AI risk",
+  },
+};
+
+const outlookStyles: Record<
+  NonNullable<SkillRiskProfile["bySkill"][string]["outlook"]>,
+  { chip: string; icon: typeof TrendingUp; label: string }
+> = {
+  rising: {
+    chip: "bg-greenT/10 text-greenT",
+    icon: TrendingUp,
+    label: "Rising 2025–35",
+  },
+  stable: {
+    chip: "bg-muted text-muted-foreground",
+    icon: TrendingUp,
+    label: "Stable 2025–35",
+  },
+  declining: {
+    chip: "bg-danger/10 text-danger",
+    icon: TrendingDown,
+    label: "Declining 2025–35",
   },
 };
 
@@ -63,17 +84,39 @@ export function AIRiskLens({ profile }: { profile: SkillRiskProfile }) {
         <div className="mt-3 space-y-3">
           {Object.entries(profile.bySkill).map(([name, risk]) => {
             const s = levelStyles[risk.level];
+            const outlook = risk.outlook ? outlookStyles[risk.outlook] : null;
+            const OutlookIcon = outlook?.icon;
+            const showBaseline =
+              typeof risk.baselineExposure === "number" &&
+              risk.baselineExposure !== risk.exposure;
             return (
               <div
                 key={name}
                 className="rounded-lg border border-border bg-background p-4"
               >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="font-medium text-foreground">{name}</div>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-medium text-foreground">{name}</span>
+                    {outlook && OutlookIcon && (
+                      <span
+                        title={risk.outlookNote}
+                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${outlook.chip}`}
+                      >
+                        <OutlookIcon className="h-3 w-3" />
+                        {outlook.label}
+                      </span>
+                    )}
+                  </div>
                   <span
                     className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${s.chip}`}
                   >
                     {s.label} · {risk.exposure}
+                    {showBaseline && (
+                      <span className="text-muted-foreground">
+                        {" "}
+                        (US baseline {risk.baselineExposure})
+                      </span>
+                    )}
                   </span>
                 </div>
                 <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
@@ -85,6 +128,11 @@ export function AIRiskLens({ profile }: { profile: SkillRiskProfile }) {
                 <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
                   {risk.rationale}
                 </p>
+                {risk.outlookNote && (
+                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                    {risk.outlookNote}
+                  </p>
+                )}
                 <p className="mt-1 text-[10px] uppercase tracking-wide text-muted-foreground/80">
                   Source: {risk.source}
                 </p>

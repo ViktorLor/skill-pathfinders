@@ -312,14 +312,24 @@ function normalizeDraftResult(result: unknown): ProfileDraftResult {
   };
 }
 
-function withProfileDefaults(profile: CandidateSkillProfile): CandidateSkillProfile {
+type RawCandidateProfile = {
+  profile: CandidateSkillProfile["profile"];
+  occupation?: Partial<CandidateSkillProfile["occupation"]>;
+  experience?: Partial<CandidateSkillProfile["experience"]>;
+  education?: Partial<CandidateSkillProfile["education"]>;
+  skills?: Partial<CandidateSkillProfile["skills"]>;
+  evidence?: CandidateSkillProfile["evidence"];
+  automationAndReskilling?: Partial<NonNullable<CandidateSkillProfile["automationAndReskilling"]>>;
+};
+
+function withProfileDefaults(profile: RawCandidateProfile): CandidateSkillProfile {
   return {
-    ...profile,
+    profile: profile.profile,
     occupation: {
       alternativeOccupationMatches: [],
       ...profile.occupation,
-      iscoCode: normalizeRequiredText(profile.occupation.iscoCode, "unknown"),
-      iscoTitle: normalizeRequiredText(profile.occupation.iscoTitle, "Unknown occupation"),
+      iscoCode: normalizeRequiredText(profile.occupation?.iscoCode, "unknown"),
+      iscoTitle: normalizeRequiredText(profile.occupation?.iscoTitle, "Unknown occupation"),
     },
     experience: {
       hasJob: false,

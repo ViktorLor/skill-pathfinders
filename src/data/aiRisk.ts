@@ -22,6 +22,12 @@ export interface SkillAIRisk {
   rationale: string;
   /** Short source attribution shown in the UI */
   source: string;
+  /** Wittgenstein 2025–2035 demand outlook for this skill, when known */
+  outlook?: "rising" | "stable" | "declining";
+  /** Plain-English Wittgenstein note tied to the projection */
+  outlookNote?: string;
+  /** US-baseline Frey-Osborne automation probability before LMIC adjustment, 0–100 */
+  baselineExposure?: number;
 }
 
 export interface AdjacentSkill {
@@ -284,4 +290,329 @@ export function getRiskProfileForCandidate(
   }
   return null;
 }
+
+// --- Dynamic risk computation -------------------------------------------------
+// Produces an AI readiness assessment for a candidate-supplied skills profile,
+// chaining three real datasets:
+//   1. Frey-Osborne 2017 automation probabilities by SOC occupation
+//   2. LMIC country modifier (Carbonero–Ernst–Weber 2018, World Bank STEP)
+//   3. Wittgenstein 2025–2035 SSP2 education projections, mapped to skill
+//      cluster outlook (rising / stable / declining)
+// A curated overlay (TECH/TRADE/AGRI demo profiles) wins when present so
+// hand-written rationales aren't lost.
+
+import type { CandidateSkillProfile, CandidateTrack, SkillItem } from "@/types/unmapped";
+import { FREY_OSBORNE_2017, FREY_OSBORNE_CITATION } from "./automation/freyOsborne";
+import { lookupSocForSkill } from "./automation/skillToSoc";
+import {
+  COUNTRY_MODIFIERS,
+  getCountryModifier,
+  type CountryAutomationContext,
+} from "./automation/countryModifier";
+import {
+  WITTGENSTEIN_CITATION,
+  lookupWittgensteinOutlook,
+  type SkillClusterOutlook,
+} from "./automation/wittgenstein";
+
+const KNOWN_SKILL_RISKS: Record<string, SkillAIRisk> = (() => {
+  const merged: Record<string, SkillAIRisk> = {};
+  for (const profile of [TECH_RISK_PROFILE, TRADE_RISK_PROFILE, AGRI_RISK_PROFILE]) {
+    for (const [name, risk] of Object.entries(profile.bySkill)) {
+      merged[name.toLowerCase()] = risk;
+    }
+  }
+  return merged;
+})();
+
+const CATEGORY_RISK_DEFAULTS: Record<
+  SkillItem["category"],
+  Partial<Record<CandidateTrack, { exposure: number; level: AIRiskLevel; rationale: string }>> & {
+    default: { exposure: number; level: AIRiskLevel; rationale: string };
+  }
+> = {
+  technical: {
+    tech: {
+      exposure: 70,
+      level: "high",
+      rationale:
+        "Routine technical tasks (code generation, scripting, documentation) are heavily exposed to LLM coding tools. Durable value is in design and integration.",
+    },
+    trade: {
+      exposure: 45,
+      level: "moderate",
+      rationale:
+        "Hands-on technical trade work is more durable than office tasks; AI is starting to assist diagnostics and quoting.",
+    },
+    agriculture: {
+      exposure: 40,
+      level: "moderate",
+      rationale:
+        "Field-applied technical knowledge stays human; AI is primarily entering record-keeping and image-based diagnostics.",
+    },
+    default: {
+      exposure: 60,
+      level: "moderate",
+      rationale:
+        "Technical skills face mixed exposure: routine pattern-matching is automatable, but applied judgment remains human.",
+    },
+  },
+  tool: {
+    tech: {
+      exposure: 55,
+      level: "moderate",
+      rationale:
+        "Tooling expertise is partially commoditised by AI assistants, but configuring and troubleshooting tools in production still requires human judgment.",
+    },
+    default: {
+      exposure: 45,
+      level: "moderate",
+      rationale: "Operating tools is partly automatable, but maintenance and judgment remain human.",
+    },
+  },
+  domain: {
+    default: {
+      exposure: 40,
+      level: "moderate",
+      rationale:
+        "Domain knowledge is harder to automate than generic technical work, especially when tied to local context.",
+    },
+  },
+  business: {
+    default: {
+      exposure: 50,
+      level: "moderate",
+      rationale:
+        "Routine business workflows are increasingly drafted by AI, but stakeholder judgment, negotiation and trust-based relationships remain durable.",
+    },
+  },
+  soft: {
+    default: {
+      exposure: 22,
+      level: "low",
+      rationale:
+        "Interpersonal, leadership and communication work is among the most AI-resilient skill clusters in LMIC labor markets (ILO 2023).",
+    },
+  },
+  language: {
+    default: {
+      exposure: 60,
+      level: "moderate",
+      rationale:
+        "Written translation is highly automated by LLMs; spoken, in-person and culturally-grounded language work is more durable.",
+    },
+  },
+};
+
+function levelFromExposure(exposure: number): AIRiskLevel {
+  if (exposure >= 65) return "high";
+  if (exposure >= 40) return "moderate";
+  return "low";
+}
+
+function attachOutlook(risk: SkillAIRisk, outlook: SkillClusterOutlook | null): SkillAIRisk {
+  if (!outlook) return risk;
+  return {
+    ...risk,
+    outlook: outlook.outlook,
+    outlookNote: `Wittgenstein SSP2 2025–35: ${outlook.cluster} — ${outlook.rationale}`,
+  };
+}
+
+/**
+ * Look up Frey-Osborne SOC entries for a skill and return the average
+ * automation probability (0–1). When the skill maps to multiple SOC codes,
+ * we average — a single skill rarely lives in exactly one occupation.
+ */
+function freyOsborneProbabilityForSkill(skillName: string): {
+  probability: number;
+  occupations: string[];
+  socCodes: string[];
+} | null {
+  const socs = lookupSocForSkill(skillName);
+  if (!socs.length) return null;
+
+  const matches = socs
+    .map((soc) => FREY_OSBORNE_2017[soc])
+    .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry));
+  if (!matches.length) return null;
+
+  const probability =
+    matches.reduce((sum, entry) => sum + entry.probability, 0) / matches.length;
+  return {
+    probability,
+    occupations: matches.map((m) => m.occupation),
+    socCodes: matches.map((m) => m.socCode),
+  };
+}
+
+function riskFromFreyOsborne(
+  skillName: string,
+  countryCtx: CountryAutomationContext,
+): SkillAIRisk | null {
+  const fo = freyOsborneProbabilityForSkill(skillName);
+  if (!fo) return null;
+
+  const baseline = Math.round(fo.probability * 100);
+  const adjusted = Math.round(fo.probability * countryCtx.modifier * 100);
+  const occupationLabel = fo.occupations[0];
+
+  const isAdjusted = countryCtx.modifier !== 1.0;
+  const adjustmentClause = isAdjusted
+    ? ` Adjusted to ${adjusted}/100 for ${countryCtx.countryName} labor market context (modifier ×${countryCtx.modifier.toFixed(2)}, ${countryCtx.source}).`
+    : "";
+
+  return {
+    level: levelFromExposure(adjusted),
+    exposure: adjusted,
+    baselineExposure: baseline,
+    rationale: `Anchored to "${occupationLabel}" (SOC ${fo.socCodes[0]}) in Frey & Osborne 2017, automation probability ${fo.probability.toFixed(2)}.${adjustmentClause}`,
+    source: `${FREY_OSBORNE_CITATION}${isAdjusted ? ` · ${countryCtx.source}` : ""}`,
+  };
+}
+
+function inferRiskFromCategory(
+  category: SkillItem["category"],
+  track: CandidateTrack,
+  countryCtx: CountryAutomationContext,
+): SkillAIRisk {
+  const bucket = CATEGORY_RISK_DEFAULTS[category];
+  const cell = bucket[track] ?? bucket.default;
+  const adjustedExposure = Math.round(cell.exposure * countryCtx.modifier);
+  const isAdjusted = countryCtx.modifier !== 1.0;
+
+  return {
+    level: levelFromExposure(adjustedExposure),
+    exposure: adjustedExposure,
+    baselineExposure: cell.exposure,
+    rationale: `${cell.rationale}${
+      isAdjusted
+        ? ` Calibrated to ${countryCtx.countryName} (×${countryCtx.modifier.toFixed(2)}).`
+        : ""
+    }`,
+    source: `ILO 2023 · Frey-Osborne 2017 (category-level estimate)${
+      isAdjusted ? ` · ${countryCtx.source}` : ""
+    }`,
+  };
+}
+
+const TRACK_ADJACENT_FALLBACK: Record<CandidateTrack, AdjacentSkill[]> = {
+  tech: TECH_RISK_PROFILE.adjacent,
+  trade: TRADE_RISK_PROFILE.adjacent,
+  agriculture: AGRI_RISK_PROFILE.adjacent,
+  other: [
+    {
+      name: "AI tool literacy",
+      reason:
+        "Becoming fluent with AI assistants protects the durable human parts of your work, regardless of sector.",
+      outlook: "rising",
+    },
+    {
+      name: "Cross-functional communication",
+      reason:
+        "Translation between technical, business and local stakeholders is a non-routine human task in growing demand.",
+      outlook: "rising",
+    },
+  ],
+};
+
+const TRACK_HEADLINE: Record<CandidateTrack, string> = {
+  tech: TECH_RISK_PROFILE.summary.headline,
+  trade: TRADE_RISK_PROFILE.summary.headline,
+  agriculture: AGRI_RISK_PROFILE.summary.headline,
+  other:
+    "AI exposure varies by task within this profile. Routine cognitive work is heavily exposed; in-person, judgment-based and locally-rooted work is more durable.",
+};
+
+function enrichAdjacentWithOutlook(adjacent: AdjacentSkill): AdjacentSkill {
+  const outlook = lookupWittgensteinOutlook(adjacent.name);
+  if (!outlook) return adjacent;
+  // AdjacentSkill currently only carries "rising" | "stable"; map declining
+  // up to stable for adjacent recommendations (we never recommend learning
+  // a declining skill, so this rarely fires).
+  const mapped: AdjacentSkill["outlook"] = outlook.outlook === "declining" ? "stable" : outlook.outlook;
+  return {
+    ...adjacent,
+    outlook: mapped,
+    reason: outlook.rationale ? `${adjacent.reason} ${outlook.rationale}` : adjacent.reason,
+  };
+}
+
+export function computeRiskProfileForCandidateProfile(
+  profile: CandidateSkillProfile,
+  countryCode?: string,
+): SkillRiskProfile {
+  const allSkills = Object.values(profile.skills).flat();
+  const track = profile.profile.track;
+  const countryCtx = getCountryModifier(countryCode);
+
+  const bySkill: Record<string, SkillAIRisk> = {};
+  for (const skill of allSkills) {
+    const curated = KNOWN_SKILL_RISKS[skill.name.toLowerCase()];
+    const fromFreyOsborne = curated ? null : riskFromFreyOsborne(skill.name, countryCtx);
+    const base = curated ?? fromFreyOsborne ?? inferRiskFromCategory(skill.category, track, countryCtx);
+    bySkill[skill.name] = attachOutlook(base, lookupWittgensteinOutlook(skill.name));
+  }
+
+  const exposures = Object.values(bySkill).map((r) => r.exposure);
+  const overallExposure = exposures.length
+    ? Math.round(exposures.reduce((a, b) => a + b, 0) / exposures.length)
+    : 50;
+  const overallLevel = levelFromExposure(overallExposure);
+
+  const resilient: string[] = [];
+  for (const [name, risk] of Object.entries(bySkill)) {
+    if (risk.level === "low" || risk.outlook === "rising") {
+      resilient.push(name);
+    }
+  }
+  const llmResilient = profile.automationAndReskilling?.resilientSkills ?? [];
+  for (const name of llmResilient) {
+    if (name && !resilient.includes(name)) resilient.push(name);
+  }
+
+  const heldSkillNames = new Set(allSkills.map((s) => s.name.toLowerCase()));
+  const llmAdjacent: AdjacentSkill[] = (
+    profile.automationAndReskilling?.recommendedLearningSkills ?? []
+  )
+    .filter((s) => s && !heldSkillNames.has(s.toLowerCase()))
+    .map((s) => ({
+      name: s,
+      reason: "Recommended next-step skill from your interview answers and CV.",
+      outlook: "rising" as const,
+    }));
+
+  const fallbackAdjacent = TRACK_ADJACENT_FALLBACK[track].filter(
+    (a) => !heldSkillNames.has(a.name.toLowerCase()),
+  );
+
+  const adjacentByName = new Map<string, AdjacentSkill>();
+  for (const a of [...llmAdjacent, ...fallbackAdjacent]) {
+    const key = a.name.toLowerCase();
+    if (!adjacentByName.has(key)) {
+      adjacentByName.set(key, enrichAdjacentWithOutlook(a));
+    }
+  }
+  const adjacent = Array.from(adjacentByName.values()).slice(0, 5);
+
+  const isAdjusted = countryCtx.modifier !== 1.0;
+  const headline = isAdjusted
+    ? `${TRACK_HEADLINE[track]} Risk levels shown have been calibrated to ${countryCtx.countryName} via a ×${countryCtx.modifier.toFixed(2)} LMIC modifier (${countryCtx.source}). 2025–2035 outlook uses ${WITTGENSTEIN_CITATION}.`
+    : `${TRACK_HEADLINE[track]} 2025–2035 outlook uses ${WITTGENSTEIN_CITATION}.`;
+
+  return {
+    summary: {
+      overallLevel,
+      overallExposure,
+      headline,
+    },
+    bySkill,
+    resilient: resilient.slice(0, 8),
+    adjacent,
+  };
+}
+
+// Re-export so consumers (UI, callers) can read the country list / modifiers
+// without importing from the dataset module directly.
+export { COUNTRY_MODIFIERS, type CountryAutomationContext };
 

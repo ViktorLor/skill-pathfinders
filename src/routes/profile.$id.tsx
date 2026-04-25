@@ -28,9 +28,11 @@ import {
   RefreshCcw,
   Loader2,
 } from "lucide-react";
+import { useCountry } from "@/context/CountryContext";
 import { CoverLetterModal } from "@/components/profile/CoverLetterModal";
 import { AIRiskLens } from "@/components/profile/AIRiskLens";
 import {
+  computeRiskProfileForCandidateProfile,
   getRiskProfileForCandidate,
   type SkillAIRisk,
 } from "@/data/aiRisk";
@@ -350,8 +352,10 @@ function ProfilePage() {
 
 function DynamicProfilePage({ snapshot }: { snapshot: ProfileSnapshot }) {
   const navigate = useNavigate();
+  const { country } = useCountry();
   const profile = snapshot.profile;
   const skills = Object.values(profile.skills).flat();
+  const riskProfile = computeRiskProfileForCandidateProfile(profile, country.code);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
   const initials = (profile.profile.roleName || "Candidate")
@@ -461,7 +465,11 @@ function DynamicProfilePage({ snapshot }: { snapshot: ProfileSnapshot }) {
         <h2 className="text-lg font-semibold text-navy">Skills from profile</h2>
         <div className="mt-4 space-y-3">
           {skills.map((skill) => (
-            <DynamicSkillRow key={`${skill.category}-${skill.name}`} skill={skill} />
+            <DynamicSkillRow
+              key={`${skill.category}-${skill.name}`}
+              skill={skill}
+              aiRisk={riskProfile.bySkill[skill.name]}
+            />
           ))}
           {!skills.length && (
             <div className="rounded-lg border border-border bg-card p-4 text-sm text-muted-foreground">
@@ -470,6 +478,8 @@ function DynamicProfilePage({ snapshot }: { snapshot: ProfileSnapshot }) {
           )}
         </div>
       </section>
+
+      {skills.length > 0 && <AIRiskLens profile={riskProfile} />}
 
       <section className="mt-10 grid gap-6 md:grid-cols-2">
         <ProfileList
@@ -488,30 +498,10 @@ function DynamicProfilePage({ snapshot }: { snapshot: ProfileSnapshot }) {
             ...profile.education.degrees,
             ...profile.education.certifications,
             ...profile.education.trainings,
-          ].filter(Boolean)}
+          ].filter((v): v is string => Boolean(v))}
           empty="No education or training details captured yet."
         />
       </section>
-
-      {profile.automationAndReskilling && (
-        <section className="mt-10 rounded-xl border border-border bg-card p-6">
-          <h2 className="text-lg font-semibold text-navy">Automation and reskilling</h2>
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <ProfileList
-              title="Resilient skills"
-              items={profile.automationAndReskilling.resilientSkills}
-              empty="No resilient skills listed yet."
-              compact
-            />
-            <ProfileList
-              title="Recommended learning"
-              items={profile.automationAndReskilling.recommendedLearningSkills}
-              empty="No learning recommendations listed yet."
-              compact
-            />
-          </div>
-        </section>
-      )}
     </main>
   );
 }
@@ -663,9 +653,20 @@ function parseDemoOccupation(value?: string) {
   };
 }
 
-function DynamicSkillRow({ skill }: { skill: SkillItem }) {
+const DYNAMIC_RISK_CHIP: Record<
+  SkillAIRisk["level"],
+  { cls: string; icon: typeof Bot; label: string }
+> = {
+  low: { cls: "bg-teal/10 text-teal", icon: Shield, label: "AI-resilient" },
+  moderate: { cls: "bg-amber/15 text-amber", icon: Bot, label: "Some AI risk" },
+  high: { cls: "bg-danger/10 text-danger", icon: Bot, label: "At AI risk" },
+};
+
+function DynamicSkillRow({ skill, aiRisk }: { skill: SkillItem; aiRisk?: SkillAIRisk }) {
   const score = skill.confidence === "high" ? 86 : skill.confidence === "medium" ? 68 : 45;
   const evidence = skill.evidence[0] ?? "Captured from the CV/profile interview.";
+  const chip = aiRisk ? DYNAMIC_RISK_CHIP[aiRisk.level] : null;
+  const ChipIcon = chip?.icon;
 
   return (
     <div className="rounded-lg border border-border bg-card p-4">
@@ -678,6 +679,15 @@ function DynamicSkillRow({ skill }: { skill: SkillItem }) {
           {skill.proficiency && (
             <span className="rounded-full bg-teal/10 px-2 py-0.5 text-[10px] font-semibold capitalize text-teal">
               {skill.proficiency}
+            </span>
+          )}
+          {chip && ChipIcon && (
+            <span
+              title={aiRisk?.rationale}
+              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${chip.cls}`}
+            >
+              <ChipIcon className="h-3 w-3" />
+              {chip.label}
             </span>
           )}
         </div>
