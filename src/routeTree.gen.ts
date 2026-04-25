@@ -10,33 +10,68 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as OnboardTradeRouteImport } from './routes/onboard.trade'
+import { Route as OnboardTechRouteImport } from './routes/onboard.tech'
+import { Route as OnboardAgricultureRouteImport } from './routes/onboard.agriculture'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OnboardTradeRoute = OnboardTradeRouteImport.update({
+  id: '/onboard/trade',
+  path: '/onboard/trade',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardTechRoute = OnboardTechRouteImport.update({
+  id: '/onboard/tech',
+  path: '/onboard/tech',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardAgricultureRoute = OnboardAgricultureRouteImport.update({
+  id: '/onboard/agriculture',
+  path: '/onboard/agriculture',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/onboard/agriculture': typeof OnboardAgricultureRoute
+  '/onboard/tech': typeof OnboardTechRoute
+  '/onboard/trade': typeof OnboardTradeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/onboard/agriculture': typeof OnboardAgricultureRoute
+  '/onboard/tech': typeof OnboardTechRoute
+  '/onboard/trade': typeof OnboardTradeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/onboard/agriculture': typeof OnboardAgricultureRoute
+  '/onboard/tech': typeof OnboardTechRoute
+  '/onboard/trade': typeof OnboardTradeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/onboard/agriculture' | '/onboard/tech' | '/onboard/trade'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/onboard/agriculture' | '/onboard/tech' | '/onboard/trade'
+  id:
+    | '__root__'
+    | '/'
+    | '/onboard/agriculture'
+    | '/onboard/tech'
+    | '/onboard/trade'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  OnboardAgricultureRoute: typeof OnboardAgricultureRoute
+  OnboardTechRoute: typeof OnboardTechRoute
+  OnboardTradeRoute: typeof OnboardTradeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +83,35 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/onboard/trade': {
+      id: '/onboard/trade'
+      path: '/onboard/trade'
+      fullPath: '/onboard/trade'
+      preLoaderRoute: typeof OnboardTradeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboard/tech': {
+      id: '/onboard/tech'
+      path: '/onboard/tech'
+      fullPath: '/onboard/tech'
+      preLoaderRoute: typeof OnboardTechRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboard/agriculture': {
+      id: '/onboard/agriculture'
+      path: '/onboard/agriculture'
+      fullPath: '/onboard/agriculture'
+      preLoaderRoute: typeof OnboardAgricultureRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  OnboardAgricultureRoute: OnboardAgricultureRoute,
+  OnboardTechRoute: OnboardTechRoute,
+  OnboardTradeRoute: OnboardTradeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
