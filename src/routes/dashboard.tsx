@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { useCountry } from "@/context/CountryContext";
+import { getYouthUnemploymentData } from "@/services/worldBank";
 import {
   Select,
   SelectTrigger,
@@ -64,6 +66,31 @@ const WAGE_BY_OCC = [
 
 function DashboardPage() {
   const { country, setCountryCode } = useCountry();
+  const [youthUnemployment, setYouthUnemployment] = useState(
+    country.youthUnemployment ?? "Loading World Bank data...",
+  );
+
+  useEffect(() => {
+    let isCurrent = true;
+    setYouthUnemployment(country.youthUnemployment ?? "Loading World Bank data...");
+
+    getYouthUnemploymentData(country.wbCountryCode)
+      .then((data) => {
+        if (!isCurrent) return;
+        setYouthUnemployment(
+          `${data.value.toFixed(1)}% (${data.countryName}, ${data.year})`,
+        );
+      })
+      .catch((error) => {
+        console.error("Failed to load World Bank youth unemployment", error);
+        if (!isCurrent) return;
+        setYouthUnemployment(country.youthUnemployment ?? "Data unavailable");
+      });
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [country]);
 
   return (
     <main className="mx-auto max-w-7xl px-4 pb-20 pt-10 sm:px-6">
@@ -107,8 +134,9 @@ function DashboardPage() {
         />
         <Metric
           icon={<AlertCircle className="h-5 w-5 text-amber" />}
-          label="Top skills gap"
-          value="Written English"
+          label="Youth unemployment"
+          value={youthUnemployment}
+          sub="World Bank WDI"
         />
         <Metric
           icon={<Gauge className="h-5 w-5 text-greenT" />}

@@ -1,3 +1,5 @@
+import { getYouthUnemployment as getWorldBankYouthUnemployment } from "@/services/worldBank";
+
 export async function getWageSignal(
   iscoCode: string,
   countryCode: string,
@@ -9,6 +11,10 @@ export async function getWageSignal(
 export async function getYouthUnemployment(
   countryCode: string,
 ): Promise<string> {
-  console.log("TODO: implement getYouthUnemployment", countryCode);
-  return "Youth unemployment: data unavailable";
+  try {
+    return await getWorldBankYouthUnemployment(countryCode);
+  } catch (error) {
+    console.error("Failed to fetch World Bank youth unemployment", error);
+    return "Youth unemployment: data unavailable";
+  }
 }

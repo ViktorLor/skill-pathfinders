@@ -1,8 +1,9 @@
 ToDo List:
 
-A Skills Signal Engine
+A) Skills Signal Engine
 1) youth user, training provider, or community navigator inputs their education level,
 informal experience, and demonstrated competencies.
+[CV Parsing is done]
 2) The system maps these to a
 standardized, portable skills profile grounded in real taxonomies (ISCO, ESCO, O∗NET or
 equivalent). 
@@ -12,7 +13,7 @@ Side Requirement: Profile must be portable across borders & sectors, and explain
 user.
 ----
 
-B AI Readiness & Displacement Risk Lens
+B) AI Readiness & Displacement Risk Lens
 
 1) Given a skills profile and local labor market context, the tool produces an honest readiness
 assessment: which parts of someone’s work are at automation risk, which skills are
@@ -26,7 +27,7 @@ ILO task indices, World Bank STEP).
 
 
 ----
-C Econometric Dashboard:
+C) Econometric Dashboard:
 
 1) Get Wage floor, Sector employmenth growth, returns to education by level (Must show atleast two real econometric signals visibly to the user, not buried in the algorithm) @NABIL
 2) Match user skills profile to realistic reachable opportunities
