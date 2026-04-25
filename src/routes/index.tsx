@@ -16,6 +16,12 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  clearStoredAccountSession,
+  getStoredAccountSession,
+  saveStoredAccountSession,
+  type AccountSession,
+} from "@/lib/accountSession";
 import { createAccount, verifyAccountLogin } from "@/services/accounts.server";
 import { findLatestAccountProfile } from "@/services/profileAccounts.server";
 import { saveCandidateSkillProfileJson } from "@/services/profileHandler";
@@ -64,11 +70,6 @@ type SaveProfileInput = {
   profile: CandidateSkillProfile;
   status: "draft" | "complete";
   questionsAnswered: number;
-};
-
-type AccountSession = {
-  id: string;
-  email: string;
 };
 
 const analyzeCv = createServerFn({ method: "POST" })
@@ -419,12 +420,9 @@ function LandingPage() {
   const latestQuestion = [...messages].reverse().find((message) => message.role === "assistant")?.text;
 
   useEffect(() => {
-    const storedAccountId = window.localStorage.getItem("accountId");
-    const storedAccountEmail = window.localStorage.getItem("accountEmail");
+    const storedAccount = getStoredAccountSession();
 
-    if (!storedAccountId || !storedAccountEmail) return;
-
-    const storedAccount = { id: storedAccountId, email: storedAccountEmail };
+    if (!storedAccount) return;
     setAccount(storedAccount);
     void redirectToExistingProfile(storedAccount);
   }, []);
@@ -453,14 +451,12 @@ function LandingPage() {
   };
 
   const saveAccountSession = (nextAccount: AccountSession) => {
-    window.localStorage.setItem("accountId", nextAccount.id);
-    window.localStorage.setItem("accountEmail", nextAccount.email);
+    saveStoredAccountSession(nextAccount);
     setAccount(nextAccount);
   };
 
   const clearAccountSession = () => {
-    window.localStorage.removeItem("accountId");
-    window.localStorage.removeItem("accountEmail");
+    clearStoredAccountSession();
     setAccount(null);
     setAuthStatus("");
     setAuthError("");
@@ -613,15 +609,6 @@ function LandingPage() {
 
   return (
     <main className="mx-auto max-w-7xl px-4 pb-24 pt-12 sm:px-6 sm:pt-20">
-      <AuthStartPanel
-        account={account}
-        authStatus={authStatus}
-        authError={authError}
-        isCheckingAccountProfile={isCheckingAccountProfile}
-        onAuthenticated={handleAuthenticated}
-        onLogout={clearAccountSession}
-      />
-
       <section className="mx-auto max-w-3xl text-center">
         <span className="inline-flex items-center rounded-full bg-navy/5 px-3 py-1 text-xs font-medium text-navy">
           A skill passport for unmapped youth
@@ -633,154 +620,162 @@ function LandingPage() {
           Upload a CV or answer profile questions, and we will turn your experience into a
           structured skill profile.
         </p>
-        <div className="mt-8 flex justify-center">
-          <Button
-            size="lg"
-            onClick={startNoCvInterview}
-            disabled={!account || isCheckingAccountProfile}
-            className="rounded-md bg-navy text-navy-foreground hover:bg-navy/90"
-          >
-            <>
-              If you do not have a written CV, please proceed here.
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </>
-          </Button>
-        </div>
       </section>
 
-      <section id="profile-builder" className="mt-16 grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
-        <div className="rounded-lg border border-border bg-card p-6 shadow-sm sm:p-8">
-          <div className="flex items-start gap-4">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-teal/10 text-teal">
-              <FileText className="h-6 w-6" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-semibold text-navy">Build your skill profile</h2>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Upload a CV, or use the button above to answer questions if you do not have one.
-                The hidden track is inferred, not chosen by the user.
-              </p>
-            </div>
-          </div>
+      <AuthStartPanel
+        account={account}
+        authStatus={authStatus}
+        authError={authError}
+        isCheckingAccountProfile={isCheckingAccountProfile}
+        onAuthenticated={handleAuthenticated}
+        onLogout={clearAccountSession}
+      />
 
-          <label className="mt-6 flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-border bg-surface px-6 py-8 text-center hover:border-navy/40">
-            <FileText className="h-6 w-6 text-muted-foreground" />
-            <span className="mt-2 text-sm font-medium text-foreground">
-              {cvFile ? cvFile.name : "Upload your CV"}
-            </span>
-            <span className="mt-1 text-xs text-muted-foreground">PDF or TXT</span>
-            <input
-              type="file"
-              accept=".pdf,.txt,application/pdf,text/plain"
-              className="hidden"
-              onChange={(event) => {
-                setCvFile(event.target.files?.[0] ?? null);
-                setError("");
-              }}
-            />
-          </label>
-
-          <div className="mt-4 flex justify-end">
-            <Button
-              onClick={submitCv}
-              disabled={!account || !cvFile || isAnalyzing || isSendingAnswer}
-              className="rounded-md bg-navy text-navy-foreground hover:bg-navy/90"
-            >
-              {isAnalyzing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Scan CV
-            </Button>
-          </div>
-
-          {error && (
-            <div className="mt-4 rounded-md border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-              {error}
-            </div>
-          )}
-
-          {profile && (
-            <div className="mt-8 rounded-lg border border-border bg-background p-4">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <div className="flex items-center gap-2 text-xs font-medium uppercase text-muted-foreground">
-                    <MessageCircle className="h-4 w-4" />
-                    Profile interview
-                  </div>
-                  <h3 className="mt-1 text-lg font-semibold text-navy">
-                    {isComplete ? "Profile complete" : `Question ${Math.min(questionCount, MAX_INTERVIEW_QUESTIONS)} of ${MAX_INTERVIEW_QUESTIONS}`}
-                  </h3>
-                </div>
-                {isComplete && <CheckCircle2 className="h-5 w-5 text-teal" />}
+      {account && (
+        <section id="profile-builder" className="mt-16 grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
+          <div className="rounded-lg border border-border bg-card p-6 shadow-sm sm:p-8">
+            <div className="flex items-start gap-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-teal/10 text-teal">
+                <FileText className="h-6 w-6" />
               </div>
+              <div>
+                <h2 className="text-2xl font-semibold text-navy">Build your skill profile</h2>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Upload a CV, or answer questions if you do not have one.
+                  The hidden track is inferred, not chosen by the user.
+                </p>
+              </div>
+            </div>
 
-              <Progress value={progressValue} className="mt-4" />
+            <label className="mt-6 flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-border bg-surface px-6 py-8 text-center hover:border-navy/40">
+              <FileText className="h-6 w-6 text-muted-foreground" />
+              <span className="mt-2 text-sm font-medium text-foreground">
+                {cvFile ? cvFile.name : "Upload your CV"}
+              </span>
+              <span className="mt-1 text-xs text-muted-foreground">PDF or TXT</span>
+              <input
+                type="file"
+                accept=".pdf,.txt,application/pdf,text/plain"
+                className="hidden"
+                onChange={(event) => {
+                  setCvFile(event.target.files?.[0] ?? null);
+                  setError("");
+                }}
+              />
+            </label>
 
-              <div className="mt-5 space-y-3">
-                {messages.map((message, index) => (
-                  <div
-                    key={`${message.role}-${index}`}
-                    className={
-                      message.role === "assistant"
-                        ? "max-w-[88%] rounded-lg bg-muted px-4 py-2 text-sm text-foreground"
-                        : "ml-auto max-w-[88%] rounded-lg border border-border bg-surface px-4 py-2 text-sm text-foreground"
-                    }
-                  >
-                    {message.text}
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={startNoCvInterview}
+                disabled={isCheckingAccountProfile || isAnalyzing || isSendingAnswer}
+                className="rounded-md"
+              >
+                No written CV
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+              <Button
+                onClick={submitCv}
+                disabled={!cvFile || isAnalyzing || isSendingAnswer}
+                className="rounded-md bg-navy text-navy-foreground hover:bg-navy/90"
+              >
+                {isAnalyzing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Scan CV
+              </Button>
+            </div>
+
+            {error && (
+              <div className="mt-4 rounded-md border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                {error}
+              </div>
+            )}
+
+            {profile && (
+              <div className="mt-8 rounded-lg border border-border bg-background p-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2 text-xs font-medium uppercase text-muted-foreground">
+                      <MessageCircle className="h-4 w-4" />
+                      Profile interview
+                    </div>
+                    <h3 className="mt-1 text-lg font-semibold text-navy">
+                      {isComplete ? "Profile complete" : `Question ${Math.min(questionCount, MAX_INTERVIEW_QUESTIONS)} of ${MAX_INTERVIEW_QUESTIONS}`}
+                    </h3>
                   </div>
-                ))}
-                {isSendingAnswer && (
-                  <div className="inline-flex items-center rounded-lg bg-muted px-4 py-2 text-sm text-muted-foreground">
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Updating profile
+                  {isComplete && <CheckCircle2 className="h-5 w-5 text-teal" />}
+                </div>
+
+                <Progress value={progressValue} className="mt-4" />
+
+                <div className="mt-5 space-y-3">
+                  {messages.map((message, index) => (
+                    <div
+                      key={`${message.role}-${index}`}
+                      className={
+                        message.role === "assistant"
+                          ? "max-w-[88%] rounded-lg bg-muted px-4 py-2 text-sm text-foreground"
+                          : "ml-auto max-w-[88%] rounded-lg border border-border bg-surface px-4 py-2 text-sm text-foreground"
+                      }
+                    >
+                      {message.text}
+                    </div>
+                  ))}
+                  {isSendingAnswer && (
+                    <div className="inline-flex items-center rounded-lg bg-muted px-4 py-2 text-sm text-muted-foreground">
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Updating profile
+                    </div>
+                  )}
+                </div>
+
+                {!isComplete && (
+                  <>
+                    <Textarea
+                      value={chatInput}
+                      onChange={(event) => setChatInput(event.target.value)}
+                      rows={4}
+                      className="mt-4"
+                      placeholder="Answer in your own words"
+                      disabled={isSendingAnswer}
+                    />
+                    <div className="mt-4 flex justify-end">
+                      <Button
+                        onClick={submitInterviewAnswer}
+                        disabled={!chatInput.trim() || isSendingAnswer}
+                        className="rounded-md bg-teal text-white hover:bg-teal/90"
+                      >
+                        {isSendingAnswer && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Send answer
+                      </Button>
+                    </div>
+                  </>
+                )}
+
+                {savedPath && (
+                  <p className="mt-4 text-xs text-muted-foreground">
+                    Saved locally to <span className="font-medium text-foreground">{savedPath}</span>
+                  </p>
+                )}
+
+                {isComplete && (
+                  <div className="mt-4 flex justify-end">
+                    <Button
+                      onClick={openCandidateProfile}
+                      className="rounded-md bg-navy text-navy-foreground hover:bg-navy/90"
+                    >
+                      Open candidate profile
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
                   </div>
                 )}
               </div>
+            )}
+          </div>
 
-              {!isComplete && (
-                <>
-                  <Textarea
-                    value={chatInput}
-                    onChange={(event) => setChatInput(event.target.value)}
-                    rows={4}
-                    className="mt-4"
-                    placeholder="Answer in your own words"
-                    disabled={isSendingAnswer}
-                  />
-                  <div className="mt-4 flex justify-end">
-                    <Button
-                      onClick={submitInterviewAnswer}
-                      disabled={!chatInput.trim() || isSendingAnswer}
-                      className="rounded-md bg-teal text-white hover:bg-teal/90"
-                    >
-                      {isSendingAnswer && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      Send answer
-                    </Button>
-                  </div>
-                </>
-              )}
-
-              {savedPath && (
-                <p className="mt-4 text-xs text-muted-foreground">
-                  Saved locally to <span className="font-medium text-foreground">{savedPath}</span>
-                </p>
-              )}
-
-              {isComplete && (
-                <div className="mt-4 flex justify-end">
-                  <Button
-                    onClick={openCandidateProfile}
-                    className="rounded-md bg-navy text-navy-foreground hover:bg-navy/90"
-                  >
-                    Open candidate profile
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        <ProfileSummary profile={profile} savedPath={savedPath} />
-      </section>
+          <ProfileSummary profile={profile} savedPath={savedPath} />
+        </section>
+      )}
 
       <section className="mx-auto mt-20 grid max-w-4xl grid-cols-1 gap-6 rounded-lg border border-border bg-card p-8 sm:grid-cols-3">
         <Stat value="5 max" label="profile questions" />
@@ -850,7 +845,7 @@ function AuthStartPanel({
   };
 
   return (
-    <section className="mx-auto mb-14 max-w-3xl rounded-lg border border-border bg-card p-6 shadow-sm sm:p-8">
+    <section className="mx-auto mb-14 mt-10 max-w-3xl rounded-lg border border-border bg-card p-6 shadow-sm sm:p-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-navy">Start with your account</h1>

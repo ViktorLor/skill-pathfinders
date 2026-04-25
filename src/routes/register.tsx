@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { saveStoredAccountSession } from "@/lib/accountSession";
 import { createAccount } from "@/services/accounts.server";
 
 export const Route = createFileRoute("/register")({
@@ -33,9 +34,8 @@ function RegisterPage() {
 
     try {
       const account = await registerAccount({ data: { email, password } });
-      window.localStorage.setItem("accountId", account.id);
-      window.localStorage.setItem("accountEmail", account.email);
-      setMessage(`Account saved for ${account.email}. You can log in now.`);
+      saveStoredAccountSession(account);
+      setMessage(`Account created for ${account.email}.`);
       setPassword("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not create the account.");

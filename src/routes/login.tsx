@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { saveStoredAccountSession } from "@/lib/accountSession";
 import { verifyAccountLogin } from "@/services/accounts.server";
 import { findLatestAccountProfile } from "@/services/profileAccounts.server";
 
@@ -52,8 +53,7 @@ function LoginPage() {
 
     try {
       const account = await loginAccount({ data: { email, password } });
-      window.localStorage.setItem("accountId", account.id);
-      window.localStorage.setItem("accountEmail", account.email);
+      saveStoredAccountSession(account);
       const profile = await loadLatestAccountProfile({ data: { accountId: account.id } });
       if (profile?.profileId) {
         navigate({ to: "/profile/$id", params: { id: profile.profileId } });

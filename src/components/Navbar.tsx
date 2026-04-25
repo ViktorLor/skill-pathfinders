@@ -1,16 +1,48 @@
-import { Link } from "@tanstack/react-router";
-import { useCountry } from "@/context/CountryContext";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import {
   DropdownMenu,
-  DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { ChevronDown } from "lucide-react";
+import {
+  ACCOUNT_SESSION_CHANGED_EVENT,
+  clearStoredAccountSession,
+  getStoredAccountSession,
+  type AccountSession,
+} from "@/lib/accountSession";
+import { ChevronDown, Globe2, LogOut } from "lucide-react";
 
 export function Navbar() {
-  const { country, setCountryCode } = useCountry();
+  const navigate = useNavigate();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const [account, setAccount] = useState<AccountSession | null>(null);
+
+  useEffect(() => {
+    setAccount(getStoredAccountSession());
+
+    const refreshAccount = () => setAccount(getStoredAccountSession());
+    window.addEventListener("storage", refreshAccount);
+    window.addEventListener(ACCOUNT_SESSION_CHANGED_EVENT, refreshAccount);
+
+    return () => {
+      window.removeEventListener("storage", refreshAccount);
+      window.removeEventListener(ACCOUNT_SESSION_CHANGED_EVENT, refreshAccount);
+    };
+  }, []);
+
+  useEffect(() => {
+    setAccount(getStoredAccountSession());
+  }, [pathname]);
+
+  const logout = () => {
+    clearStoredAccountSession();
+    setAccount(null);
+    navigate({ to: "/" });
+  };
+
   return (
     <header className="sticky top-0 z-30 w-full border-b border-border bg-background/90 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
@@ -34,14 +66,32 @@ export function Navbar() {
         </nav>
 
         <div className="flex items-center gap-2 sm:gap-3">
-          <Button
-            asChild
-            variant="ghost"
-            size="sm"
-            className="rounded-md text-muted-foreground hover:text-navy"
-          >
-            <Link to="/login">Login</Link>
-          </Button>
+          {account ? (
+            <div className="flex items-center gap-2">
+              <span className="max-w-[9rem] truncate text-sm font-medium text-muted-foreground sm:max-w-[14rem]">
+                {account.email}
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={logout}
+                className="rounded-md text-muted-foreground hover:text-navy"
+              >
+                <LogOut className="h-4 w-4" />
+                <span className="hidden sm:inline">Logout</span>
+              </Button>
+            </div>
+          ) : (
+            <Button
+              asChild
+              variant="ghost"
+              size="sm"
+              className="rounded-md text-muted-foreground hover:text-navy"
+            >
+              <Link to="/login">Login</Link>
+            </Button>
+          )}
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -50,31 +100,17 @@ export function Navbar() {
                 size="sm"
                 className="rounded-md border-border"
               >
-                <span className="mr-1">{country.flag}</span>
-                <span className="hidden sm:inline">{country.name}</span>
+                <Globe2 className="h-4 w-4" />
+                <span className="hidden sm:inline">English</span>
                 <ChevronDown className="ml-1 h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setCountryCode("GHA")}>
-                🇬🇭 Ghana
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setCountryCode("BGD")}>
-                🇧🇩 Bangladesh
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setCountryCode("NGA")}>
-                🇳🇬 Nigeria
-              </DropdownMenuItem>
+              <DropdownMenuItem>English</DropdownMenuItem>
+              <DropdownMenuItem>France</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Button
-            asChild
-            size="sm"
-            className="rounded-md bg-navy text-navy-foreground hover:bg-navy/90"
-          >
-            <Link to="/">Get Started</Link>
-          </Button>
         </div>
       </div>
     </header>
