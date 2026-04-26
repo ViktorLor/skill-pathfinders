@@ -190,6 +190,8 @@ interface PassportData {
   jobTitles: string[];
   responsibilities: string[];
   educationLevel?: string;
+  educationSkillLevel?: string;
+  credentialLabel?: string;
   educationItems: string[];
   riskLevel?: string;
   riskHeadline?: string;
@@ -338,6 +340,14 @@ function PassportDocument({ data }: { data: PassportData }) {
             <div style={{ marginTop: 4 }}>
               <span className="sp-label">Highest level: </span>
               {data.educationLevel}
+            </div>
+          )}
+          {(data.educationSkillLevel || data.credentialLabel) && (
+            <div style={{ marginTop: 4 }}>
+              <span className="sp-label">Mapped credential: </span>
+              {[data.credentialLabel, data.educationSkillLevel && `${data.educationSkillLevel} skill level`]
+                .filter(Boolean)
+                .join(" · ")}
             </div>
           )}
           {data.educationItems.length > 0 && (
@@ -495,6 +505,7 @@ function dynamicPassportData(
     ...(profile.education.certifications ?? []),
     ...(profile.education.trainings ?? []),
   ].filter((s): s is string => Boolean(s && s.trim()));
+  const educationMapping = profile.education.credentialMapping;
 
   const countryName = profile.country
     ? (getIsoCountry(profile.country)?.name ?? profile.country)
@@ -524,6 +535,8 @@ function dynamicPassportData(
     jobTitles: profile.experience.jobTitles ?? [],
     responsibilities: profile.experience.responsibilities ?? [],
     educationLevel: profile.education.highestLevel,
+    educationSkillLevel: educationMapping?.estimatedSkillLevel,
+    credentialLabel: educationMapping?.credentialLabel,
     educationItems,
     riskLevel: riskProfile?.summary.overallLevel,
     riskHeadline: riskProfile ? firstSentence(riskProfile.summary.headline) : undefined,
@@ -715,7 +728,7 @@ function ProfilePage() {
       {/* Skills */}
       <section className="mt-8">
         <h2 className="text-lg font-semibold text-navy">Verified skills</h2>
-        <div className="mt-4 space-y-3">
+        <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
           {candidate.skillScores.map((s) => (
             <SkillRow
               key={s.name}
@@ -728,32 +741,6 @@ function ProfilePage() {
 
       {/* AI risk lens */}
       {riskProfile && <AIRiskLens profile={riskProfile} />}
-
-      {/* Experience */}
-      <section className="mt-10">
-        <h2 className="text-lg font-semibold text-navy">Experience</h2>
-        <ol className="mt-4 space-y-4 border-l-2 border-border pl-5">
-          {candidate.experience.map((e, i) => (
-            <li key={i} className="relative">
-              <span className="absolute -left-[27px] top-1 h-3 w-3 rounded-full bg-navy" />
-              <div className="rounded-lg border border-border bg-card p-4">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="font-medium text-foreground">{e.title}</h3>
-                  <Badge variant="secondary" className="text-xs capitalize">
-                    {e.context}
-                  </Badge>
-                  <span className="text-xs text-muted-foreground">
-                    {e.duration}
-                  </span>
-                </div>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {e.description}
-                </p>
-              </div>
-            </li>
-          ))}
-        </ol>
-      </section>
 
       {/* Job matches */}
       <section className="mt-10">
@@ -786,6 +773,7 @@ function DynamicProfilePage({ snapshot }: { snapshot: ProfileSnapshot }) {
   const skills = Object.values(profile.skills).flat();
   const effectiveCountryCode = profile.country?.trim() || country.code;
   const riskProfile = computeRiskProfileForCandidateProfile(profile, effectiveCountryCode);
+  const educationMapping = profile.education.credentialMapping;
   const profileUrl = useProfileUrl();
   const passportData = dynamicPassportData(snapshot, riskProfile, profileUrl);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -935,6 +923,11 @@ function DynamicProfilePage({ snapshot }: { snapshot: ProfileSnapshot }) {
                 <span className="rounded-md bg-muted px-2.5 py-1 text-xs font-medium capitalize text-foreground">
                   {profile.profile.seniority}
                 </span>
+                {educationMapping && (
+                  <span className="rounded-md bg-teal/10 px-2.5 py-1 text-xs font-medium capitalize text-teal">
+                    Education skill: {educationMapping.estimatedSkillLevel}
+                  </span>
+                )}
                 <span className="rounded-md bg-muted px-2.5 py-1 text-xs font-medium text-foreground">
                   Employed: {profile.experience.hasJob ? "Yes" : "No"}
                 </span>
@@ -947,6 +940,12 @@ function DynamicProfilePage({ snapshot }: { snapshot: ProfileSnapshot }) {
                   </span>
                 )}
               </div>
+              {educationMapping && (
+                <EducationSummary
+                  mapping={educationMapping}
+                  totalYears={profile.experience.totalYears}
+                />
+              )}
             </div>
           </div>
 
@@ -1033,7 +1032,7 @@ function DynamicProfilePage({ snapshot }: { snapshot: ProfileSnapshot }) {
 
       <section className="mt-8">
         <h2 className="text-lg font-semibold text-navy">Skills from profile</h2>
-        <div className="mt-4 space-y-3">
+        <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
           {skills.map((skill) => (
             <DynamicSkillRow
               key={`${skill.category}-${skill.name}`}
@@ -1042,7 +1041,7 @@ function DynamicProfilePage({ snapshot }: { snapshot: ProfileSnapshot }) {
             />
           ))}
           {!skills.length && (
-            <div className="rounded-lg border border-border bg-card p-4 text-sm text-muted-foreground">
+            <div className="rounded-lg border border-border bg-card p-4 text-sm text-muted-foreground sm:col-span-2 xl:col-span-3">
               No skills were captured in this profile yet.
             </div>
           )}
@@ -1050,28 +1049,6 @@ function DynamicProfilePage({ snapshot }: { snapshot: ProfileSnapshot }) {
       </section>
 
       {skills.length > 0 && <AIRiskLens profile={riskProfile} />}
-
-      <section className="mt-10 grid gap-6 md:grid-cols-2">
-        <ProfileList
-          title="Experience"
-          items={[
-            ...profile.experience.jobTitles,
-            ...profile.experience.responsibilities,
-            ...profile.experience.achievements,
-          ]}
-          empty="No experience details captured yet."
-        />
-        <ProfileList
-          title="Education and training"
-          items={[
-            profile.education.highestLevel,
-            ...profile.education.degrees,
-            ...profile.education.certifications,
-            ...profile.education.trainings,
-          ].filter((v): v is string => Boolean(v))}
-          empty="No education or training details captured yet."
-        />
-      </section>
 
       <section className="mt-10 rounded-xl border border-border bg-card p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
@@ -1306,6 +1283,63 @@ function deriveEscoCode(uri?: string) {
   return parts.at(-1);
 }
 
+function EducationSummary({
+  mapping,
+  totalYears,
+}: {
+  mapping: NonNullable<CandidateSkillProfile["education"]["credentialMapping"]>;
+  totalYears?: number;
+}) {
+  return (
+    <div className="mt-4 grid max-w-3xl grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
+      <EducationSummaryItem
+        label="YOE"
+        value={typeof totalYears === "number" ? `${totalYears}` : "Unknown"}
+        title="Years of experience"
+      />
+      <EducationSummaryItem
+        label="Education level"
+        value={mapping.taxonomyLevel}
+        title={mapping.taxonomyLabel}
+      />
+      <EducationSummaryItem
+        label="Education skill"
+        value={mapping.estimatedSkillLevel}
+        title={`${mapping.estimatedSkillLevel} skill level`}
+      />
+      <EducationSummaryItem
+        label="Credential"
+        value={mapping.credentialCategory}
+        title={mapping.credentialLabel}
+      />
+    </div>
+  );
+}
+
+function EducationSummaryItem({
+  label,
+  value,
+  title,
+}: {
+  label: string;
+  value: string;
+  title: string;
+}) {
+  return (
+    <div
+      title={title}
+      className="rounded-md border border-border bg-background px-3 py-2"
+    >
+      <div className="text-[10px] font-medium uppercase text-muted-foreground">
+        {label}
+      </div>
+      <div className="mt-0.5 truncate text-sm font-semibold capitalize text-foreground">
+        {value.replaceAll("_", " ")}
+      </div>
+    </div>
+  );
+}
+
 function parseDemoOccupation(value?: string) {
   if (!value) return null;
 
@@ -1326,71 +1360,47 @@ const DYNAMIC_RISK_CHIP: Record<
 };
 
 function DynamicSkillRow({ skill, aiRisk }: { skill: SkillItem; aiRisk?: SkillAIRisk }) {
-  const score = skill.confidence === "high" ? 86 : skill.confidence === "medium" ? 68 : 45;
   const evidence = skill.evidence[0] ?? "Captured from the CV/profile interview.";
   const chip = aiRisk ? DYNAMIC_RISK_CHIP[aiRisk.level] : null;
   const ChipIcon = chip?.icon;
+  const title = [
+    evidence,
+    aiRisk?.rationale ? `AI: ${aiRisk.rationale}` : "",
+    skill.escoPreferredLabel ? `ESCO: ${skill.escoPreferredLabel}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
 
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="font-semibold text-foreground">{skill.name}</span>
-          <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold capitalize text-muted-foreground">
-            {skill.category}
-          </span>
-          {skill.proficiency && (
-            <span className="rounded-full bg-teal/10 px-2 py-0.5 text-[10px] font-semibold capitalize text-teal">
-              {skill.proficiency}
-            </span>
-          )}
-          {chip && ChipIcon && (
-            <span
-              title={aiRisk?.rationale}
-              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${chip.cls}`}
-            >
-              <ChipIcon className="h-3 w-3" />
-              {chip.label}
-            </span>
-          )}
-        </div>
-        <span className="text-sm font-semibold capitalize text-foreground">
+    <div
+      title={title}
+      className="rounded-md border border-border bg-card px-3 py-2 shadow-sm"
+    >
+      <div className="flex min-w-0 items-start justify-between gap-2">
+        <span className="min-w-0 truncate text-sm font-semibold text-foreground">
+          {skill.name}
+        </span>
+        <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold capitalize text-muted-foreground">
           {skill.confidence}
         </span>
       </div>
-
-      <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-muted">
-        <div className="h-full bg-teal" style={{ width: `${score}%` }} />
-      </div>
-
-      <p className="mt-2 text-xs text-muted-foreground">{evidence}</p>
-    </div>
-  );
-}
-
-function ProfileList({
-  title,
-  items,
-  empty,
-  compact = false,
-}: {
-  title: string;
-  items: string[];
-  empty: string;
-  compact?: boolean;
-}) {
-  const visibleItems = items.filter(Boolean);
-
-  return (
-    <div className={compact ? "" : "rounded-xl border border-border bg-card p-6"}>
-      <h2 className="text-lg font-semibold text-navy">{title}</h2>
-      <div className="mt-3 space-y-2">
-        {visibleItems.map((item) => (
-          <div key={item} className="rounded-md bg-muted px-3 py-2 text-sm text-foreground">
-            {item}
-          </div>
-        ))}
-        {!visibleItems.length && <p className="text-sm text-muted-foreground">{empty}</p>}
+      <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+        <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium capitalize text-muted-foreground">
+          {skill.category}
+        </span>
+        {skill.proficiency && (
+          <span className="rounded-full bg-teal/10 px-2 py-0.5 text-[10px] font-medium capitalize text-teal">
+            {skill.proficiency}
+          </span>
+        )}
+        {chip && ChipIcon && (
+          <span
+            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${chip.cls}`}
+          >
+            <ChipIcon className="h-3 w-3" />
+            {chip.label}
+          </span>
+        )}
       </div>
     </div>
   );
@@ -1407,35 +1417,30 @@ function SkillRow({
     switch (skill.status) {
       case "confirmed":
         return {
-          bar: "bg-teal",
           badge: "bg-teal/10 text-teal",
           icon: <CheckCircle2 className="h-3.5 w-3.5" />,
           label: "Confirmed",
         };
       case "partial":
         return {
-          bar: "bg-amber",
           badge: "bg-amber/15 text-amber",
           icon: <AlertTriangle className="h-3.5 w-3.5" />,
           label: "Partial",
         };
       case "no_evidence":
         return {
-          bar: "bg-danger",
           badge: "bg-danger/10 text-danger",
           icon: <XCircle className="h-3.5 w-3.5" />,
           label: "No evidence",
         };
       case "challenged":
         return {
-          bar: "bg-purpleT",
           badge: "bg-purpleT/10 text-purpleT",
           icon: <Star className="h-3.5 w-3.5" />,
           label: "Challenge-verified",
         };
       default:
         return {
-          bar: "bg-muted-foreground",
           badge: "bg-muted text-muted-foreground",
           icon: null,
           label: "Pending",
@@ -1466,48 +1471,38 @@ function SkillRow({
     } as const;
     return map[aiRisk.level];
   })();
+  const title = [detail, aiRisk?.rationale ? `AI: ${aiRisk.rationale}` : ""]
+    .filter(Boolean)
+    .join("\n");
 
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="font-semibold text-foreground">{skill.name}</span>
-          {riskChip && (
-            <span
-              title={aiRisk?.rationale}
-              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${riskChip.cls}`}
-            >
-              {riskChip.icon}
-              {riskChip.label}
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-foreground">
-            {skill.score}
-          </span>
+    <div
+      title={title}
+      className="rounded-md border border-border bg-card px-3 py-2 shadow-sm"
+    >
+      <div className="flex min-w-0 items-start justify-between gap-2">
+        <span className="min-w-0 truncate text-sm font-semibold text-foreground">
+          {skill.name}
+        </span>
+        <span className="shrink-0 text-sm font-semibold text-foreground">{skill.score}</span>
+      </div>
+      <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+        <span
+          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${cfg.badge}`}
+        >
+          {cfg.icon}
+          {cfg.label}
+        </span>
+        {riskChip && (
           <span
-            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${cfg.badge}`}
+            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${riskChip.cls}`}
           >
-            {cfg.icon}
-            {cfg.label}
+            {riskChip.icon}
+            {riskChip.label}
           </span>
-        </div>
-      </div>
-
-      <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-muted">
-        <div
-          className={`h-full ${cfg.bar}`}
-          style={{ width: `${skill.score}%` }}
-        />
-      </div>
-
-      <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-        {detail && (
-          <p className="text-xs text-muted-foreground">{detail}</p>
         )}
         {skill.verifiedBy && (
-          <span className="ml-auto rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+          <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
             via {skill.verifiedBy}
           </span>
         )}

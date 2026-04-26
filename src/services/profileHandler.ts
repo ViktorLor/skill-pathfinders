@@ -1,4 +1,5 @@
 import type { CandidateSkillProfile } from "@/types/unmapped";
+import { withEducationCredentialMapping } from "@/data/educationTaxonomy";
 import {
   deleteAccountProfileSnapshot,
   saveAccountProfileSnapshot,
@@ -23,11 +24,16 @@ export async function saveCandidateSkillProfileJson(snapshot: ProfileSnapshot) {
   const filename = `${snapshot.profileId.replace(/[^a-zA-Z0-9_-]/g, "-")}.json`;
 
   await mkdir(dir, { recursive: true });
+  const mappedSnapshot = {
+    ...snapshot,
+    profile: withEducationCredentialMapping(snapshot.profile),
+  };
+
   await writeFile(
     resolve(dir, filename),
     JSON.stringify(
       {
-        ...snapshot,
+        ...mappedSnapshot,
         savedAt: new Date().toISOString(),
       },
       null,
@@ -36,7 +42,7 @@ export async function saveCandidateSkillProfileJson(snapshot: ProfileSnapshot) {
     "utf8",
   );
 
-  await saveAccountProfileSnapshot(snapshot);
+  await saveAccountProfileSnapshot(mappedSnapshot);
 
   return { path: `candidate-profiles/${filename}` };
 }
@@ -49,7 +55,11 @@ export async function readCandidateSkillProfileJson(profileId: string) {
   const filename = `${profileId.replace(/[^a-zA-Z0-9_-]/g, "-")}.json`;
   const file = await readFile(resolve(process.cwd(), "candidate-profiles", filename), "utf8");
 
-  return JSON.parse(file) as ProfileSnapshot & { savedAt?: string };
+  const snapshot = JSON.parse(file) as ProfileSnapshot & { savedAt?: string };
+  return {
+    ...snapshot,
+    profile: withEducationCredentialMapping(snapshot.profile),
+  };
 }
 
 export async function deleteCandidateSkillProfileJson(profileId: string, accountId?: string) {

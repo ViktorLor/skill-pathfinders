@@ -104,7 +104,7 @@ We provide wage floor, sector employment data and information about the profile.
 Country Agnostic Requiremnt:
 
 • Labor market data source and structure (wage indices, sector classifications)[DONE]
-• Education level taxonomy and credential mapping[TODO]
+• Education level taxonomy and credential mapping[DONE]
 • Language and script of the user interface[To mention]
 • Automation exposure calibration (risk profiles differ by infrastructure context)[DONE]
 • Opportunity types surfaced (formal employment, self-employment, gig, training

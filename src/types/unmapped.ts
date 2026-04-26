@@ -30,6 +30,46 @@ export type CandidateSeniority =
 
 export type CandidateConfidence = "high" | "medium" | "low";
 
+export type EducationTaxonomyLevel =
+  | "no_formal"
+  | "primary"
+  | "lower_secondary"
+  | "upper_secondary"
+  | "vocational"
+  | "certificate"
+  | "diploma"
+  | "bachelor"
+  | "postgraduate"
+  | "unknown";
+
+export type CredentialCategory =
+  | "none"
+  | "school"
+  | "vocational_training"
+  | "short_certificate"
+  | "diploma"
+  | "degree"
+  | "postgraduate_degree"
+  | "unknown";
+
+export type EstimatedEducationSkillLevel =
+  | "foundational"
+  | "basic"
+  | "intermediate"
+  | "advanced"
+  | "specialized"
+  | "unknown";
+
+export interface EducationCredentialMapping {
+  taxonomyLevel: EducationTaxonomyLevel;
+  taxonomyLabel: string;
+  credentialCategory: CredentialCategory;
+  credentialLabel: string;
+  estimatedSkillLevel: EstimatedEducationSkillLevel;
+  confidence: CandidateConfidence;
+  rationale: string;
+}
+
 export interface SkillItem {
   name: string;
   normalizedName: string;
@@ -87,6 +127,7 @@ export interface CandidateSkillProfile {
     fieldsOfStudy: string[];
     certifications: string[];
     trainings: string[];
+    credentialMapping?: EducationCredentialMapping;
   };
   skills: {
     technical: SkillItem[];
