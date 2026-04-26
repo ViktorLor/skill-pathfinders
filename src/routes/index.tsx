@@ -99,6 +99,7 @@ const analyzeCv = createServerFn({ method: "POST" })
   .inputValidator((data: FormData) => data)
   .handler(async ({ data }): Promise<ProfileDraftResult> => {
     const file = data.get("cv");
+    const fixedFields = readFixedProfileFieldsFromFormData(data);
 
     if (!(file instanceof File)) {
       throw new Error("Please upload a CV file.");
@@ -115,7 +116,11 @@ const analyzeCv = createServerFn({ method: "POST" })
           {
             type: "input_text",
             text:
-              "Read this CV and create a draft CandidateSkillProfile. Ask one concise follow-up question for the most important missing field.",
+              `Read this CV and create a draft CandidateSkillProfile. Include the provided profile fields in the result and ask one concise follow-up question for the most important missing field.\n\nProvided profile fields:\n${JSON.stringify(
+                fixedFields,
+                null,
+                2,
+              )}`,
           },
           {
             type: "input_file",
@@ -128,7 +133,11 @@ const analyzeCv = createServerFn({ method: "POST" })
       : [
           {
             type: "input_text",
-            text: `Read this CV text and create a draft CandidateSkillProfile. Ask one concise follow-up question for the most important missing field.\n\n${await file.text()}`,
+            text: `Read this CV text and create a draft CandidateSkillProfile. Include the provided profile fields in the result and ask one concise follow-up question for the most important missing field.\n\nProvided profile fields:\n${JSON.stringify(
+              fixedFields,
+              null,
+              2,
+            )}\n\nCV text:\n${await file.text()}`,
           },
         ];
 
@@ -258,6 +267,7 @@ Return JSON with this shape:
   "isComplete": boolean
 }
 Preserve the candidate's fullName and telephoneNumber exactly from the provided profile fields or interview answers. Do not invent either value.
+When provided profile fields include location, country, currentlyEmployed, or willingToRelocate, copy them into the profile and set experience.hasJob from currentlyEmployed.
 Each skill item must include name, normalizedName, category, evidence, and confidence. Add proficiency or yearsExperience only when supported.
 Map the education entry to credentialMapping. This is an estimated parameter: normalize the person's stated highest education/training/credential into the taxonomy, then estimate the education-based skill level. If uncertain, use unknown with low confidence.
 Always include escoOccupationCode when an ESCO occupation is mapped. Use the ESCO concept identifier or notation, not the full URL. Keep escoOccupationUri only for internal linking.
@@ -455,6 +465,21 @@ function withProfileDefaults(profile: RawCandidateProfile): CandidateSkillProfil
   });
 }
 
+function readFixedProfileFieldsFromFormData(data: FormData): FixedProfileFields {
+  return {
+    fullName: normalizeFormDataText(data.get("fullName")),
+    telephoneNumber: normalizeFormDataText(data.get("telephoneNumber")),
+    location: normalizeFormDataText(data.get("location")),
+    country: normalizeFormDataText(data.get("country")),
+    currentlyEmployed: normalizeFormDataText(data.get("currentlyEmployed")) === "true",
+    willingToRelocate: normalizeFormDataText(data.get("willingToRelocate")) === "true",
+  };
+}
+
+function normalizeFormDataText(value: FormDataEntryValue | null) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
 function arrayBufferToBase64(buffer: ArrayBuffer) {
   const bytes = new Uint8Array(buffer);
   let binary = "";
@@ -632,6 +657,7 @@ function LandingPage() {
     try {
       const data = new FormData();
       data.append("cv", cvFile);
+      appendFixedProfileFields(data, fixedFields);
       const result = await analyzeCv({ data });
       const fixedProfile = applyFixedProfileFields(result.profile, fixedFields);
       setProfile(fixedProfile);
@@ -1390,6 +1416,15 @@ function applyFixedProfileFields(
       hasJob: fixedFields.currentlyEmployed,
     },
   });
+}
+
+function appendFixedProfileFields(data: FormData, fixedFields: FixedProfileFields) {
+  data.set("fullName", fixedFields.fullName);
+  data.set("telephoneNumber", fixedFields.telephoneNumber);
+  data.set("location", fixedFields.location);
+  data.set("country", fixedFields.country);
+  data.set("currentlyEmployed", String(fixedFields.currentlyEmployed));
+  data.set("willingToRelocate", String(fixedFields.willingToRelocate));
 }
 
 function readFixedProfileFields(profile: CandidateSkillProfile): FixedProfileFields {
