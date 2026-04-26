@@ -1,7 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { createServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { CountryCombobox } from "@/components/CountryCombobox";
 import { useCountry } from "@/context/CountryContext";
+import {
+  getPolicyProfileAggregates,
+  type PolicyAggregateRow,
+  type PolicyProfileAggregates,
+} from "@/services/policyAggregates";
 import { getCountryWdiSnapshot, type WorldBankIndicatorData } from "@/services/worldBank";
 import type { CountryConfig } from "@/types/unmapped";
 import {
@@ -10,9 +16,14 @@ import {
   Database,
   ExternalLink,
   Heart,
+  ListChecks,
   Sparkles,
   Users,
 } from "lucide-react";
+
+const loadPolicyProfileAggregates = createServerFn({ method: "GET" }).handler(() =>
+  getPolicyProfileAggregates(),
+);
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -351,27 +362,61 @@ function PolicymakerView({
   snapshot: WdiSnapshot;
   isLoading: boolean;
 }) {
-  const profilesVerified = "1,247";
+  const [profileAggregates, setProfileAggregates] = useState<PolicyProfileAggregates | null>(null);
+  const [aggregateError, setAggregateError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isCurrent = true;
+    setAggregateError(null);
+
+    loadPolicyProfileAggregates()
+      .then((aggregates) => {
+        if (!isCurrent) return;
+        setProfileAggregates(aggregates);
+      })
+      .catch((error) => {
+        console.error("Failed to load policy profile aggregates", error);
+        if (!isCurrent) return;
+        setAggregateError(
+          error instanceof Error ? error.message : "Profile aggregates could not be loaded.",
+        );
+      });
+
+    return () => {
+      isCurrent = false;
+    };
+  }, []);
 
   return (
     <>
       <section className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Metric
           icon={<Users className="h-5 w-5 text-navy" />}
-          label="Profiles verified this month"
-          value={profilesVerified}
-          sub="Unmapped platform"
+          label="Profiles in aggregate"
+          value={formatCount(profileAggregates?.totalProfiles)}
+          sub={profileAggregates?.sourceLabel ?? "Loading platform aggregate"}
         />
-        {snapshot.youthUnemployment && (
-          <PolicyMetric indicator={snapshot.youthUnemployment} />
-        )}
-        {snapshot.wageAndSalariedShare && (
-          <PolicyMetric indicator={snapshot.wageAndSalariedShare} />
-        )}
-        {snapshot.laborForceParticipation && (
-          <PolicyMetric indicator={snapshot.laborForceParticipation} />
-        )}
+        <Metric
+          icon={<Database className="h-5 w-5 text-teal" />}
+          label="Unique ISCO/ESCO profiles"
+          value={formatCount(profileAggregates?.uniqueOccupations)}
+          sub="Grouped by normalized occupation"
+        />
+        <Metric
+          icon={<Briefcase className="h-5 w-5 text-amber" />}
+          label="Currently unemployed"
+          value={formatCount(profileAggregates?.unemployedProfiles)}
+          sub="Aggregate profile signal"
+        />
+        <Metric
+          icon={<ListChecks className="h-5 w-5 text-navy" />}
+          label="Ranked lists"
+          value="Top 10"
+          sub="No individual profile data shown"
+        />
       </section>
+
+      <ProfileAggregateSection aggregates={profileAggregates} error={aggregateError} />
 
       <section className="mt-6 rounded-xl border border-border bg-card p-5">
         <div className="flex items-center gap-2 text-sm font-semibold text-navy">
@@ -380,14 +425,8 @@ function PolicymakerView({
         </div>
         {isLoading ? (
           <LoadingState message="Fetching live WDI indicators…" />
-        ) : cards.length > 0 ? (
-          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {cards.map((indicator) => (
-              <IndicatorCard key={indicator.indicatorId} indicator={indicator} />
-            ))}
-          </div>
         ) : (
-          <EmptyState message="No live WDI indicators were returned for this country." />
+          <EmptyState message="WDI values are listed once in the source table below." />
         )}
       </section>
 
@@ -400,7 +439,6 @@ function PolicymakerView({
           max={100}
           isLoading={isLoading}
         />
-        <GdpCard indicator={snapshot.gdpPerCapita} isLoading={isLoading} />
       </section>
 
       <section className="mt-6 rounded-xl border border-border bg-card p-5">
@@ -461,6 +499,104 @@ function PolicymakerView({
         </p>
       </section>
     </>
+  );
+}
+
+function ProfileAggregateSection({
+  aggregates,
+  error,
+}: {
+  aggregates: PolicyProfileAggregates | null;
+  error: string | null;
+}) {
+  return (
+    <section className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <AggregateList
+        title="Top ISCO/ESCO profile groups"
+        description="Hardcoded demo aggregation grouped by occupation profile."
+        rows={aggregates?.iscoEscoTop10 ?? []}
+        valueLabel="Profiles"
+        valueKey="profiles"
+        isLoading={!aggregates && !error}
+        error={error}
+      />
+      <AggregateList
+        title="Top unemployed profile groups"
+        description="Aggregate count of profiles marked currently unemployed."
+        rows={aggregates?.unemploymentTop10 ?? []}
+        valueLabel="Unemployed"
+        valueKey="unemployedProfiles"
+        isLoading={!aggregates && !error}
+        error={error}
+      />
+    </section>
+  );
+}
+
+function AggregateList({
+  title,
+  description,
+  rows,
+  valueLabel,
+  valueKey,
+  isLoading,
+  error,
+}: {
+  title: string;
+  description: string;
+  rows: PolicyAggregateRow[];
+  valueLabel: string;
+  valueKey: "profiles" | "unemployedProfiles";
+  isLoading: boolean;
+  error: string | null;
+}) {
+  return (
+    <div className="rounded-xl border border-border bg-card p-5">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-semibold text-navy">{title}</h3>
+          <p className="mt-1 text-xs text-muted-foreground">{description}</p>
+        </div>
+        <span className="shrink-0 rounded-md bg-muted px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+          Top 10
+        </span>
+      </div>
+      {isLoading ? (
+        <LoadingState message="Fetching profile aggregates..." />
+      ) : error ? (
+        <EmptyState message={error} />
+      ) : rows.length > 0 ? (
+        <div className="mt-4 overflow-hidden rounded-md border border-border">
+          <table className="w-full border-collapse text-left text-xs">
+            <thead className="bg-muted/60 text-muted-foreground">
+              <tr>
+                <th className="w-10 px-3 py-2 font-medium">#</th>
+                <th className="px-3 py-2 font-medium">Profile group</th>
+                <th className="px-3 py-2 text-right font-medium">{valueLabel}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr key={`${title}-${row.code}`} className="border-t border-border">
+                  <td className="px-3 py-2 font-medium text-muted-foreground">{row.rank}</td>
+                  <td className="px-3 py-2">
+                    <div className="font-medium text-foreground">{row.title}</div>
+                    <div className="mt-0.5 font-mono text-[10px] text-muted-foreground">
+                      {row.code} · {row.shareLabel}
+                    </div>
+                  </td>
+                  <td className="px-3 py-2 text-right font-semibold text-navy">
+                    {row[valueKey].toLocaleString()}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <EmptyState message="No aggregate profile rows are available yet." />
+      )}
+    </div>
   );
 }
 
@@ -669,6 +805,10 @@ function buildWdiSectorShares(snapshot: WdiSnapshot): LiveBarSignal[] {
         sourceUrl: value.sourceUrl,
       };
     });
+}
+
+function formatCount(value: number | undefined) {
+  return typeof value === "number" ? value.toLocaleString() : "Loading";
 }
 
 function formatWdiValue(indicator: WorldBankIndicatorData) {
