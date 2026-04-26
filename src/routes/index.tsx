@@ -281,18 +281,18 @@ Set isComplete true when the profile is useful for matching or after 5 answered 
 `;
 
 async function callOpenAIForProfile(apiKey: string, input: unknown[]) {
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+  const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "gpt-4-mini",
-      messages: input,
-      response_format: {
-        type: "json_schema",
-        json_schema: {
+      model: "gpt-4.1-mini",
+      input,
+      text: {
+        format: {
+          type: "json_schema",
           name: "candidate_skill_profile_interview",
           strict: false,
           schema: profileDraftSchema,
@@ -306,8 +306,10 @@ async function callOpenAIForProfile(apiKey: string, input: unknown[]) {
     throw new Error(`OpenAI profile analysis failed: ${errorText}`);
   }
 
-  const result = await response.json();
-  return JSON.parse(result.choices[0]?.message?.content ?? "{}") as unknown;
+  const result = (await response.json()) as OpenAIResponseResult;
+  const text = extractResponseText(result);
+
+  return JSON.parse(text) as unknown;
 }
 
 const skillItemSchema = {
@@ -972,7 +974,7 @@ function LandingPage() {
                       {t("landing.profileInterview")}
                     </div>
                     <h3 className="mt-1 text-lg font-semibold text-navy">
-                      {isComplete ? t("landing.profileComplete") : `${t("landing.question")} ${Math.min(questionCount, MAX_INTERVIEW_QUESTIONS)} ${t("common.of")} ${MAX_INTERVIEW_QUESTIONS}`}
+                      {isComplete ? t("landing.profileComplete") : `${t("Question")} ${Math.min(questionCount, MAX_INTERVIEW_QUESTIONS)} ${t("common.of")} ${MAX_INTERVIEW_QUESTIONS}`}
                     </h3>
                   </div>
                   {isComplete && <CheckCircle2 className="h-5 w-5 text-teal" />}
