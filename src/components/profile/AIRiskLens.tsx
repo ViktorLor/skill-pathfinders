@@ -301,6 +301,14 @@ export function AIRiskLens({ profile }: { profile: SkillRiskProfile }) {
                 <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
                   {a.reason}
                 </p>
+                <a
+                  href={`https://www.coursera.org/search?query=${encodeURIComponent(a.name)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-sky hover:underline"
+                >
+                  Learn on Coursera →
+                </a>
               </li>
             ))}
           </ul>

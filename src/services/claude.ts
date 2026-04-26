@@ -46,7 +46,7 @@ export async function matchJobs(
   return getJobMatchesForTrack(profile.track);
 }
 
-export async function generateCoverLetter(
+// generateCoverLetter removed — not implemented
   profile: CandidateProfile,
   job: JobMatch,
 ): Promise<string> {

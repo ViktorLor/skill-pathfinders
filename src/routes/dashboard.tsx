@@ -420,6 +420,15 @@ function PolicymakerView({
 
   return (
     <>
+      {profileAggregates?.isDemoData && (
+        <div className="mt-6 rounded-xl border border-amber/40 bg-amber/10 px-4 py-3 text-sm text-foreground">
+          <span className="font-semibold text-amber-700">Demo data</span>
+          {" — "}
+          No real profiles have been saved to this instance yet. The numbers below are illustrative
+          aggregates based on expected ISCO distribution in LMIC contexts. They will be replaced
+          automatically once profiles are submitted.
+        </div>
+      )}
       <section className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Metric
           icon={<Users className="h-5 w-5 text-navy" />}

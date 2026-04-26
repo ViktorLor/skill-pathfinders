@@ -38,6 +38,7 @@ export interface PolicyProfileAggregates {
   uniqueOccupations: number;
   unemployedProfiles: number;
   sourceLabel: string;
+  isDemoData?: boolean;
   iscoEscoTop10: PolicyAggregateRow[];
   unemploymentTop10: PolicyAggregateRow[];
 }
@@ -53,6 +54,7 @@ const HARDCODED_POLICY_AGGREGATES: PolicyProfileAggregates = {
   uniqueOccupations: 38,
   unemployedProfiles: 66,
   sourceLabel: `${PROFILE_AGGREGATE_HARD_CAP} profiles shown`,
+  isDemoData: true,
   iscoEscoTop10: [
     row(1, "2512", "ISCO-08 2512", "Software and web developers", 30, 6),
     row(2, "5223", "ISCO-08 5223", "Retail and customer sales workers", 24, 10),

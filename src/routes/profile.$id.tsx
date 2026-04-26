@@ -40,7 +40,6 @@ import {
   getWageAndSalariedShare,
   getYouthUnemploymentData,
 } from "@/services/worldBank";
-import { CoverLetterModal } from "@/components/profile/CoverLetterModal";
 import { AIRiskLens } from "@/components/profile/AIRiskLens";
 import {
   computeRiskProfileForCandidateProfile,
@@ -539,7 +538,6 @@ function ProfilePage() {
   const [dynamicSnapshot, setDynamicSnapshot] = useState<ProfileSnapshot | null>(null);
   const [dynamicLoading, setDynamicLoading] = useState(!candidate);
   const [dynamicError, setDynamicError] = useState("");
-  const [activeJob, setActiveJob] = useState<JobMatch | null>(null);
 
   useEffect(() => {
     if (candidate) {
@@ -718,18 +716,11 @@ function ProfilePage() {
         <h2 className="text-lg font-semibold text-navy">Matched opportunities</h2>
         <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
           {jobs.map((j) => (
-            <JobCard key={j.id} job={j} onApply={() => setActiveJob(j)} />
+            <JobCard key={j.id} job={j} onApply={() => {}} />
           ))}
         </div>
       </section>
 
-      {activeJob && (
-        <CoverLetterModal
-          candidate={candidate}
-          job={activeJob}
-          onClose={() => setActiveJob(null)}
-        />
-      )}
       <PassportDocument data={passportData} />
     </main>
   );
