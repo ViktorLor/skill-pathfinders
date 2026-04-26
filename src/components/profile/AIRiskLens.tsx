@@ -1,51 +1,57 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Bot, ChevronDown, ChevronUp, Shield, Sparkles, TrendingDown, TrendingUp } from "lucide-react";
 import type { SkillRiskProfile, AIRiskLevel } from "@/data/aiRisk";
 
 const levelStyles: Record<
   AIRiskLevel,
-  { bar: string; chip: string; label: string }
+  { bar: string; chip: string }
 > = {
   low: {
     bar: "bg-teal",
     chip: "bg-teal/10 text-teal",
-    label: "Low AI risk",
   },
   moderate: {
     bar: "bg-amber",
     chip: "bg-amber/15 text-amber",
-    label: "Moderate AI risk",
   },
   high: {
     bar: "bg-danger",
     chip: "bg-danger/10 text-danger",
-    label: "High AI risk",
   },
 };
 
 const outlookStyles: Record<
   NonNullable<SkillRiskProfile["bySkill"][string]["outlook"]>,
-  { chip: string; icon: typeof TrendingUp; label: string }
+  { chip: string; icon: typeof TrendingUp }
 > = {
   rising: {
     chip: "bg-greenT/10 text-greenT",
     icon: TrendingUp,
-    label: "Rising 2025–35",
   },
   stable: {
     chip: "bg-muted text-muted-foreground",
     icon: TrendingUp,
-    label: "Stable 2025–35",
   },
   declining: {
     chip: "bg-danger/10 text-danger",
     icon: TrendingDown,
-    label: "Declining 2025–35",
   },
 };
 
 export function AIRiskLens({ profile }: { profile: SkillRiskProfile }) {
+  const { t } = useTranslation();
   const summary = levelStyles[profile.summary.overallLevel];
+  const levelLabels: Record<AIRiskLevel, string> = {
+    low: t("aiRisk.level.low"),
+    moderate: t("aiRisk.level.moderate"),
+    high: t("aiRisk.level.high"),
+  };
+  const outlookLabels = {
+    rising: t("aiRisk.outlook.rising"),
+    stable: t("aiRisk.outlook.stable"),
+    declining: t("aiRisk.outlook.declining"),
+  };
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const riskEntries = Object.entries(profile.bySkill);
   const indexedSkillCount = profile.indexedSkillCount ?? riskEntries.length;
@@ -70,12 +76,10 @@ export function AIRiskLens({ profile }: { profile: SkillRiskProfile }) {
           </div>
           <div>
             <h2 className="text-lg font-semibold text-navy">
-              AI readiness &amp; displacement risk
+              {t("aiRisk.title")}
             </h2>
             <p className="mt-1 max-w-2xl text-xs text-muted-foreground">
-              Calibrated for LMIC labor markets using Frey-Osborne automation
-              probabilities, ILO task indices and World Bank STEP. Outlook
-              uses Wittgenstein Centre 2025–2035 projections.
+              {t("aiRisk.subtitle")}
             </p>
           </div>
         </div>
@@ -83,7 +87,7 @@ export function AIRiskLens({ profile }: { profile: SkillRiskProfile }) {
           className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${summary.chip}`}
         >
           <Shield className="h-3.5 w-3.5" />
-          Overall: {summary.label} · {profile.summary.overallExposure}/100
+          {t("aiRisk.overall")} {levelLabels[profile.summary.overallLevel]} · {profile.summary.overallExposure}/100
         </span>
       </div>
 
@@ -95,11 +99,11 @@ export function AIRiskLens({ profile }: { profile: SkillRiskProfile }) {
         <div className="mt-3 rounded-lg border border-border bg-background px-4 py-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-xs font-medium text-foreground">
-              Directly indexed skills: {indexedSkillCount}/{totalSkillCount}
+              {t("aiRisk.directlyIndexedSkills", { indexedSkillCount, totalSkillCount })}
             </p>
             {unindexedSkills.length > 0 && (
               <span className="text-[11px] text-muted-foreground">
-                Unmatched skills stay in the profile-level estimate only.
+                {t("aiRisk.unmatchedSkillsOnly")}
               </span>
             )}
           </div>
@@ -115,7 +119,7 @@ export function AIRiskLens({ profile }: { profile: SkillRiskProfile }) {
               ))}
               {unindexedSkills.length > 10 && (
                 <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
-                  +{unindexedSkills.length - 10} more
+                  {t("aiRisk.moreCount", { count: unindexedSkills.length - 10 })}
                 </span>
               )}
             </div>
@@ -126,14 +130,12 @@ export function AIRiskLens({ profile }: { profile: SkillRiskProfile }) {
       {/* Per-skill exposure */}
       <div className="mt-6">
         <h3 className="text-sm font-semibold text-navy">
-          Matched per-skill exposure
+          {t("aiRisk.matchedPerSkillExposure")}
         </h3>
         <div className="mt-3 space-y-3">
           {riskEntries.length === 0 && (
             <div className="rounded-lg border border-border bg-background p-4 text-sm text-muted-foreground">
-              No extracted skills matched a direct automation or occupation
-              index yet. The overall view uses the candidate's track,
-              categories and 2025â€“2035 trajectory instead.
+              {t("aiRisk.noExtractedSkills")}
             </div>
           )}
           {riskEntries.map(([name, risk]) => {
@@ -161,7 +163,7 @@ export function AIRiskLens({ profile }: { profile: SkillRiskProfile }) {
                         className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${outlook.chip}`}
                       >
                         <OutlookIcon className="h-3 w-3" />
-                        {outlook.label}
+                        {outlookLabels[risk.outlook!]}
                         {deltaPct !== null && deltaPct !== 0 && (
                           <span className="font-bold">
                             {" "}
@@ -175,11 +177,10 @@ export function AIRiskLens({ profile }: { profile: SkillRiskProfile }) {
                   <span
                     className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${s.chip}`}
                   >
-                    {s.label} · {risk.exposure}
+                    {levelLabels[risk.level]} · {risk.exposure}
                     {showBaseline && (
                       <span className="text-muted-foreground">
-                        {" "}
-                        (US baseline {risk.baselineExposure})
+                        {" "}{t("aiRisk.usBaseline", { baseline: risk.baselineExposure })}
                       </span>
                     )}
                   </span>
@@ -215,11 +216,11 @@ export function AIRiskLens({ profile }: { profile: SkillRiskProfile }) {
                 >
                   {expanded.has(name) ? (
                     <>
-                      Hide sources <ChevronUp className="h-3 w-3" />
+                      {t("aiRisk.hideSources")} <ChevronUp className="h-3 w-3" />
                     </>
                   ) : (
                     <>
-                      Show sources <ChevronDown className="h-3 w-3" />
+                      {t("aiRisk.showSources")} <ChevronDown className="h-3 w-3" />
                     </>
                   )}
                 </button>
@@ -234,7 +235,7 @@ export function AIRiskLens({ profile }: { profile: SkillRiskProfile }) {
                       </p>
                     )}
                     <p className="mt-2 text-[10px] uppercase tracking-wide text-muted-foreground/80">
-                      Source: {risk.source}
+                      {t("aiRisk.source")} {risk.source}
                     </p>
                   </div>
                 )}
@@ -250,12 +251,11 @@ export function AIRiskLens({ profile }: { profile: SkillRiskProfile }) {
           <div className="flex items-center gap-2">
             <Shield className="h-4 w-4 text-teal" />
             <h3 className="text-sm font-semibold text-navy">
-              Your resilient skills
+              {t("aiRisk.resilientSkillsTitle")}
             </h3>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
-            Skills you already have that are unlikely to be displaced by AI in
-            the next decade.
+            {t("aiRisk.resilientSkillsSubtitle")}
           </p>
           <div className="mt-3 flex flex-wrap gap-1.5">
             {profile.resilient.map((s) => (
@@ -274,12 +274,11 @@ export function AIRiskLens({ profile }: { profile: SkillRiskProfile }) {
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-sky" />
             <h3 className="text-sm font-semibold text-navy">
-              Adjacent skills to learn
+              {t("aiRisk.adjacentSkillsTitle")}
             </h3>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
-            Close to what you already do — small step to learn, big resilience
-            gain.
+            {t("aiRisk.adjacentSkillsSubtitle")}
           </p>
           <ul className="mt-3 space-y-2.5">
             {profile.adjacent.map((a) => (
@@ -294,7 +293,7 @@ export function AIRiskLens({ profile }: { profile: SkillRiskProfile }) {
                   {a.outlook === "rising" && (
                     <span className="inline-flex items-center gap-1 rounded-full bg-greenT/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-greenT">
                       <TrendingUp className="h-3 w-3" />
-                      Rising 2025–35
+                      {t("aiRisk.outlook.rising")}
                     </span>
                   )}
                 </div>
@@ -313,7 +312,7 @@ export function AIRiskLens({ profile }: { profile: SkillRiskProfile }) {
             <TrendingUp className="mt-0.5 h-4 w-4 text-navy" />
             <div className="flex-1">
               <h3 className="text-sm font-semibold text-navy">
-                Landscape 2025 → 2035
+                {t("aiRisk.landscapeTitle")}
               </h3>
               <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
                 {profile.trajectory.summary}
@@ -327,20 +326,20 @@ export function AIRiskLens({ profile }: { profile: SkillRiskProfile }) {
               {profile.trajectory.rising.length > 0 && (
                 <div>
                   <div className="text-[10px] font-semibold uppercase tracking-wide text-greenT">
-                    Rising clusters in your portfolio
+                    {t("aiRisk.risingClusters")}
                   </div>
                   <ul className="mt-2 space-y-1.5">
-                    {profile.trajectory.rising.map((t) => (
+                    {profile.trajectory.rising.map((item) => (
                       <li
-                        key={`r-${t.skill}`}
+                        key={`r-${item.skill}`}
                         className="flex items-center justify-between gap-2 rounded-md bg-greenT/5 px-2.5 py-1.5 text-xs"
                       >
                         <span className="font-medium text-foreground">
-                          {t.skill}
+                          {item.skill}
                         </span>
                         <span className="inline-flex items-center gap-1 text-greenT">
                           <TrendingUp className="h-3 w-3" />
-                          +{Math.round(t.changeIndex * 100)}% by 2035
+                          {t("aiRisk.by2035Increase", { percent: Math.round(item.changeIndex * 100) })}
                         </span>
                       </li>
                     ))}
@@ -351,20 +350,20 @@ export function AIRiskLens({ profile }: { profile: SkillRiskProfile }) {
               {profile.trajectory.declining.length > 0 && (
                 <div>
                   <div className="text-[10px] font-semibold uppercase tracking-wide text-danger">
-                    Declining clusters in your portfolio
+                    {t("aiRisk.decliningClusters")}
                   </div>
                   <ul className="mt-2 space-y-1.5">
-                    {profile.trajectory.declining.map((t) => (
+                    {profile.trajectory.declining.map((item) => (
                       <li
-                        key={`d-${t.skill}`}
+                        key={`d-${item.skill}`}
                         className="flex items-center justify-between gap-2 rounded-md bg-danger/5 px-2.5 py-1.5 text-xs"
                       >
                         <span className="font-medium text-foreground">
-                          {t.skill}
+                          {item.skill}
                         </span>
                         <span className="inline-flex items-center gap-1 text-danger">
                           <TrendingDown className="h-3 w-3" />
-                          {Math.round(t.changeIndex * 100)}% by 2035
+                          {t("aiRisk.by2035Percent", { percent: Math.round(item.changeIndex * 100) })}
                         </span>
                       </li>
                     ))}
@@ -375,8 +374,7 @@ export function AIRiskLens({ profile }: { profile: SkillRiskProfile }) {
           )}
 
           <p className="mt-3 text-[10px] uppercase tracking-wide text-muted-foreground/80">
-            Source: Wittgenstein Centre Human Capital Data Explorer (SSP2,
-            2025–2035)
+            {t("aiRisk.wittgensteinSource")}
           </p>
         </div>
       )}

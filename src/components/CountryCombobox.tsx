@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,12 +25,14 @@ interface CountryComboboxProps {
 export function CountryCombobox({
   value,
   onChange,
-  placeholder = "Select country",
+  placeholder,
   disabled = false,
   className,
 }: CountryComboboxProps) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const selected = getIsoCountry(value);
+  const effectivePlaceholder = placeholder ?? t("countryCombobox.selectCountry");
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -54,7 +57,7 @@ export function CountryCombobox({
                 <span className="text-muted-foreground">({selected.code})</span>
               </>
             ) : (
-              placeholder
+              effectivePlaceholder
             )}
           </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -65,9 +68,9 @@ export function CountryCombobox({
         className="w-[--radix-popover-trigger-width] p-0"
       >
         <Command>
-          <CommandInput placeholder="Search countries..." />
+          <CommandInput placeholder={t("countryCombobox.searchCountries")} />
           <CommandList className="max-h-[300px]">
-            <CommandEmpty>No country found.</CommandEmpty>
+            <CommandEmpty>{t("countryCombobox.noCountryFound")}</CommandEmpty>
             <CommandGroup>
               {ISO_COUNTRIES.map((c) => (
                 <CommandItem

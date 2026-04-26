@@ -9,6 +9,7 @@
     "tagline": "Open skills infrastructure for unmapped youth. A protocol, not a product — plug in local data and it works anywhere.",
     "product": "Product",
     "dataSources": "Data sources",
+    "worldBankWdi": "World Bank WDI",
     "about": "About",
     "aboutText": "Built for youth, NGOs, training providers, and policymakers in LMICs.",
     "github": "GitHub",
@@ -155,5 +156,93 @@
     "no": "No",
     "optional": "optional",
     "of": "of"
+  },
+  "router": {
+    "errorDetail": "An unexpected error occurred. Please try again.",
+    "tryAgain": "Try again"
+  },
+  "login": {
+    "subtitle": "Sign in with the email and password saved in the SQL database.",
+    "noAccountYet": "No account yet?",
+    "errors": {
+      "couldNotLogin": "Could not log in."
+    }
+  },
+  "register": {
+    "subtitle": "Create an account with an email and password.",
+    "name": "Name",
+    "alreadyHaveAccount": "Already have an account?",
+    "errors": {
+      "couldNotCreateAccount": "Could not create the account."
+    }
+  },
+  "onboard": {
+    "profileUnavailable": "Profile unavailable",
+    "noProfileSelected": "No profile was selected.",
+    "openingProfile": "Opening profile"
+  },
+  "countryCombobox": {
+    "selectCountry": "Select country",
+    "searchCountries": "Search countries...",
+    "noCountryFound": "No country found."
+  },
+  "demo": {
+    "button": "Demo",
+    "profiles": "Demo profiles",
+    "techKwame": "Tech - Kwame",
+    "tradeAmara": "Trade - Amara",
+    "agriKofi": "Agri - Kofi"
+  },
+  "coverLetter": {
+    "title": "Cover letter - {{title}}",
+    "atCompany": "at {{company}}",
+    "drafting": "Drafting your letter...",
+    "copy": "Copy",
+    "downloadTxt": "Download .txt"
+  },
+  "chatInterview": {
+    "title": "Skill interview",
+    "questionOf": "Question {{current}} of {{total}}",
+    "placeholder": "Type your answer...",
+    "finish": "Finish",
+    "nextQuestion": "Next question"
+  },
+  "loadingPipeline": {
+    "title": "Building your Skill Passport",
+    "subtitle": "This usually takes a few seconds."
+  },
+  "aiRisk": {
+    "title": "AI readiness and displacement risk",
+    "subtitle": "Calibrated for LMIC labor markets using Frey-Osborne automation probabilities, ILO task indices and World Bank STEP. Outlook uses Wittgenstein Centre 2025-2035 projections.",
+    "overall": "Overall:",
+    "directlyIndexedSkills": "Directly indexed skills: {{indexedSkillCount}}/{{totalSkillCount}}",
+    "unmatchedSkillsOnly": "Unmatched skills stay in the profile-level estimate only.",
+    "moreCount": "+{{count}} more",
+    "matchedPerSkillExposure": "Matched per-skill exposure",
+    "noExtractedSkills": "No extracted skills matched a direct automation or occupation index yet. The overall view uses the candidate's track, categories and 2025-2035 trajectory instead.",
+    "usBaseline": "(US baseline {{baseline}})",
+    "showSources": "Show sources",
+    "hideSources": "Hide sources",
+    "source": "Source:",
+    "resilientSkillsTitle": "Your resilient skills",
+    "resilientSkillsSubtitle": "Skills you already have that are unlikely to be displaced by AI in the next decade.",
+    "adjacentSkillsTitle": "Adjacent skills to learn",
+    "adjacentSkillsSubtitle": "Close to what you already do - small step to learn, big resilience gain.",
+    "landscapeTitle": "Landscape 2025 to 2035",
+    "risingClusters": "Rising clusters in your portfolio",
+    "decliningClusters": "Declining clusters in your portfolio",
+    "by2035Increase": "+{{percent}}% by 2035",
+    "by2035Percent": "{{percent}}% by 2035",
+    "wittgensteinSource": "Source: Wittgenstein Centre Human Capital Data Explorer (SSP2, 2025-2035)",
+    "level": {
+      "low": "Low AI risk",
+      "moderate": "Moderate AI risk",
+      "high": "High AI risk"
+    },
+    "outlook": {
+      "rising": "Rising 2025-35",
+      "stable": "Stable 2025-35",
+      "declining": "Declining 2025-35"
+    }
   }
 }

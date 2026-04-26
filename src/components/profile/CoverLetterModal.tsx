@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Dialog,
   DialogContent,
@@ -20,6 +21,7 @@ export function CoverLetterModal({
   job: JobMatch;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -60,15 +62,15 @@ export function CoverLetterModal({
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>
-            Cover letter — {job.title}
-            {job.company ? ` at ${job.company}` : ""}
+            {t("coverLetter.title", { title: job.title })}
+            {job.company ? ` ${t("coverLetter.atCompany", { company: job.company })}` : ""}
           </DialogTitle>
         </DialogHeader>
 
         {loading ? (
           <div className="flex items-center gap-2 py-12 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
-            Drafting your letter...
+            {t("coverLetter.drafting")}
           </div>
         ) : (
           <>
@@ -81,14 +83,14 @@ export function CoverLetterModal({
             <div className="mt-2 flex justify-end gap-2">
               <Button variant="outline" onClick={copy}>
                 <Copy className="mr-1 h-4 w-4" />
-                Copy
+                {t("coverLetter.copy")}
               </Button>
               <Button
                 onClick={download}
                 className="bg-navy text-navy-foreground hover:bg-navy/90"
               >
                 <Download className="mr-1 h-4 w-4" />
-                Download .txt
+                {t("coverLetter.downloadTxt")}
               </Button>
             </div>
           </>

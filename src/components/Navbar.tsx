@@ -55,9 +55,6 @@ export function Navbar() {
     void i18n.changeLanguage(lang);
     setStoredLanguage(lang);
     setCurrentLang(lang);
-    // Flip document direction for RTL languages
-    const dir = SUPPORTED_LANGUAGES.find((l) => l.code === lang)?.dir ?? "ltr";
-    document.documentElement.setAttribute("dir", dir);
   };
 
   const activeLang = SUPPORTED_LANGUAGES.find((l) => l.code === currentLang) ?? SUPPORTED_LANGUAGES[0];

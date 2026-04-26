@@ -55,6 +55,14 @@ export function setStoredLanguage(lang: string) {
   localStorage.setItem(STORAGE_KEY, lang);
 }
 
+function applyDocumentLanguage(lang: string) {
+  if (typeof document === "undefined") return;
+  const normalized = SUPPORTED_LANGUAGES.some((item) => item.code === lang) ? lang : "en";
+  const dir = SUPPORTED_LANGUAGES.find((item) => item.code === normalized)?.dir ?? "ltr";
+  document.documentElement.setAttribute("lang", normalized);
+  document.documentElement.setAttribute("dir", dir);
+}
+
 if (!i18n.isInitialized) {
   i18n.use(initReactI18next).init({
     resources: {
@@ -75,5 +83,10 @@ if (!i18n.isInitialized) {
     },
   });
 }
+
+applyDocumentLanguage(i18n.language || getStoredLanguage());
+i18n.on("languageChanged", (lang) => {
+  applyDocumentLanguage(lang);
+});
 
 export default i18n;
