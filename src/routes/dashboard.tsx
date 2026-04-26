@@ -11,7 +11,12 @@ import {
   type PolicyOccupationProfileGroup,
   type PolicyProfileAggregates,
 } from "@/services/policyAggregates";
-import { getCountryWdiSnapshot, getReturnsToEducation, type ReturnsToEducation, type WorldBankIndicatorData } from "@/services/worldBank";
+import {
+  getCountryWdiSnapshot,
+  getReturnsToEducation,
+  type ReturnsToEducation,
+  type WorldBankIndicatorData,
+} from "@/services/worldBank";
 import type { CountryConfig } from "@/types/unmapped";
 import {
   AlertCircle,
@@ -254,7 +259,13 @@ function YouthView({
       <section className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
         <YouthFact
           label={t("dashboard.signals.youthUnemployment")}
-          value={youthUnemp ? `${youthUnemp.value.toFixed(1)}%` : isLoading ? t("dashboard.loading") : t("dashboard.notAvailable")}
+          value={
+            youthUnemp
+              ? `${youthUnemp.value.toFixed(1)}%`
+              : isLoading
+                ? t("dashboard.loading")
+                : t("dashboard.notAvailable")
+          }
           plain={
             youthUnemp
               ? `In ${country.name}, about ${formatRoundedPct(youthUnemp.value)} ${t("dashboard.signals.youthUnemploymentDetail")} (${youthUnemp.year}).`
@@ -262,13 +273,13 @@ function YouthView({
           }
         />
         <YouthFact
-          label="Workers with formal pay"
+          label={t("dashboard.signals.wageWorkers")}
           value={
             wageShare
               ? `${wageShare.value.toFixed(1)}%`
               : isLoading
-                ? "Loading…"
-                : "Not available"
+                ? t("dashboard.loading")
+                : t("dashboard.notAvailable")
           }
           plain={
             wageShare
@@ -277,13 +288,13 @@ function YouthView({
           }
         />
         <YouthFact
-          label="People active in the workforce"
+          label={t("dashboard.signals.laborForce")}
           value={
             labor
               ? `${labor.value.toFixed(1)}%`
               : isLoading
-                ? "Loading…"
-                : "Not available"
+                ? t("dashboard.loading")
+                : t("dashboard.notAvailable")
           }
           plain={
             labor
