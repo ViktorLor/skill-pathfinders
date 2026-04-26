@@ -17,7 +17,11 @@ dist-ssr
 *.local
 .env
 .sqlite
+<<<<<<< Updated upstream
 
+=======
+.json
+>>>>>>> Stashed changes
 # Wrangler / Cloudflare
 .wrangler/
 .dev.vars
