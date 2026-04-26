@@ -1,0 +1,159 @@
+{
+  "nav": {
+    "buildProfile": "建立我的个人资料",
+    "liveDashboard": "实时仪表板",
+    "login": "登录",
+    "logout": "注销"
+  },
+  "footer": {
+    "tagline": "开放式技能基础设施，面向无地图青年。这是一个协议，而不是一个产品--插入本地数据即可在任何地方运行。",
+    "product": "产品",
+    "dataSources": "数据来源",
+    "about": "关于",
+    "aboutText": "面向低收入和中等收入国家的青年、非政府组织、培训机构和政策制定者。",
+    "github": "GitHub",
+    "copyright": "开放式技能基础设施。",
+    "automationCredit": "自动化数据：Frey & Osborne (2017) - 国际劳工组织任务指数 - 世界银行 STEP - 维特根斯坦中心 2025-2035"
+  },
+  "landing": {
+    "badge": "为未经规划的青年提供技能护照",
+    "headline": "你的技能",
+    "headlineAccent": "你的机会来了",
+    "subheadline": "上传简历或回答简介问题，我们将把您的经验转化为结构化的技能简介。",
+    "buildProfile": "建立自己的技能档案",
+    "buildProfileHint": "上传简历，如果没有简历，请回答问题。",
+    "uploadLabel": "上传您的简历",
+    "uploadFormats": "PDF 或 TXT",
+    "tabs": {
+      "upload": "上传简历",
+      "interview": "没有简历？回答问题"
+    },
+    "fields": {
+      "fullName": "全名",
+      "fullNamePlaceholder": "例如：阿马拉-门萨",
+      "telephone": "电话号码",
+      "telephonePlaceholder": "例如：+233 24 123 4567",
+      "country": "国家",
+      "countryPlaceholder": "选择您的国家",
+      "city": "城市",
+      "cityOptional": "可选",
+      "cityPlaceholder": "例如：内罗毕",
+      "currentlyEmployed": "您目前有工作吗？",
+      "willingToRelocate": "您愿意为工作而搬迁吗？",
+      "yes": "是",
+      "no": "没有",
+      "chooseOne": "选择一个"
+    },
+    "buttons": {
+      "scanCv": "扫描简历",
+      "scanCvLoading": "分析...",
+      "startNoCV": "从没有简历开始",
+      "sendAnswer": "发送",
+      "viewProfile": "查看您的个人资料",
+      "saveProfile": "保存完成的配置文件"
+    },
+    "auth": {
+      "signedIn": "登录为",
+      "register": "注册",
+      "login": "登录",
+      "logout": "签出",
+      "email": "电子邮件",
+      "password": "密码",
+      "registering": "注册...",
+      "loggingIn": "登录...",
+      "continueProfile": "开始问卷调查",
+      "startTitle": "从您的账户开始",
+      "startSubtitle": "在问卷调查前注册或登录，以便将您的个人资料保存到您的账户中。",
+      "checkingProfile": "检查您保存的配置文件..."
+    },
+    "errors": {
+      "loginRequired": "添加问卷数据前请先注册或登录。",
+      "fixedFieldsRequired": "请在扫描简历前添加您的姓名、电话号码、工作地点、职业和搬迁情况。",
+      "cvRequired": "请上传简历文件。"
+    },
+    "progress": {
+      "question": "问题",
+      "of": "的",
+      "complete": "完整"
+    },
+    "profileInterview": "简介访谈",
+    "updatingProfile": "更新个人资料",
+    "answerPlaceholder": "用自己的话回答"
+  },
+  "dashboard": {
+    "youthTitle": "国家概况",
+    "policyTitle": "地区技能情报仪表板",
+    "youthSubtitle": "来自世界银行的实时信号，为规划工作的人提供框架。",
+    "policySubtitle": "为政策和计划团队汇总具有完整来源属性的 WDI 信号。",
+    "youthView": "青年视角",
+    "youthViewSub": "像我这样的人",
+    "policyView": "决策者观点",
+    "policyViewSub": "信号汇总",
+    "loadingSignals": "加载来自世界银行的最新信号",
+    "notAvailable": "不详",
+    "loading": "正在加载...",
+    "whatThisMeans": "这对您意味着什么",
+    "signals": {
+      "youthUnemployment": "失业青年",
+      "youthUnemploymentDetail": "想要工作的 15-24 岁人口中还没有工作的比例",
+      "wageWorkers": "领取正式工资的工人",
+      "wageWorkersDetail": "的工人从事有薪工作。其余的大多数人则从事日常工作或季节性工作。",
+      "laborForce": "活跃在劳动力队伍中的人",
+      "laborForceDetail": "的成年人正在工作或积极寻找工作"
+    },
+    "sectors": {
+      "title": "按行业分列的就业情况",
+      "subtitle": "各主要部门的劳动力比例"
+    },
+    "education": {
+      "title": "教育回报",
+      "subtitle": "按教育程度分列的劳动力参与率",
+      "basic": "基本",
+      "intermediate": "中学",
+      "advanced": "三级",
+      "noData": "世界银行未提供该国的逐级教育数据。",
+      "higherParticipation": "与基础教育相比，高等教育的参与率更高"
+    },
+    "source": "资料来源",
+    "wdiTable": "完整的 WDI 简图",
+    "profiles": {
+      "title": "候选人简介汇总",
+      "totalProfiles": "简介总数",
+      "byTrack": "按轨道",
+      "bySeniority": "按资历",
+      "topSkills": "顶级技能"
+    }
+  },
+  "profile": {
+    "skillPassport": "技能护照",
+    "print": "打印",
+    "econometrics": "劳动力市场背景",
+    "aiRisk": "接触人工智能",
+    "jobs": "附近的机会",
+    "education": "教育",
+    "experience": "经验",
+    "skills": "技能",
+    "languages": "语言",
+    "coverLetter": "生成求职信",
+    "noData": "无数据"
+  },
+  "common": {
+    "learnMore": "了解更多",
+    "source": "资料来源",
+    "year": "年份",
+    "country": "国家",
+    "back": "返回",
+    "save": "节省",
+    "cancel": "取消",
+    "close": "关闭",
+    "loading": "正在加载...",
+    "error": "出问题了",
+    "notFound": "页面未找到",
+    "notFoundDetail": "您要查找的页面不存在或已被移动。",
+    "goHome": "回家",
+    "yes": "是",
+    "no": "没有",
+    "optional": "可选的",
+    "of": "的"
+  }
+}

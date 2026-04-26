@@ -5,6 +5,8 @@ import { CountryProvider } from "@/context/CountryContext";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { DemoButton } from "@/components/DemoButton";
+// Initialise i18next before first render
+import "@/lib/i18n";
 
 function NotFoundComponent() {
   return (

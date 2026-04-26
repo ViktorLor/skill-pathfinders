@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import type { FormEvent } from "react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ArrowRight,
   CheckCircle2,
@@ -493,6 +494,7 @@ function extractResponseText(result: OpenAIResponseResult) {
 }
 
 function LandingPage() {
+  const { t } = useTranslation();
   const [account, setAccount] = useState<AccountSession | null>(null);
   const [authStatus, setAuthStatus] = useState("");
   const [authError, setAuthError] = useState("");
@@ -741,14 +743,13 @@ function LandingPage() {
     <main className="mx-auto max-w-7xl px-4 pb-24 pt-12 sm:px-6 sm:pt-20">
       <section className="mx-auto max-w-3xl text-center">
         <span className="inline-flex items-center rounded-full bg-navy/5 px-3 py-1 text-xs font-medium text-navy">
-          A skill passport for unmapped youth
+          {t("landing.badge")}
         </span>
         <h1 className="mt-5 text-4xl font-bold text-navy sm:text-5xl md:text-6xl">
-          Your skills, seen. <span className="text-teal">Your opportunity, found.</span>
+          {t("landing.headline")} <span className="text-teal">{t("landing.headlineAccent")}</span>
         </h1>
         <p className="mx-auto mt-5 max-w-2xl text-base text-muted-foreground sm:text-lg">
-          Upload a CV or answer profile questions, and we will turn your experience into a
-          structured skill profile.
+          {t("landing.subheadline")}
         </p>
       </section>
 
@@ -769,10 +770,9 @@ function LandingPage() {
                 <FileText className="h-6 w-6" />
               </div>
               <div>
-                <h2 className="text-2xl font-semibold text-navy">Build your skill profile</h2>
+                <h2 className="text-2xl font-semibold text-navy">{t("landing.buildProfile")}</h2>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Upload a CV, or answer questions if you do not have one.
-                  The hidden track is inferred, not chosen by the user.
+                  {t("landing.buildProfileHint")}
                 </p>
               </div>
             </div>
@@ -780,7 +780,7 @@ function LandingPage() {
             <label className="mt-6 flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-border bg-surface px-6 py-8 text-center hover:border-navy/40">
               <FileText className="h-6 w-6 text-muted-foreground" />
               <span className="mt-2 text-sm font-medium text-foreground">
-                {cvFile ? cvFile.name : "Upload your CV"}
+                {cvFile ? cvFile.name : t("landing.uploadLabel")}
               </span>
               <span className="mt-1 text-xs text-muted-foreground">PDF or TXT</span>
               <input
@@ -797,7 +797,7 @@ function LandingPage() {
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <div>
                 <label className="mb-2 block text-sm font-medium text-foreground">
-                  Full name
+                  {t("landing.fields.fullName")}
                 </label>
                 <Input
                   value={fullNameInput}
@@ -813,7 +813,7 @@ function LandingPage() {
               </div>
               <div>
                 <label className="mb-2 block text-sm font-medium text-foreground">
-                  Telephone number
+                  {t("landing.fields.telephone")}
                 </label>
                 <Input
                   type="tel"
@@ -834,7 +834,7 @@ function LandingPage() {
               <div>
                 <label className="mb-2 flex items-center gap-2 text-sm font-medium text-foreground">
                   <MapPin className="h-4 w-4 text-muted-foreground" />
-                  Country
+                  {t("landing.fields.country")}
                 </label>
                 <CountryCombobox
                   value={selectedCountry}
@@ -848,7 +848,7 @@ function LandingPage() {
               </div>
               <div>
                 <label className="mb-2 block text-sm font-medium text-foreground">
-                  City <span className="text-muted-foreground">(optional)</span>
+                  {t("landing.fields.city")} <span className="text-muted-foreground">({t("common.optional")})</span>
                 </label>
                 <Input
                   value={cityInput}
@@ -863,7 +863,7 @@ function LandingPage() {
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <div>
                 <label className="mb-2 block text-sm font-medium text-foreground">
-                  Are you currently employed?
+                  {t("landing.fields.currentlyEmployed")}
                 </label>
                 <Select
                   value={currentlyEmployed}
@@ -874,18 +874,18 @@ function LandingPage() {
                   disabled={isAnalyzing || isSendingAnswer || Boolean(profile)}
                 >
                   <SelectTrigger className="h-11 bg-background">
-                    <SelectValue placeholder="Choose one" />
+                    <SelectValue placeholder={t("landing.fields.chooseOne")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="yes">Yes</SelectItem>
-                    <SelectItem value="no">No</SelectItem>
+                    <SelectItem value="yes">{t("common.yes")}</SelectItem>
+                    <SelectItem value="no">{t("common.no")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
                 <label className="mb-2 block text-sm font-medium text-foreground">
-                  Are you willing to relocate for a job?
+                  {t("landing.fields.willingToRelocate")}
                 </label>
                 <Select
                   value={willingToRelocate}
@@ -896,11 +896,11 @@ function LandingPage() {
                   disabled={isAnalyzing || isSendingAnswer || Boolean(profile)}
                 >
                   <SelectTrigger className="h-11 bg-background">
-                    <SelectValue placeholder="Choose one" />
+                    <SelectValue placeholder={t("landing.fields.chooseOne")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="yes">Yes</SelectItem>
-                    <SelectItem value="no">No</SelectItem>
+                    <SelectItem value="yes">{t("common.yes")}</SelectItem>
+                    <SelectItem value="no">{t("common.no")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -914,7 +914,7 @@ function LandingPage() {
                 disabled={isCheckingAccountProfile || isAnalyzing || isSendingAnswer || !fixedFields}
                 className="rounded-md"
               >
-                No written CV
+                {t("landing.buttons.startNoCV")}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
               <Button
@@ -923,7 +923,7 @@ function LandingPage() {
                 className="rounded-md bg-navy text-navy-foreground hover:bg-navy/90"
               >
                 {isAnalyzing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Scan CV
+                {t("landing.buttons.scanCv")}
               </Button>
             </div>
 
@@ -939,10 +939,10 @@ function LandingPage() {
                   <div>
                     <div className="flex items-center gap-2 text-xs font-medium uppercase text-muted-foreground">
                       <MessageCircle className="h-4 w-4" />
-                      Profile interview
+                      {t("landing.profileInterview")}
                     </div>
                     <h3 className="mt-1 text-lg font-semibold text-navy">
-                      {isComplete ? "Profile complete" : `Question ${Math.min(questionCount, MAX_INTERVIEW_QUESTIONS)} of ${MAX_INTERVIEW_QUESTIONS}`}
+                      {isComplete ? t("landing.profileComplete") : `${t("landing.question")} ${Math.min(questionCount, MAX_INTERVIEW_QUESTIONS)} ${t("common.of")} ${MAX_INTERVIEW_QUESTIONS}`}
                     </h3>
                   </div>
                   {isComplete && <CheckCircle2 className="h-5 w-5 text-teal" />}
@@ -966,7 +966,7 @@ function LandingPage() {
                   {isSendingAnswer && (
                     <div className="inline-flex items-center rounded-lg bg-muted px-4 py-2 text-sm text-muted-foreground">
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Updating profile
+                      {t("landing.updatingProfile")}
                     </div>
                   )}
                 </div>
@@ -978,7 +978,7 @@ function LandingPage() {
                       onChange={(event) => setChatInput(event.target.value)}
                       rows={4}
                       className="mt-4"
-                      placeholder="Answer in your own words"
+                      placeholder={t("landing.answerPlaceholder")}
                       disabled={isSendingAnswer}
                     />
                     <div className="mt-4 flex justify-end">
@@ -988,7 +988,7 @@ function LandingPage() {
                         className="rounded-md bg-teal text-white hover:bg-teal/90"
                       >
                         {isSendingAnswer && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Send answer
+                        {t("landing.buttons.sendAnswer")}
                       </Button>
                     </div>
                   </>
@@ -1006,7 +1006,7 @@ function LandingPage() {
                       onClick={openCandidateProfile}
                       className="rounded-md bg-navy text-navy-foreground hover:bg-navy/90"
                     >
-                      Open candidate profile
+                      {t("landing.buttons.viewProfile")}
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   </div>
@@ -1044,6 +1044,7 @@ function AuthStartPanel({
   const [registerPassword, setRegisterPassword] = useState("");
   const [isSubmittingAuth, setIsSubmittingAuth] = useState(false);
   const [localError, setLocalError] = useState("");
+  const { t } = useTranslation();
 
   const submitLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -1085,10 +1086,9 @@ function AuthStartPanel({
     <section className="mx-auto mb-14 mt-10 max-w-3xl rounded-lg border border-border bg-card p-6 shadow-sm sm:p-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-navy">Start with your account</h1>
+          <h1 className="text-2xl font-semibold text-navy">{t("landing.auth.startTitle")}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Register or log in before the questionnaire so your profile data is saved to your
-            account.
+            {t("landing.auth.startSubtitle")}
           </p>
         </div>
         {account && (
@@ -1099,7 +1099,7 @@ function AuthStartPanel({
             onClick={onLogout}
             className="rounded-md"
           >
-            Log out
+            {t("nav.logout")}
           </Button>
         )}
       </div>
@@ -1109,7 +1109,7 @@ function AuthStartPanel({
           {isCheckingAccountProfile ? (
             <span className="inline-flex items-center gap-2">
               <Loader2 className="h-4 w-4 animate-spin" />
-              Checking for your saved profile...
+              {t("landing.auth.checkingProfile")}
             </span>
           ) : (
             authStatus || `Signed in as ${account.email}.`
@@ -1120,11 +1120,11 @@ function AuthStartPanel({
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="login" className="gap-2">
               <LogIn className="h-4 w-4" />
-              Login
+              {t("landing.auth.login")}
             </TabsTrigger>
             <TabsTrigger value="register" className="gap-2">
               <UserPlus className="h-4 w-4" />
-              Register
+              {t("landing.auth.register")}
             </TabsTrigger>
           </TabsList>
 
@@ -1135,7 +1135,7 @@ function AuthStartPanel({
                 value={loginEmail}
                 onChange={(event) => setLoginEmail(event.target.value)}
                 autoComplete="email"
-                placeholder="Email"
+                placeholder={t("landing.auth.email")}
                 required
               />
               <Input
@@ -1143,7 +1143,7 @@ function AuthStartPanel({
                 value={loginPassword}
                 onChange={(event) => setLoginPassword(event.target.value)}
                 autoComplete="current-password"
-                placeholder="Password"
+                placeholder={t("landing.auth.password")}
                 minLength={8}
                 required
               />
@@ -1153,7 +1153,7 @@ function AuthStartPanel({
                 className="rounded-md bg-navy text-navy-foreground hover:bg-navy/90"
               >
                 {isSubmittingAuth && <Loader2 className="h-4 w-4 animate-spin" />}
-                Login
+                {t("landing.auth.login")}
               </Button>
             </form>
           </TabsContent>
@@ -1165,7 +1165,7 @@ function AuthStartPanel({
                 value={registerEmail}
                 onChange={(event) => setRegisterEmail(event.target.value)}
                 autoComplete="email"
-                placeholder="Email"
+                placeholder={t("landing.auth.email")}
                 required
               />
               <Input
@@ -1173,7 +1173,7 @@ function AuthStartPanel({
                 value={registerPassword}
                 onChange={(event) => setRegisterPassword(event.target.value)}
                 autoComplete="new-password"
-                placeholder="Password"
+                placeholder={t("landing.auth.password")}
                 minLength={8}
                 required
               />
@@ -1183,7 +1183,7 @@ function AuthStartPanel({
                 className="rounded-md bg-navy text-navy-foreground hover:bg-navy/90"
               >
                 {isSubmittingAuth && <Loader2 className="h-4 w-4 animate-spin" />}
-                Register
+                {t("landing.auth.register")}
               </Button>
             </form>
           </TabsContent>

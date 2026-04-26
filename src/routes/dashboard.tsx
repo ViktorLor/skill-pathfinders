@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { CountryCombobox } from "@/components/CountryCombobox";
 import { useCountry } from "@/context/CountryContext";
 import {
@@ -55,6 +56,7 @@ interface LiveBarSignal {
 }
 
 function DashboardPage() {
+  const { t } = useTranslation();
   const { country, setCountryCode } = useCountry();
   const [wdiSnapshot, setWdiSnapshot] = useState<WdiSnapshot>({});
   const [isLoading, setIsLoading] = useState(true);
@@ -102,14 +104,10 @@ function DashboardPage() {
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-2xl font-bold text-navy">
-            {view === "youth"
-              ? "Your country at a glance"
-              : "Regional Skills Intelligence Dashboard"}
+            {view === "youth" ? t("dashboard.youthTitle") : t("dashboard.policyTitle")}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {view === "youth"
-              ? "Live signals from the World Bank, framed for someone planning their work."
-              : "Aggregate WDI signals with full source attribution for policy and program teams."}
+            {view === "youth" ? t("dashboard.youthSubtitle") : t("dashboard.policySubtitle")}
           </p>
         </div>
         <CountryCombobox
@@ -158,6 +156,7 @@ function ViewToggle({
   value: DashboardView;
   onChange: (v: DashboardView) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div
       role="tablist"
@@ -168,15 +167,15 @@ function ViewToggle({
         active={value === "youth"}
         onClick={() => onChange("youth")}
         icon={<Heart className="h-4 w-4" />}
-        label="Youth view"
-        sub="For someone like me"
+        label={t("dashboard.youthView")}
+        sub={t("dashboard.youthViewSub")}
       />
       <ToggleButton
         active={value === "policymaker"}
         onClick={() => onChange("policymaker")}
         icon={<Briefcase className="h-4 w-4" />}
-        label="Policymaker view"
-        sub="Aggregate signals"
+        label={t("dashboard.policyView")}
+        sub={t("dashboard.policyViewSub")}
       />
     </div>
   );
@@ -229,6 +228,7 @@ function YouthView({
   sectorShares: LiveBarSignal[];
   isLoading: boolean;
 }) {
+  const { t } = useTranslation();
   const youthUnemp = snapshot.youthUnemployment;
   const wageShare = snapshot.wageAndSalariedShare;
   const labor = snapshot.laborForceParticipation;
@@ -244,11 +244,11 @@ function YouthView({
           <Sparkles className="mt-0.5 h-5 w-5 text-teal" />
           <div>
             <h2 className="text-base font-semibold text-navy">
-              What this means for you
+              {t("dashboard.whatThisMeans")}
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-foreground">
               {isLoading
-                ? `Loading the latest signals from the World Bank for ${country.name}…`
+                ? `${t("dashboard.loadingSignals")} ${country.name}…`
                 : composeYouthCallout(country.name, youthUnemp, wageShare)}
             </p>
           </div>
@@ -257,47 +257,29 @@ function YouthView({
 
       <section className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
         <YouthFact
-          label="Young people without a job"
-          value={
-            youthUnemp
-              ? `${youthUnemp.value.toFixed(1)}%`
-              : isLoading
-                ? "Loading…"
-                : "Not available"
-          }
+          label={t("dashboard.signals.youthUnemployment")}
+          value={youthUnemp ? `${youthUnemp.value.toFixed(1)}%` : isLoading ? t("dashboard.loading") : t("dashboard.notAvailable")}
           plain={
             youthUnemp
-              ? `In ${country.name}, about ${formatRoundedPct(youthUnemp.value)} of people aged 15–24 who want a job don't have one yet (${youthUnemp.year}).`
+              ? `In ${country.name}, about ${formatRoundedPct(youthUnemp.value)} ${t("dashboard.signals.youthUnemploymentDetail")} (${youthUnemp.year}).`
               : "World Bank youth unemployment data isn't available for this country right now."
           }
         />
         <YouthFact
-          label="Workers with formal pay"
-          value={
-            wageShare
-              ? `${wageShare.value.toFixed(1)}%`
-              : isLoading
-                ? "Loading…"
-                : "Not available"
-          }
+          label={t("dashboard.signals.wageWorkers")}
+          value={wageShare ? `${wageShare.value.toFixed(1)}%` : isLoading ? t("dashboard.loading") : t("dashboard.notAvailable")}
           plain={
             wageShare
-              ? `Roughly ${formatRoundedPct(wageShare.value)} of workers in ${country.name} have wage or salaried employment (${wageShare.year}). Most of the rest run their own work, day-to-day or seasonal.`
+              ? `Roughly ${formatRoundedPct(wageShare.value)} ${t("dashboard.signals.wageWorkersDetail").replace("of workers", `of workers in ${country.name}`)}`
               : "World Bank formal-wage share isn't available for this country right now."
           }
         />
         <YouthFact
-          label="People active in the workforce"
-          value={
-            labor
-              ? `${labor.value.toFixed(1)}%`
-              : isLoading
-                ? "Loading…"
-                : "Not available"
-          }
+          label={t("dashboard.signals.laborForce")}
+          value={labor ? `${labor.value.toFixed(1)}%` : isLoading ? t("dashboard.loading") : t("dashboard.notAvailable")}
           plain={
             labor
-              ? `${formatRoundedPct(labor.value)} of adults in ${country.name} are working or actively looking for work (${labor.year}).`
+              ? `${formatRoundedPct(labor.value)} ${t("dashboard.signals.laborForceDetail")} (${labor.year}).`
               : "World Bank labor force participation isn't available for this country right now."
           }
         />

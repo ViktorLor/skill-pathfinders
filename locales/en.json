@@ -1,0 +1,159 @@
+{
+  "nav": {
+    "buildProfile": "Build my profile",
+    "liveDashboard": "Live dashboard",
+    "login": "Login",
+    "logout": "Logout"
+  },
+  "footer": {
+    "tagline": "Open skills infrastructure for unmapped youth. A protocol, not a product — plug in local data and it works anywhere.",
+    "product": "Product",
+    "dataSources": "Data sources",
+    "about": "About",
+    "aboutText": "Built for youth, NGOs, training providers, and policymakers in LMICs.",
+    "github": "GitHub",
+    "copyright": "Open skills infrastructure.",
+    "automationCredit": "Automation data: Frey & Osborne (2017) · ILO Task Index · World Bank STEP · Wittgenstein Centre 2025–2035"
+  },
+  "landing": {
+    "badge": "A skill passport for unmapped youth",
+    "headline": "Your skills, seen.",
+    "headlineAccent": "Your opportunity, found.",
+    "subheadline": "Upload a CV or answer profile questions, and we will turn your experience into a structured skill profile.",
+    "buildProfile": "Build your skill profile",
+    "buildProfileHint": "Upload a CV, or answer questions if you do not have one.",
+    "uploadLabel": "Upload your CV",
+    "uploadFormats": "PDF or TXT",
+    "tabs": {
+      "upload": "Upload CV",
+      "interview": "No CV? Answer questions"
+    },
+    "fields": {
+      "fullName": "Full name",
+      "fullNamePlaceholder": "e.g. Amara Mensah",
+      "telephone": "Telephone number",
+      "telephonePlaceholder": "e.g. +233 24 123 4567",
+      "country": "Country",
+      "countryPlaceholder": "Select your country",
+      "city": "City",
+      "cityOptional": "(optional)",
+      "cityPlaceholder": "e.g. Nairobi",
+      "currentlyEmployed": "Are you currently employed?",
+      "willingToRelocate": "Are you willing to relocate for a job?",
+      "yes": "Yes",
+      "no": "No",
+      "chooseOne": "Choose one"
+    },
+    "buttons": {
+      "scanCv": "Scan CV",
+      "scanCvLoading": "Analyzing…",
+      "startNoCV": "Start without a CV",
+      "sendAnswer": "Send",
+      "viewProfile": "View your profile",
+      "saveProfile": "Save completed profile"
+    },
+    "auth": {
+      "signedIn": "Signed in as",
+      "register": "Register",
+      "login": "Login",
+      "logout": "Sign out",
+      "email": "Email",
+      "password": "Password",
+      "registering": "Registering…",
+      "loggingIn": "Logging in…",
+      "continueProfile": "Start questionnaire",
+      "startTitle": "Start with your account",
+      "startSubtitle": "Register or log in before the questionnaire so your profile data is saved to your account.",
+      "checkingProfile": "Checking for your saved profile…"
+    },
+    "errors": {
+      "loginRequired": "Please register or log in before adding questionnaire data.",
+      "fixedFieldsRequired": "Please add your name, telephone number, location, employment, and relocation before scanning the CV.",
+      "cvRequired": "Please upload a CV file."
+    },
+    "progress": {
+      "question": "Question",
+      "of": "of",
+      "complete": "Complete"
+    },
+    "profileInterview": "Profile interview",
+    "updatingProfile": "Updating profile",
+    "answerPlaceholder": "Answer in your own words"
+  },
+  "dashboard": {
+    "youthTitle": "Your country at a glance",
+    "policyTitle": "Regional Skills Intelligence Dashboard",
+    "youthSubtitle": "Live signals from the World Bank, framed for someone planning their work.",
+    "policySubtitle": "Aggregate WDI signals with full source attribution for policy and program teams.",
+    "youthView": "Youth view",
+    "youthViewSub": "For someone like me",
+    "policyView": "Policymaker view",
+    "policyViewSub": "Aggregate signals",
+    "loadingSignals": "Loading the latest signals from the World Bank for",
+    "notAvailable": "Not available",
+    "loading": "Loading…",
+    "whatThisMeans": "What this means for you",
+    "signals": {
+      "youthUnemployment": "Young people without a job",
+      "youthUnemploymentDetail": "of people aged 15–24 who want a job don't have one yet",
+      "wageWorkers": "Workers with formal pay",
+      "wageWorkersDetail": "of workers have wage or salaried employment. Most of the rest run their own work, day-to-day or seasonal.",
+      "laborForce": "People active in the workforce",
+      "laborForceDetail": "of adults are working or actively looking for work"
+    },
+    "sectors": {
+      "title": "Employment by sector",
+      "subtitle": "Share of workforce in each major sector"
+    },
+    "education": {
+      "title": "Returns to Education",
+      "subtitle": "Labour force participation rate by education level",
+      "basic": "Basic",
+      "intermediate": "Secondary",
+      "advanced": "Tertiary",
+      "noData": "World Bank education-by-level data is not available for this country.",
+      "higherParticipation": "higher participation for tertiary vs. basic"
+    },
+    "source": "Source",
+    "wdiTable": "Full WDI snapshot",
+    "profiles": {
+      "title": "Candidate profile aggregates",
+      "totalProfiles": "Total profiles",
+      "byTrack": "By track",
+      "bySeniority": "By seniority",
+      "topSkills": "Top skills"
+    }
+  },
+  "profile": {
+    "skillPassport": "Skill Passport",
+    "print": "Print",
+    "econometrics": "Labor market context",
+    "aiRisk": "AI exposure",
+    "jobs": "Nearby opportunities",
+    "education": "Education",
+    "experience": "Experience",
+    "skills": "Skills",
+    "languages": "Languages",
+    "coverLetter": "Generate cover letter",
+    "noData": "No data available"
+  },
+  "common": {
+    "learnMore": "Learn more",
+    "source": "Source",
+    "year": "Year",
+    "country": "Country",
+    "back": "Back",
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "loading": "Loading…",
+    "error": "Something went wrong.",
+    "notFound": "Page not found",
+    "notFoundDetail": "The page you're looking for doesn't exist or has been moved.",
+    "goHome": "Go home",
+    "yes": "Yes",
+    "no": "No",
+    "optional": "optional",
+    "of": "of"
+  }
+}
