@@ -176,6 +176,7 @@ In summary, while the current prototype demonstrates strong practical potential 
 # Technologies Tag
 TypeScript, Vite, Bun, JSON Data Pipelines, Localization , Cloudflare/Wrangler-ready Deployment, Modular Frontend Architecture, SQL
 
+# Github Link
 
 Additional 8 images,
 
