@@ -1,0 +1,248 @@
+{
+  "nav": {
+    "buildProfile": "Build my profile",
+    "liveDashboard": "Live dashboard",
+    "login": "Login",
+    "logout": "Logout"
+  },
+  "footer": {
+    "tagline": "Open skills infrastructure for unmapped youth. A protocol, not a product — plug in local data and it works anywhere.",
+    "product": "Product",
+    "dataSources": "Data sources",
+    "worldBankWdi": "World Bank WDI",
+    "about": "About",
+    "aboutText": "Built for youth, NGOs, training providers, and policymakers in LMICs.",
+    "github": "GitHub",
+    "copyright": "Open skills infrastructure.",
+    "automationCredit": "Automation data: Frey & Osborne (2017) · ILO Task Index · World Bank STEP · Wittgenstein Centre 2025–2035"
+  },
+  "landing": {
+    "badge": "A skill passport for unmapped youth",
+    "headline": "Your skills, seen.",
+    "headlineAccent": "Your opportunity, found.",
+    "subheadline": "Upload a CV or answer profile questions, and we will turn your experience into a structured skill profile.",
+    "buildProfile": "Build your skill profile",
+    "buildProfileHint": "Upload a CV, or answer questions if you do not have one.",
+    "uploadLabel": "Upload your CV",
+    "uploadFormats": "PDF or TXT",
+    "tabs": {
+      "upload": "Upload CV",
+      "interview": "No CV? Answer questions"
+    },
+    "fields": {
+      "fullName": "Full name",
+      "fullNamePlaceholder": "e.g. Amara Mensah",
+      "telephone": "Telephone number",
+      "telephonePlaceholder": "e.g. +233 24 123 4567",
+      "country": "Country",
+      "countryPlaceholder": "Select your country",
+      "city": "City",
+      "cityOptional": "(optional)",
+      "cityPlaceholder": "e.g. Nairobi",
+      "currentlyEmployed": "Are you currently employed?",
+      "willingToRelocate": "Are you willing to relocate for a job?",
+      "yes": "Yes",
+      "no": "No",
+      "chooseOne": "Choose one"
+    },
+    "buttons": {
+      "scanCv": "Scan CV",
+      "scanCvLoading": "Analyzing…",
+      "startNoCV": "Start without a CV",
+      "sendAnswer": "Send",
+      "viewProfile": "View your profile",
+      "saveProfile": "Save completed profile"
+    },
+    "auth": {
+      "signedIn": "Signed in as",
+      "register": "Register",
+      "login": "Login",
+      "logout": "Sign out",
+      "email": "Email",
+      "password": "Password",
+      "registering": "Registering…",
+      "loggingIn": "Logging in…",
+      "continueProfile": "Start questionnaire",
+      "startTitle": "Start with your account",
+      "startSubtitle": "Register or log in before the questionnaire so your profile data is saved to your account.",
+      "checkingProfile": "Checking for your saved profile…"
+    },
+    "errors": {
+      "loginRequired": "Please register or log in before adding questionnaire data.",
+      "fixedFieldsRequired": "Please add your name, telephone number, location, employment, and relocation before scanning the CV.",
+      "cvRequired": "Please upload a CV file."
+    },
+    "progress": {
+      "question": "Question",
+      "of": "of",
+      "complete": "Complete"
+    },
+    "profileInterview": "Profile interview",
+    "updatingProfile": "Updating profile",
+    "answerPlaceholder": "Answer in your own words"
+  },
+  "dashboard": {
+    "youthTitle": "Your country at a glance",
+    "policyTitle": "Regional Skills Intelligence Dashboard",
+    "youthSubtitle": "Live signals from the World Bank, framed for someone planning their work.",
+    "policySubtitle": "Aggregate WDI signals with full source attribution for policy and program teams.",
+    "youthView": "Youth view",
+    "youthViewSub": "For someone like me",
+    "policyView": "Policymaker view",
+    "policyViewSub": "Aggregate signals",
+    "loadingSignals": "Loading the latest signals from the World Bank for",
+    "notAvailable": "Not available",
+    "loading": "Loading…",
+    "whatThisMeans": "What this means for you",
+    "signals": {
+      "youthUnemployment": "Young people without a job",
+      "youthUnemploymentDetail": "of people aged 15–24 who want a job don't have one yet",
+      "wageWorkers": "Workers with formal pay",
+      "wageWorkersDetail": "of workers have wage or salaried employment. Most of the rest run their own work, day-to-day or seasonal.",
+      "laborForce": "People active in the workforce",
+      "laborForceDetail": "of adults are working or actively looking for work"
+    },
+    "sectors": {
+      "title": "Employment by sector",
+      "subtitle": "Share of workforce in each major sector"
+    },
+    "education": {
+      "title": "Returns to Education",
+      "subtitle": "Labour force participation rate by education level",
+      "basic": "Basic",
+      "intermediate": "Secondary",
+      "advanced": "Tertiary",
+      "noData": "World Bank education-by-level data is not available for this country.",
+      "higherParticipation": "higher participation for tertiary vs. basic"
+    },
+    "source": "Source",
+    "wdiTable": "Full WDI snapshot",
+    "profiles": {
+      "title": "Candidate profile aggregates",
+      "totalProfiles": "Total profiles",
+      "byTrack": "By track",
+      "bySeniority": "By seniority",
+      "topSkills": "Top skills"
+    }
+  },
+  "profile": {
+    "skillPassport": "Skill Passport",
+    "print": "Print",
+    "econometrics": "Labor market context",
+    "aiRisk": "AI exposure",
+    "jobs": "Nearby opportunities",
+    "education": "Education",
+    "experience": "Experience",
+    "skills": "Skills",
+    "languages": "Languages",
+    "coverLetter": "Generate cover letter",
+    "noData": "No data available"
+  },
+  "common": {
+    "learnMore": "Learn more",
+    "source": "Source",
+    "year": "Year",
+    "country": "Country",
+    "back": "Back",
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "loading": "Loading…",
+    "error": "Something went wrong.",
+    "notFound": "Page not found",
+    "notFoundDetail": "The page you're looking for doesn't exist or has been moved.",
+    "goHome": "Go home",
+    "yes": "Yes",
+    "no": "No",
+    "optional": "optional",
+    "of": "of"
+  },
+  "router": {
+    "errorDetail": "An unexpected error occurred. Please try again.",
+    "tryAgain": "Try again"
+  },
+  "login": {
+    "subtitle": "Sign in with the email and password saved in the SQL database.",
+    "noAccountYet": "No account yet?",
+    "errors": {
+      "couldNotLogin": "Could not log in."
+    }
+  },
+  "register": {
+    "subtitle": "Create an account with an email and password.",
+    "name": "Name",
+    "alreadyHaveAccount": "Already have an account?",
+    "errors": {
+      "couldNotCreateAccount": "Could not create the account."
+    }
+  },
+  "onboard": {
+    "profileUnavailable": "Profile unavailable",
+    "noProfileSelected": "No profile was selected.",
+    "openingProfile": "Opening profile"
+  },
+  "countryCombobox": {
+    "selectCountry": "Select country",
+    "searchCountries": "Search countries...",
+    "noCountryFound": "No country found."
+  },
+  "demo": {
+    "button": "Demo",
+    "profiles": "Demo profiles",
+    "techKwame": "Tech - Kwame",
+    "tradeAmara": "Trade - Amara",
+    "agriKofi": "Agri - Kofi"
+  },
+  "coverLetter": {
+    "title": "Cover letter - {{title}}",
+    "atCompany": "at {{company}}",
+    "drafting": "Drafting your letter...",
+    "copy": "Copy",
+    "downloadTxt": "Download .txt"
+  },
+  "chatInterview": {
+    "title": "Skill interview",
+    "questionOf": "Question {{current}} of {{total}}",
+    "placeholder": "Type your answer...",
+    "finish": "Finish",
+    "nextQuestion": "Next question"
+  },
+  "loadingPipeline": {
+    "title": "Building your Skill Passport",
+    "subtitle": "This usually takes a few seconds."
+  },
+  "aiRisk": {
+    "title": "AI readiness and displacement risk",
+    "subtitle": "Calibrated for LMIC labor markets using Frey-Osborne automation probabilities, ILO task indices and World Bank STEP. Outlook uses Wittgenstein Centre 2025-2035 projections.",
+    "overall": "Overall:",
+    "directlyIndexedSkills": "Directly indexed skills: {{indexedSkillCount}}/{{totalSkillCount}}",
+    "unmatchedSkillsOnly": "Unmatched skills stay in the profile-level estimate only.",
+    "moreCount": "+{{count}} more",
+    "matchedPerSkillExposure": "Matched per-skill exposure",
+    "noExtractedSkills": "No extracted skills matched a direct automation or occupation index yet. The overall view uses the candidate's track, categories and 2025-2035 trajectory instead.",
+    "usBaseline": "(US baseline {{baseline}})",
+    "showSources": "Show sources",
+    "hideSources": "Hide sources",
+    "source": "Source:",
+    "resilientSkillsTitle": "Your resilient skills",
+    "resilientSkillsSubtitle": "Skills you already have that are unlikely to be displaced by AI in the next decade.",
+    "adjacentSkillsTitle": "Adjacent skills to learn",
+    "adjacentSkillsSubtitle": "Close to what you already do - small step to learn, big resilience gain.",
+    "landscapeTitle": "Landscape 2025 to 2035",
+    "risingClusters": "Rising clusters in your portfolio",
+    "decliningClusters": "Declining clusters in your portfolio",
+    "by2035Increase": "+{{percent}}% by 2035",
+    "by2035Percent": "{{percent}}% by 2035",
+    "wittgensteinSource": "Source: Wittgenstein Centre Human Capital Data Explorer (SSP2, 2025-2035)",
+    "level": {
+      "low": "Low AI risk",
+      "moderate": "Moderate AI risk",
+      "high": "High AI risk"
+    },
+    "outlook": {
+      "rising": "Rising 2025-35",
+      "stable": "Stable 2025-35",
+      "declining": "Declining 2025-35"
+    }
+  }
+}

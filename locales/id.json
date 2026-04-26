@@ -1,0 +1,159 @@
+{
+  "nav": {
+    "buildProfile": "Buat profil saya",
+    "liveDashboard": "Dasbor langsung",
+    "login": "Masuk",
+    "logout": "Keluar"
+  },
+  "footer": {
+    "tagline": "Infrastruktur keterampilan terbuka untuk kaum muda yang belum terpetakan. Sebuah protokol, bukan produk - colokkan data lokal dan berfungsi di mana saja.",
+    "product": "Produk",
+    "dataSources": "Sumber data",
+    "about": "Tentang",
+    "aboutText": "Dibangun untuk kaum muda, LSM, penyedia pelatihan, dan pembuat kebijakan di LMIC.",
+    "github": "GitHub",
+    "copyright": "Infrastruktur keterampilan terbuka.",
+    "automationCredit": "Data otomatisasi: Frey & Osborne (2017) - Indeks Tugas ILO - World Bank STEP - Wittgenstein Centre 2025-2035"
+  },
+  "landing": {
+    "badge": "Paspor keterampilan untuk kaum muda yang belum terpetakan",
+    "headline": "Keterampilan Anda, terlihat.",
+    "headlineAccent": "Kesempatan Anda, ditemukan.",
+    "subheadline": "Unggah CV atau jawab pertanyaan profil, dan kami akan mengubah pengalaman Anda menjadi profil keahlian yang terstruktur.",
+    "buildProfile": "Bangun profil keahlian Anda",
+    "buildProfileHint": "Unggah CV, atau jawab pertanyaan jika Anda tidak memilikinya.",
+    "uploadLabel": "Unggah CV Anda",
+    "uploadFormats": "PDF atau TXT",
+    "tabs": {
+      "upload": "Unggah CV",
+      "interview": "Tidak ada CV? Menjawab pertanyaan"
+    },
+    "fields": {
+      "fullName": "Nama lengkap",
+      "fullNamePlaceholder": "misalnya Amara Mensah",
+      "telephone": "Nomor telepon",
+      "telephonePlaceholder": "contoh: +233 24 123 4567",
+      "country": "Negara",
+      "countryPlaceholder": "Pilih negara Anda",
+      "city": "Kota",
+      "cityOptional": "(opsional)",
+      "cityPlaceholder": "misalnya Nairobi",
+      "currentlyEmployed": "Apakah Anda saat ini bekerja?",
+      "willingToRelocate": "Apakah Anda bersedia pindah kerja?",
+      "yes": "Ya.",
+      "no": "Tidak.",
+      "chooseOne": "Pilih salah satu"
+    },
+    "buttons": {
+      "scanCv": "Pindai CV",
+      "scanCvLoading": "Menganalisis...",
+      "startNoCV": "Mulai tanpa CV",
+      "sendAnswer": "Kirim",
+      "viewProfile": "Lihat profil Anda",
+      "saveProfile": "Menyimpan profil yang sudah selesai"
+    },
+    "auth": {
+      "signedIn": "Masuk sebagai",
+      "register": "Daftar",
+      "login": "Masuk",
+      "logout": "Keluar",
+      "email": "Email",
+      "password": "Kata sandi",
+      "registering": "Mendaftar...",
+      "loggingIn": "Masuk...",
+      "continueProfile": "Mulai kuesioner",
+      "startTitle": "Mulai dengan akun Anda",
+      "startSubtitle": "Daftarkan diri Anda atau login sebelum mengisi kuesioner agar data profil Anda tersimpan di akun Anda.",
+      "checkingProfile": "Memeriksa profil Anda yang tersimpan..."
+    },
+    "errors": {
+      "loginRequired": "Silakan mendaftar atau masuk sebelum menambahkan data kuesioner.",
+      "fixedFieldsRequired": "Tambahkan nama, nomor telepon, lokasi, pekerjaan, dan relokasi Anda sebelum memindai CV.",
+      "cvRequired": "Silakan unggah file CV."
+    },
+    "progress": {
+      "question": "Pertanyaan",
+      "of": "dari",
+      "complete": "Lengkap"
+    },
+    "profileInterview": "Wawancara profil",
+    "updatingProfile": "Memperbarui profil",
+    "answerPlaceholder": "Jawab dengan kata-kata Anda sendiri"
+  },
+  "dashboard": {
+    "youthTitle": "Sekilas tentang negara Anda",
+    "policyTitle": "Dasbor Intelijen Keterampilan Regional",
+    "youthSubtitle": "Sinyal langsung dari Bank Dunia, dibingkai untuk seseorang yang merencanakan pekerjaan mereka.",
+    "policySubtitle": "Mengagregasi sinyal WDI dengan atribusi sumber lengkap untuk tim kebijakan dan program.",
+    "youthView": "Pandangan kaum muda",
+    "youthViewSub": "Untuk orang seperti saya",
+    "policyView": "Pandangan pembuat kebijakan",
+    "policyViewSub": "Sinyal agregat",
+    "loadingSignals": "Memuat sinyal terbaru dari Bank Dunia untuk",
+    "notAvailable": "Tidak tersedia",
+    "loading": "Memuat...",
+    "whatThisMeans": "Apa artinya ini bagi Anda",
+    "signals": {
+      "youthUnemployment": "Kaum muda tanpa pekerjaan",
+      "youthUnemploymentDetail": "orang berusia 15-24 tahun yang menginginkan pekerjaan belum memiliki pekerjaan",
+      "wageWorkers": "Pekerja dengan gaji formal",
+      "wageWorkersDetail": "pekerja memiliki pekerjaan dengan upah atau gaji. Sebagian besar sisanya menjalankan pekerjaan mereka sendiri, baik secara harian maupun musiman.",
+      "laborForce": "Orang-orang yang aktif dalam angkatan kerja",
+      "laborForceDetail": "orang dewasa bekerja atau secara aktif mencari pekerjaan"
+    },
+    "sectors": {
+      "title": "Pekerjaan berdasarkan sektor",
+      "subtitle": "Persentase tenaga kerja di setiap sektor utama"
+    },
+    "education": {
+      "title": "Kembali ke Pendidikan",
+      "subtitle": "Tingkat partisipasi angkatan kerja berdasarkan tingkat pendidikan",
+      "basic": "Dasar",
+      "intermediate": "Sekunder",
+      "advanced": "Tersier",
+      "noData": "Data pendidikan menurut tingkat pendidikan dari Bank Dunia tidak tersedia untuk negara ini.",
+      "higherParticipation": "partisipasi yang lebih tinggi untuk tersier vs. dasar"
+    },
+    "source": "Sumber",
+    "wdiTable": "Cuplikan WDI lengkap",
+    "profiles": {
+      "title": "Agregat profil kandidat",
+      "totalProfiles": "Total profil",
+      "byTrack": "Dengan trek",
+      "bySeniority": "Berdasarkan senioritas",
+      "topSkills": "Keterampilan terbaik"
+    }
+  },
+  "profile": {
+    "skillPassport": "Paspor Keterampilan",
+    "print": "Mencetak",
+    "econometrics": "Konteks pasar tenaga kerja",
+    "aiRisk": "Paparan AI",
+    "jobs": "Peluang terdekat",
+    "education": "Pendidikan",
+    "experience": "Pengalaman",
+    "skills": "Keterampilan",
+    "languages": "Bahasa",
+    "coverLetter": "Buat surat lamaran",
+    "noData": "Tidak ada data yang tersedia"
+  },
+  "common": {
+    "learnMore": "Pelajari lebih lanjut",
+    "source": "Sumber",
+    "year": "Tahun",
+    "country": "Negara",
+    "back": "Kembali",
+    "save": "Simpan",
+    "cancel": "Batal",
+    "close": "Tutup",
+    "loading": "Memuat...",
+    "error": "Ada yang tidak beres.",
+    "notFound": "Halaman tidak ditemukan",
+    "notFoundDetail": "Halaman yang Anda cari tidak ada atau telah dipindahkan.",
+    "goHome": "Pulanglah.",
+    "yes": "Ya.",
+    "no": "Tidak.",
+    "optional": "opsional",
+    "of": "dari"
+  }
+}

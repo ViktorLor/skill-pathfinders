@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Sparkles, X } from "lucide-react";
 
 export function DemoButton() {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -18,7 +20,7 @@ export function DemoButton() {
         <div className="mb-2 w-64 rounded-lg border border-border bg-card p-3 shadow-lg">
           <div className="mb-2 flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Demo profiles
+              {t("demo.profiles")}
             </span>
             <button
               onClick={() => setOpen(false)}
@@ -32,19 +34,19 @@ export function DemoButton() {
               onClick={() => go("demo-tech")}
               className="rounded-md border-l-4 border-navy bg-surface px-3 py-2 text-left text-sm hover:bg-muted"
             >
-              💻 Tech — Kwame
+              {t("demo.techKwame")}
             </button>
             <button
               onClick={() => go("demo-trade")}
               className="rounded-md border-l-4 border-sky bg-surface px-3 py-2 text-left text-sm hover:bg-muted"
             >
-              🔧 Trade — Amara
+              {t("demo.tradeAmara")}
             </button>
             <button
               onClick={() => go("demo-agri")}
               className="rounded-md border-l-4 border-greenT bg-surface px-3 py-2 text-left text-sm hover:bg-muted"
             >
-              🌾 Agri — Kofi
+              {t("demo.agriKofi")}
             </button>
           </div>
         </div>
@@ -56,7 +58,7 @@ export function DemoButton() {
         className="rounded-full shadow-md"
       >
         <Sparkles className="mr-1 h-4 w-4" />
-        Demo
+        {t("demo.button")}
       </Button>
     </div>
   );

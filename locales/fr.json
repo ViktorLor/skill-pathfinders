@@ -1,0 +1,159 @@
+{
+  "nav": {
+    "buildProfile": "Créer mon profil",
+    "liveDashboard": "Tableau de bord en direct",
+    "login": "Connexion",
+    "logout": "Déconnexion"
+  },
+  "footer": {
+    "tagline": "Une infrastructure de compétences ouverte pour les jeunes non cartographiés. Un protocole, pas un produit - branchez des données locales et cela fonctionne partout.",
+    "product": "Produit",
+    "dataSources": "Sources de données",
+    "about": "A propos de",
+    "aboutText": "Conçu pour les jeunes, les ONG, les prestataires de formation et les décideurs politiques dans les PRFM.",
+    "github": "GitHub",
+    "copyright": "Infrastructure de compétences ouverte.",
+    "automationCredit": "Données d'automatisation : Frey & Osborne (2017) - ILO Task Index - World Bank STEP - Wittgenstein Centre 2025-2035"
+  },
+  "landing": {
+    "badge": "Un passeport de compétences pour les jeunes non cartographiés",
+    "headline": "Vos compétences, vues.",
+    "headlineAccent": "Votre chance, trouvée.",
+    "subheadline": "Téléchargez un CV ou répondez aux questions du profil, et nous transformerons votre expérience en un profil de compétences structuré.",
+    "buildProfile": "Établissez votre profil de compétences",
+    "buildProfileHint": "Téléchargez un CV ou répondez aux questions si vous n'en avez pas.",
+    "uploadLabel": "Téléchargez votre CV",
+    "uploadFormats": "PDF ou TXT",
+    "tabs": {
+      "upload": "Télécharger le CV",
+      "interview": "Pas de CV ? Répondre aux questions"
+    },
+    "fields": {
+      "fullName": "Nom complet",
+      "fullNamePlaceholder": "par exemple Amara Mensah",
+      "telephone": "Numéro de téléphone",
+      "telephonePlaceholder": "par exemple : +233 24 123 4567",
+      "country": "Pays",
+      "countryPlaceholder": "Sélectionnez votre pays",
+      "city": "Ville",
+      "cityOptional": "(facultatif)",
+      "cityPlaceholder": "par exemple, Nairobi",
+      "currentlyEmployed": "Êtes-vous actuellement employé(e) ?",
+      "willingToRelocate": "Êtes-vous prêt à déménager pour un emploi ?",
+      "yes": "Oui",
+      "no": "Non",
+      "chooseOne": "Choisissez une option"
+    },
+    "buttons": {
+      "scanCv": "Scan CV",
+      "scanCvLoading": "Analyser...",
+      "startNoCV": "Commencer sans CV",
+      "sendAnswer": "Envoyer",
+      "viewProfile": "Voir votre profil",
+      "saveProfile": "Sauvegarder le profil complété"
+    },
+    "auth": {
+      "signedIn": "Inscrit en tant que",
+      "register": "Registre",
+      "login": "Connexion",
+      "logout": "S'inscrire",
+      "email": "Courriel",
+      "password": "Mot de passe",
+      "registering": "S'inscrire...",
+      "loggingIn": "Connexion...",
+      "continueProfile": "Démarrer le questionnaire",
+      "startTitle": "Commencez par votre compte",
+      "startSubtitle": "Inscrivez-vous ou connectez-vous avant le questionnaire pour que les données de votre profil soient enregistrées dans votre compte.",
+      "checkingProfile": "Vérification de votre profil sauvegardé..."
+    },
+    "errors": {
+      "loginRequired": "Veuillez vous enregistrer ou vous connecter avant d'ajouter des données au questionnaire.",
+      "fixedFieldsRequired": "Veuillez ajouter votre nom, votre numéro de téléphone, votre lieu de travail, votre emploi et votre lieu de résidence avant de scanner le CV.",
+      "cvRequired": "Veuillez télécharger un CV."
+    },
+    "progress": {
+      "question": "Question",
+      "of": "de",
+      "complete": "Compléter"
+    },
+    "profileInterview": "Entretien de profil",
+    "updatingProfile": "Mise à jour du profil",
+    "answerPlaceholder": "Réponse dans vos propres mots"
+  },
+  "dashboard": {
+    "youthTitle": "Votre pays en un coup d'œil",
+    "policyTitle": "Tableau de bord régional de l'intelligence des compétences",
+    "youthSubtitle": "Signaux en direct de la Banque mondiale, encadrés pour ceux qui planifient leur travail.",
+    "policySubtitle": "Agrégation des signaux WDI avec attribution complète de la source pour les équipes chargées des politiques et des programmes.",
+    "youthView": "Le point de vue des jeunes",
+    "youthViewSub": "Pour quelqu'un comme moi",
+    "policyView": "Point de vue des décideurs politiques",
+    "policyViewSub": "Signaux agrégés",
+    "loadingSignals": "Chargement des derniers signaux de la Banque mondiale pour",
+    "notAvailable": "Non disponible",
+    "loading": "Chargement...",
+    "whatThisMeans": "Ce que cela signifie pour vous",
+    "signals": {
+      "youthUnemployment": "Jeunes sans emploi",
+      "youthUnemploymentDetail": "des personnes âgées de 15 à 24 ans qui souhaitent un emploi n'en ont pas encore",
+      "wageWorkers": "Travailleurs rémunérés de manière formelle",
+      "wageWorkersDetail": "des travailleurs ont un emploi salarié. La plupart des autres travaillent à leur compte, au jour le jour ou de manière saisonnière.",
+      "laborForce": "Personnes actives sur le marché du travail",
+      "laborForceDetail": "des adultes travaillent ou recherchent activement un emploi"
+    },
+    "sectors": {
+      "title": "Emploi par secteur",
+      "subtitle": "Part de la main-d'œuvre dans chaque grand secteur"
+    },
+    "education": {
+      "title": "Rendement de l'éducation",
+      "subtitle": "Taux d'activité par niveau d'éducation",
+      "basic": "De base",
+      "intermediate": "Secondaire",
+      "advanced": "Tertiaire",
+      "noData": "Les données de la Banque mondiale sur l'éducation par niveau ne sont pas disponibles pour ce pays.",
+      "higherParticipation": "participation plus élevée pour l'enseignement supérieur que pour l'enseignement de base"
+    },
+    "source": "Source",
+    "wdiTable": "Aperçu complet de l'indice des prix à la consommation",
+    "profiles": {
+      "title": "Agrégats de profils de candidats",
+      "totalProfiles": "Total des profils",
+      "byTrack": "Par voie",
+      "bySeniority": "Par ancienneté",
+      "topSkills": "Compétences de pointe"
+    }
+  },
+  "profile": {
+    "skillPassport": "Passeport de compétences",
+    "print": "Imprimer",
+    "econometrics": "Contexte du marché du travail",
+    "aiRisk": "Exposition à l'IA",
+    "jobs": "Opportunités à proximité",
+    "education": "L'éducation",
+    "experience": "Expérience",
+    "skills": "Compétences",
+    "languages": "Langues",
+    "coverLetter": "Rédiger une lettre de motivation",
+    "noData": "Pas de données disponibles"
+  },
+  "common": {
+    "learnMore": "En savoir plus",
+    "source": "Source",
+    "year": "Année",
+    "country": "Pays",
+    "back": "Retour",
+    "save": "Économiser",
+    "cancel": "Annuler",
+    "close": "Fermer",
+    "loading": "Chargement...",
+    "error": "Quelque chose n'a pas fonctionné.",
+    "notFound": "Page non trouvée",
+    "notFoundDetail": "La page que vous recherchez n'existe pas ou a été déplacée.",
+    "goHome": "Rentrer à la maison",
+    "yes": "Oui",
+    "no": "Non",
+    "optional": "facultatif",
+    "of": "de"
+  }
+}

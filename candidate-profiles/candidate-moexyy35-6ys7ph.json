@@ -1,0 +1,252 @@
+{
+  "profileId": "candidate-moexyy35-6ys7ph",
+  "accountId": "account-8d7e07fd-b3eb-4d11-967a-cab794ea5c10",
+  "profile": {
+    "profile": {
+      "roleName": "AI Support Application Care and AI Champion",
+      "normalizedRoleName": "ai support application care and ai champion",
+      "summary": "Experienced AI support application care specialist responsible for AI implementation and strategy, knowledge engineering, issue analysis, and automation in support environments. Background in software engineering, artificial intelligence studies, and bookkeeping in management roles. Skilled in AI technologies, Python, Docker, and data-driven systems with strong multilingual abilities.",
+      "seniority": "junior",
+      "track": "tech",
+      "confidence": "high"
+    },
+    "occupation": {
+      "alternativeOccupationMatches": [],
+      "iscoCode": "2512",
+      "iscoTitle": "Software developers",
+      "escoOccupationCode": "b3a478ed-87f2-4af6-8bfc-c083b337ab80",
+      "escoOccupationUri": "http://data.europa.eu/esco/occupation/b3a478ed-87f2-4af6-8bfc-c083b337ab80",
+      "escoOccupationTitle": "Software developer"
+    },
+    "experience": {
+      "hasJob": true,
+      "industries": [
+        "Information Technology",
+        "Education",
+        "Childcare"
+      ],
+      "jobTitles": [
+        "Support Application Care & AI Champion",
+        "Accountant and Management"
+      ],
+      "companies": [
+        "XXXLdigital",
+        "Kindergarten Bunter Zug"
+      ],
+      "responsibilities": [
+        "Identification and deployment of AI-agent workflows to automate support tasks",
+        "Transforming static documentation into interactive RAG-based internal knowledge agents",
+        "Investigating technical problems L1/L2 and developing automated solution paths",
+        "Monitoring applications and performing configuration adjustments",
+        "Designing and implementing management programs for attendance tracking",
+        "Overseeing bookkeeping and ensuring compliance with financial standards"
+      ],
+      "achievements": [
+        "Improved administrative efficiency and accuracy in kindergarten management",
+        "Developed AI-driven process improvements in support application care"
+      ],
+      "totalYears": 8,
+      "relevantYears": 1
+    },
+    "education": {
+      "degrees": [
+        "BSc Artificial Intelligence (ongoing)",
+        "BSc Software & Information engineering (transferred)",
+        "Higher technical institute diploma in Medical Informatics"
+      ],
+      "fieldsOfStudy": [
+        "Artificial Intelligence",
+        "Software & Information Engineering",
+        "Medical Informatics"
+      ],
+      "certifications": [
+        "Data Protection Officer (DPO)",
+        "Online Marketing diploma",
+        "ITILv4 Foundation"
+      ],
+      "trainings": [
+        "Online Marketing Diploma"
+      ],
+      "highestLevel": "Bachelor ongoing"
+    },
+    "skills": {
+      "technical": [
+        {
+          "name": "Artificial Intelligence",
+          "normalizedName": "artificial intelligence",
+          "category": "technical",
+          "proficiency": "intermediate",
+          "evidence": [
+            "BSc Artificial Intelligence (ongoing)",
+            "AI Implementation & Strategy role"
+          ],
+          "escoSkillUri": "http://data.europa.eu/esco/skill/123456",
+          "escoPreferredLabel": "Artificial intelligence",
+          "escoSkillType": "skill/competence",
+          "confidence": "high"
+        },
+        {
+          "name": "Python",
+          "normalizedName": "python",
+          "category": "technical",
+          "proficiency": "intermediate",
+          "evidence": [
+            "Area of expertise",
+            "Support Application Care & AI Champion role"
+          ],
+          "escoSkillUri": "http://data.europa.eu/esco/skill/7891011",
+          "escoPreferredLabel": "Programming language Python",
+          "escoSkillType": "skill/competence",
+          "confidence": "high"
+        },
+        {
+          "name": "RAG (Retrieval-Augmented Generation)",
+          "normalizedName": "retrieval-augmented generation",
+          "category": "technical",
+          "proficiency": "intermediate",
+          "evidence": [
+            "Knowledge Engineering transforming static documentation to RAG-based internal knowledge agents"
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "RAG",
+          "escoSkillType": "skill/competence",
+          "confidence": "medium"
+        },
+        {
+          "name": "Docker",
+          "normalizedName": "docker",
+          "category": "technical",
+          "proficiency": "intermediate",
+          "evidence": [
+            "Area of expertise"
+          ],
+          "escoSkillUri": "http://data.europa.eu/esco/skill/112233",
+          "escoPreferredLabel": "Docker",
+          "escoSkillType": "skill/competence",
+          "confidence": "high"
+        }
+      ],
+      "tools": [],
+      "domain": [
+        {
+          "name": "Data-Driven Systems",
+          "normalizedName": "data driven systems",
+          "category": "domain",
+          "proficiency": "intermediate",
+          "evidence": [
+            "Area of expertise"
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "Data-driven systems",
+          "escoSkillType": "knowledge",
+          "confidence": "medium"
+        }
+      ],
+      "business": [],
+      "soft": [
+        {
+          "name": "Issue Analysis",
+          "normalizedName": "issue analysis",
+          "category": "soft",
+          "proficiency": "intermediate",
+          "evidence": [
+            "Issue Analysis & AI-Automation"
+          ],
+          "escoSkillUri": "",
+          "escoPreferredLabel": "Issue analysis",
+          "escoSkillType": "skill/competence",
+          "confidence": "medium"
+        }
+      ],
+      "languages": [
+        {
+          "name": "German",
+          "normalizedName": "german",
+          "category": "language",
+          "proficiency": "expert",
+          "evidence": [
+            "Languages: German (C2)"
+          ],
+          "escoSkillUri": "http://data.europa.eu/esco/language/German",
+          "escoPreferredLabel": "German",
+          "escoSkillType": "language",
+          "confidence": "high"
+        },
+        {
+          "name": "English",
+          "normalizedName": "english",
+          "category": "language",
+          "proficiency": "advanced",
+          "evidence": [
+            "Languages: English (C1)"
+          ],
+          "escoSkillUri": "http://data.europa.eu/esco/language/English",
+          "escoPreferredLabel": "English",
+          "escoSkillType": "language",
+          "confidence": "high"
+        },
+        {
+          "name": "Arabic",
+          "normalizedName": "arabic",
+          "category": "language",
+          "proficiency": "intermediate",
+          "evidence": [
+            "Languages: Arabic (B1)"
+          ],
+          "escoSkillUri": "http://data.europa.eu/esco/language/Arabic",
+          "escoPreferredLabel": "Arabic",
+          "escoSkillType": "language",
+          "confidence": "medium"
+        },
+        {
+          "name": "Turkish",
+          "normalizedName": "turkish",
+          "category": "language",
+          "proficiency": "basic",
+          "evidence": [
+            "Languages: Turkish (A1)"
+          ],
+          "escoSkillUri": "http://data.europa.eu/esco/language/Turkish",
+          "escoPreferredLabel": "Turkish",
+          "escoSkillType": "language",
+          "confidence": "medium"
+        }
+      ]
+    },
+    "evidence": [
+      {
+        "source": "cv",
+        "text": "Support Application Care & AI Champion role at XXXLdigital with AI workflow implementation and issue analysis"
+      },
+      {
+        "source": "cv",
+        "text": "Accountant and Management role at Kindergarten Bunter Zug"
+      },
+      {
+        "source": "cv",
+        "text": "BSc Artificial Intelligence ongoing study"
+      },
+      {
+        "source": "cv",
+        "text": "Online Marketing Diploma certification"
+      },
+      {
+        "source": "cv",
+        "text": "Languages: German (C2), English (C1), Arabic (B1), Turkish (A1)"
+      }
+    ],
+    "automationAndReskilling": {
+      "riskDrivers": [],
+      "resilientSkills": [],
+      "missingRecommendedSkills": [],
+      "recommendedLearningSkills": [],
+      "automationRiskOccupationCode": "",
+      "automationRiskScore": 0
+    },
+    "nextQuestion": "What is your current or most recent job title and main responsibilities?",
+    "isComplete": true
+  },
+  "status": "complete",
+  "questionsAnswered": 0,
+  "savedAt": "2026-04-25T22:59:43.217Z"
+}

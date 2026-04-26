@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -19,6 +20,7 @@ export function ChatInterview({
   accent: Accent;
   onComplete: (answers: string[]) => void;
 }) {
+  const { t } = useTranslation();
   const [idx, setIdx] = useState(0);
   const [answers, setAnswers] = useState<string[]>([]);
   const [current, setCurrent] = useState("");
@@ -38,9 +40,9 @@ export function ChatInterview({
 
   return (
     <div>
-      <h2 className="text-xl font-semibold text-navy">Skill interview</h2>
+      <h2 className="text-xl font-semibold text-navy">{t("chatInterview.title")}</h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        Question {idx + 1} of {questions.length}
+        {t("chatInterview.questionOf", { current: idx + 1, total: questions.length })}
       </p>
 
       {/* Conversation history */}
@@ -67,7 +69,7 @@ export function ChatInterview({
           value={current}
           onChange={(e) => setCurrent(e.target.value)}
           rows={4}
-          placeholder="Type your answer..."
+          placeholder={t("chatInterview.placeholder")}
         />
       </div>
 
@@ -77,7 +79,7 @@ export function ChatInterview({
           disabled={current.trim().length === 0}
           className={`rounded-md ${accentBg[accent]}`}
         >
-          {last ? "Finish" : "Next question"}
+          {last ? t("chatInterview.finish") : t("chatInterview.nextQuestion")}
         </Button>
       </div>
     </div>

@@ -1,0 +1,159 @@
+{
+  "nav": {
+    "buildProfile": "Crear mi perfil",
+    "liveDashboard": "Cuadro de mandos en directo",
+    "login": "Inicio de sesión",
+    "logout": "Cierre de sesión"
+  },
+  "footer": {
+    "tagline": "Infraestructura abierta de competencias para una juventud sin mapas. Un protocolo, no un producto: conecte los datos locales y funcionará en cualquier lugar.",
+    "product": "Producto",
+    "dataSources": "Fuentes de datos",
+    "about": "Acerca de",
+    "aboutText": "Dirigido a jóvenes, ONG, proveedores de formación y responsables políticos de los PBI y los PIM.",
+    "github": "GitHub",
+    "copyright": "Infraestructura abierta de competencias.",
+    "automationCredit": "Datos de automatización: Frey & Osborne (2017) - Índice de tareas de la OIT - STEP del Banco Mundial - Centro Wittgenstein 2025-2035."
+  },
+  "landing": {
+    "badge": "Pasaporte de competencias para jóvenes sin mapa",
+    "headline": "Tus habilidades, vistas.",
+    "headlineAccent": "Tu oportunidad, encontrada.",
+    "subheadline": "Cargue su CV o responda a las preguntas del perfil y convertiremos su experiencia en un perfil de competencias estructurado.",
+    "buildProfile": "Construye tu perfil de competencias",
+    "buildProfileHint": "Cargue un CV o responda a las preguntas si no dispone de uno.",
+    "uploadLabel": "Cargue su CV",
+    "uploadFormats": "PDF o TXT",
+    "tabs": {
+      "upload": "Cargar CV",
+      "interview": "¿No tiene CV? Responde a las preguntas"
+    },
+    "fields": {
+      "fullName": "Nombre y apellidos",
+      "fullNamePlaceholder": "por ejemplo, Amara Mensah",
+      "telephone": "Número de teléfono",
+      "telephonePlaceholder": "por ejemplo, +233 24 123 4567",
+      "country": "País",
+      "countryPlaceholder": "Seleccione su país",
+      "city": "Ciudad",
+      "cityOptional": "(opcional)",
+      "cityPlaceholder": "Por ejemplo, Nairobi",
+      "currentlyEmployed": "¿Trabaja actualmente?",
+      "willingToRelocate": "¿Está dispuesto a trasladarse por un trabajo?",
+      "yes": "Sí",
+      "no": "No",
+      "chooseOne": "Elige uno"
+    },
+    "buttons": {
+      "scanCv": "Escanear CV",
+      "scanCvLoading": "Analizar...",
+      "startNoCV": "Empezar sin CV",
+      "sendAnswer": "Enviar",
+      "viewProfile": "Ver tu perfil",
+      "saveProfile": "Guardar perfil completo"
+    },
+    "auth": {
+      "signedIn": "Registrado como",
+      "register": "Regístrese en",
+      "login": "Inicio de sesión",
+      "logout": "Cerrar sesión",
+      "email": "Correo electrónico",
+      "password": "Contraseña",
+      "registering": "Registrarse...",
+      "loggingIn": "Iniciando sesión...",
+      "continueProfile": "Cuestionario de inicio",
+      "startTitle": "Comience por su cuenta",
+      "startSubtitle": "Regístrese o conéctese antes del cuestionario para que los datos de su perfil se guarden en su cuenta.",
+      "checkingProfile": "Buscando tu perfil guardado..."
+    },
+    "errors": {
+      "loginRequired": "Por favor, regístrese o inicie sesión antes de añadir los datos del cuestionario.",
+      "fixedFieldsRequired": "Por favor, añada su nombre, número de teléfono, localización, empleo y traslado antes de escanear el CV.",
+      "cvRequired": "Cargue un archivo con su CV."
+    },
+    "progress": {
+      "question": "Pregunta",
+      "of": "de",
+      "complete": "Complete"
+    },
+    "profileInterview": "Entrevista de perfil",
+    "updatingProfile": "Actualizar el perfil",
+    "answerPlaceholder": "Responda con sus propias palabras"
+  },
+  "dashboard": {
+    "youthTitle": "Su país de un vistazo",
+    "policyTitle": "Cuadro de mando regional de inteligencia sobre competencias",
+    "youthSubtitle": "Señales en directo del Banco Mundial, enmarcadas para alguien que planifica su trabajo.",
+    "policySubtitle": "Señales agregadas de los IDM con atribución completa de la fuente para los equipos de políticas y programas.",
+    "youthView": "Opinión de los jóvenes",
+    "youthViewSub": "Para alguien como yo",
+    "policyView": "Opinión de los responsables políticos",
+    "policyViewSub": "Señales agregadas",
+    "loadingSignals": "Cargando las últimas señales del Banco Mundial para",
+    "notAvailable": "No disponible",
+    "loading": "Cargando...",
+    "whatThisMeans": "Lo que esto significa para usted",
+    "signals": {
+      "youthUnemployment": "Jóvenes sin trabajo",
+      "youthUnemploymentDetail": "de las personas de 15 a 24 años que desean un empleo aún no lo tienen",
+      "wageWorkers": "Trabajadores con salario oficial",
+      "wageWorkersDetail": "de los trabajadores tienen un empleo asalariado o por cuenta ajena. La mayoría del resto dirige su propio trabajo, diario o estacional.",
+      "laborForce": "Personas activas",
+      "laborForceDetail": "de los adultos trabajan o buscan trabajo activamente"
+    },
+    "sectors": {
+      "title": "Empleo por sector",
+      "subtitle": "Porcentaje de la mano de obra en cada sector principal"
+    },
+    "education": {
+      "title": "Retorno a la educación",
+      "subtitle": "Tasa de actividad por nivel de estudios",
+      "basic": "Básico",
+      "intermediate": "Secundaria",
+      "advanced": "Terciario",
+      "noData": "No se dispone de datos de educación por niveles del Banco Mundial para este país.",
+      "higherParticipation": "mayor participación en la educación terciaria que en la básica"
+    },
+    "source": "Fuente",
+    "wdiTable": "Instantánea completa de los IDM",
+    "profiles": {
+      "title": "Agregados de perfiles de candidatos",
+      "totalProfiles": "Perfiles totales",
+      "byTrack": "Por pista",
+      "bySeniority": "Por antigüedad",
+      "topSkills": "Competencias principales"
+    }
+  },
+  "profile": {
+    "skillPassport": "Pasaporte de competencias",
+    "print": "Imprimir",
+    "econometrics": "Contexto del mercado laboral",
+    "aiRisk": "Exposición a la IA",
+    "jobs": "Oportunidades cercanas",
+    "education": "Educación",
+    "experience": "Experiencia",
+    "skills": "Habilidades",
+    "languages": "Idiomas",
+    "coverLetter": "Generar carta de presentación",
+    "noData": "No hay datos disponibles"
+  },
+  "common": {
+    "learnMore": "Más información",
+    "source": "Fuente",
+    "year": "Año",
+    "country": "País",
+    "back": "Volver",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "close": "Cerrar",
+    "loading": "Cargando...",
+    "error": "Algo salió mal.",
+    "notFound": "Página no encontrada",
+    "notFoundDetail": "La página que buscas no existe o ha sido movida.",
+    "goHome": "Volver a casa",
+    "yes": "Sí",
+    "no": "No",
+    "optional": "opcional",
+    "of": "de"
+  }
+}

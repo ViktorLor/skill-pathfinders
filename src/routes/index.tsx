@@ -1,11 +1,43 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
-import { useState } from "react";
-import { ArrowRight, CheckCircle2, FileText, Loader2, MessageCircle } from "lucide-react";
+import type { FormEvent } from "react";
+import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import {
+  ArrowRight,
+  CheckCircle2,
+  FileText,
+  Loader2,
+  LogIn,
+  MapPin,
+  MessageCircle,
+  UserPlus,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  clearStoredAccountSession,
+  getStoredAccountSession,
+  saveStoredAccountSession,
+  type AccountSession,
+} from "@/lib/accountSession";
+import { createAccount, verifyAccountLogin } from "@/services/accounts.server";
+import { findLatestAccountProfile } from "@/services/profileAccounts.server";
+import { resolveEscoOccupation } from "@/services/esco";
 import { saveCandidateSkillProfileJson } from "@/services/profileHandler";
+import { CountryCombobox } from "@/components/CountryCombobox";
+import { getIsoCountry } from "@/data/isoCountries";
+import { mapEducationCredential, withEducationCredentialMapping } from "@/data/educationTaxonomy";
 import type { CandidateSkillProfile } from "@/types/unmapped";
 
 export const Route = createFileRoute("/")({
@@ -23,6 +55,16 @@ export const Route = createFileRoute("/")({
 });
 
 const MAX_INTERVIEW_QUESTIONS = 5;
+
+
+type FixedProfileFields = {
+  fullName: string;
+  telephoneNumber: string;
+  location: string;
+  country: string;
+  currentlyEmployed: boolean;
+  willingToRelocate: boolean;
+};
 
 type InterviewMessage = {
   role: "assistant" | "user";
@@ -47,6 +89,7 @@ type ProfileInterviewInput = {
 
 type SaveProfileInput = {
   profileId: string;
+  accountId?: string;
   profile: CandidateSkillProfile;
   status: "draft" | "complete";
   questionsAnswered: number;
@@ -56,9 +99,14 @@ const analyzeCv = createServerFn({ method: "POST" })
   .inputValidator((data: FormData) => data)
   .handler(async ({ data }): Promise<ProfileDraftResult> => {
     const file = data.get("cv");
+    const fixedFields = readFixedProfileFieldsFromFormData(data);
 
     if (!(file instanceof File)) {
       throw new Error("Please upload a CV file.");
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      throw new Error("CV file must be smaller than 5 MB.");
     }
 
     const apiKey = process.env.APIKEY;
@@ -72,7 +120,11 @@ const analyzeCv = createServerFn({ method: "POST" })
           {
             type: "input_text",
             text:
-              "Read this CV and create a draft CandidateSkillProfile. Ask one concise follow-up question for the most important missing field.",
+              `Read this CV and create a draft CandidateSkillProfile. Include the provided profile fields in the result and ask one concise follow-up question for the most important missing field.\n\nProvided profile fields:\n${JSON.stringify(
+                fixedFields,
+                null,
+                2,
+              )}`,
           },
           {
             type: "input_file",
@@ -85,7 +137,11 @@ const analyzeCv = createServerFn({ method: "POST" })
       : [
           {
             type: "input_text",
-            text: `Read this CV text and create a draft CandidateSkillProfile. Ask one concise follow-up question for the most important missing field.\n\n${await file.text()}`,
+            text: `Read this CV text and create a draft CandidateSkillProfile. Include the provided profile fields in the result and ask one concise follow-up question for the most important missing field.\n\nProvided profile fields:\n${JSON.stringify(
+              fixedFields,
+              null,
+              2,
+            )}\n\nCV text:\n${await file.text()}`,
           },
         ];
 
@@ -134,29 +190,93 @@ const updateProfileFromAnswer = createServerFn({ method: "POST" })
     return normalizeDraftResult(result);
   });
 
+async function enrichOccupationWithEsco(
+  input: SaveProfileInput,
+): Promise<SaveProfileInput> {
+  const occ = input.profile.occupation;
+  const hasCode = Boolean(occ.escoOccupationCode?.trim());
+  const hasUri = Boolean(occ.escoOccupationUri?.trim());
+  const hasIsco = Boolean(occ.iscoCode?.trim());
+  if (hasCode && hasUri && hasIsco) return input;
+
+  const query =
+    input.profile.profile.roleName?.trim() ||
+    input.profile.profile.normalizedRoleName?.trim();
+  if (!query) return input;
+
+  const resolution = await resolveEscoOccupation(query);
+  if (!resolution) return input;
+
+  return {
+    ...input,
+    profile: {
+      ...input.profile,
+      occupation: {
+        ...occ,
+        escoOccupationTitle: occ.escoOccupationTitle?.trim()
+          ? occ.escoOccupationTitle
+          : resolution.escoOccupationTitle,
+        escoOccupationUri: hasUri ? occ.escoOccupationUri : resolution.escoOccupationUri,
+        escoOccupationCode: hasCode ? occ.escoOccupationCode : resolution.escoOccupationCode,
+        iscoCode: hasIsco ? occ.iscoCode : resolution.iscoCode ?? occ.iscoCode,
+        iscoTitle: occ.iscoTitle?.trim()
+          ? occ.iscoTitle
+          : resolution.iscoTitle ?? occ.iscoTitle,
+        alternativeOccupationMatches:
+          occ.alternativeOccupationMatches?.length
+            ? occ.alternativeOccupationMatches
+            : resolution.alternativeOccupationMatches,
+      },
+    },
+  };
+}
+
 const saveProfileJson = createServerFn({ method: "POST" })
   .inputValidator((data: SaveProfileInput) => data)
   .handler(async ({ data }) => {
-    return saveCandidateSkillProfileJson(data);
+    const enriched = await enrichOccupationWithEsco(data);
+    return saveCandidateSkillProfileJson(enriched);
   });
+
+const registerAccount = createServerFn({ method: "POST" })
+  .inputValidator((data: { email: string; password: string }) => data)
+  .handler(async ({ data }) => createAccount(data));
+
+const loginAccount = createServerFn({ method: "POST" })
+  .inputValidator((data: { email: string; password: string }) => data)
+  .handler(async ({ data }) => verifyAccountLogin(data));
+
+const loadLatestAccountProfile = createServerFn({ method: "POST" })
+  .inputValidator((data: { accountId: string }) => data)
+  .handler(async ({ data }) => findLatestAccountProfile(data.accountId));
 
 const profileSystemPrompt = `
 You create structured CandidateSkillProfile JSON for employment matching.
-Use only evidence from the CV and interview answers. Do not invent employers, degrees, certifications, taxonomies, or years.
+Use only evidence from the CV if provided and the interview answers. Do not invent employers, degrees, certifications, taxonomies, countries or years.
 Return JSON with this shape:
 {
+  "fullName": string,
+  "telephoneNumber": string,
+  "location": string,
+  "country": string,
+  "willingToRelocate": boolean,
   "profile": { "roleName": string, "normalizedRoleName": string, "summary": string, "seniority": "entry|junior|mid|senior|lead|manager|executive|unknown", "track": "tech|trade|agriculture|other", "confidence": "high|medium|low" },
-  "occupation": { "iscoCode": string, "iscoTitle": string, "escoOccupationUri": string, "escoOccupationTitle": string, "alternativeOccupationMatches": [] },
-  "experience": { "totalYears": number, "relevantYears": number, "industries": [], "jobTitles": [], "companies": [], "responsibilities": [], "achievements": [] },
-  "education": { "highestLevel": string, "degrees": [], "fieldsOfStudy": [], "certifications": [], "trainings": [] },
+  "occupation": { "iscoCode": string, "iscoTitle": string, "escoOccupationCode": string, "escoOccupationUri": string, "escoOccupationTitle": string, "alternativeOccupationMatches": [] },
+  "experience": { "hasJob": boolean, "totalYears": number, "relevantYears": number, "industries": [], "jobTitles": [], "companies": [], "responsibilities": [], "achievements": [] },
+  "education": { "highestLevel": string, "degrees": [], "fieldsOfStudy": [], "certifications": [], "trainings": [], "credentialMapping": { "taxonomyLevel": "no_formal|primary|lower_secondary|upper_secondary|vocational|certificate|diploma|bachelor|postgraduate|unknown", "taxonomyLabel": string, "credentialCategory": "none|school|vocational_training|short_certificate|diploma|degree|postgraduate_degree|unknown", "credentialLabel": string, "estimatedSkillLevel": "foundational|basic|intermediate|advanced|specialized|unknown", "confidence": "high|medium|low", "rationale": string } },
   "skills": { "technical": [], "tools": [], "domain": [], "business": [], "soft": [], "languages": [] },
   "evidence": [],
   "automationAndReskilling": { "automationRiskOccupationCode": string, "automationRiskScore": number, "riskDrivers": [], "resilientSkills": [], "missingRecommendedSkills": [], "recommendedLearningSkills": [] },
   "nextQuestion": string,
   "isComplete": boolean
 }
+Preserve the candidate's fullName and telephoneNumber exactly from the provided profile fields or interview answers. Do not invent either value.
+When provided profile fields include location, country, currentlyEmployed, or willingToRelocate, copy them into the profile and set experience.hasJob from currentlyEmployed.
 Each skill item must include name, normalizedName, category, evidence, and confidence. Add proficiency or yearsExperience only when supported.
-Ask one natural chatbot question at a time. Prioritize missing role, seniority, years, responsibilities, achievements, education/certifications, tools, languages, and learning goals.
+Map the education entry to credentialMapping. This is an estimated parameter: normalize the person's stated highest education/training/credential into the taxonomy, then estimate the education-based skill level. If uncertain, use unknown with low confidence.
+Always include escoOccupationCode when an ESCO occupation is mapped. Use the ESCO concept identifier or notation, not the full URL. Keep escoOccupationUri only for internal linking.
+For "country", return an ISO 3166-1 alpha-3 code (e.g. "GHA", "BGD", "NGA", "KEN", "AUT", "IND") inferred from the CV or the candidate's answers. Leave it as an empty string only if the candidate's country is genuinely unknown. For "location" use a "City, Country" string when known.
+Ask one natural chatbot question at a time. If there is no CV, start by discovering the person's target work, whether they currently have a job, past practical experience, tools, tasks, languages, education/training, country/city of residence, and learning goals. Prioritize missing role, ISCO code/title, current job status, years, responsibilities, achievements, education/certifications, tools, languages, country, and learning goals.
 Set isComplete true when the profile is useful for matching or after 5 answered questions.
 `;
 
@@ -222,6 +342,11 @@ const profileDraftSchema = {
   additionalProperties: false,
   required: ["profile", "occupation", "experience", "education", "skills", "evidence", "nextQuestion", "isComplete"],
   properties: {
+    fullName: { type: "string" },
+    telephoneNumber: { type: "string" },
+    location: { type: "string" },
+    country: { type: "string" },
+    willingToRelocate: { type: "boolean" },
     profile: {
       type: "object",
       additionalProperties: true,
@@ -279,14 +404,37 @@ function normalizeDraftResult(result: unknown): ProfileDraftResult {
   };
 }
 
-function withProfileDefaults(profile: CandidateSkillProfile): CandidateSkillProfile {
-  return {
-    ...profile,
+type RawCandidateProfile = {
+  profile: CandidateSkillProfile["profile"];
+  occupation?: Partial<CandidateSkillProfile["occupation"]>;
+  experience?: Partial<CandidateSkillProfile["experience"]>;
+  education?: Partial<CandidateSkillProfile["education"]>;
+  skills?: Partial<CandidateSkillProfile["skills"]>;
+  evidence?: CandidateSkillProfile["evidence"];
+  automationAndReskilling?: Partial<NonNullable<CandidateSkillProfile["automationAndReskilling"]>>;
+  fullName?: string;
+  telephoneNumber?: string;
+  location?: string;
+  country?: string;
+  willingToRelocate?: boolean;
+};
+
+function withProfileDefaults(profile: RawCandidateProfile): CandidateSkillProfile {
+  return withEducationCredentialMapping({
+    fullName: normalizeOptionalText(profile.fullName),
+    telephoneNumber: normalizeOptionalText(profile.telephoneNumber),
+    location: normalizeOptionalText(profile.location),
+    country: normalizeOptionalText(profile.country),
+    willingToRelocate: profile.willingToRelocate,
+    profile: profile.profile,
     occupation: {
       alternativeOccupationMatches: [],
       ...profile.occupation,
+      iscoCode: normalizeRequiredText(profile.occupation?.iscoCode, "unknown"),
+      iscoTitle: normalizeRequiredText(profile.occupation?.iscoTitle, "Unknown occupation"),
     },
     experience: {
+      hasJob: false,
       industries: [],
       jobTitles: [],
       companies: [],
@@ -318,7 +466,22 @@ function withProfileDefaults(profile: CandidateSkillProfile): CandidateSkillProf
       recommendedLearningSkills: [],
       ...profile.automationAndReskilling,
     },
+  });
+}
+
+function readFixedProfileFieldsFromFormData(data: FormData): FixedProfileFields {
+  return {
+    fullName: normalizeFormDataText(data.get("fullName")),
+    telephoneNumber: normalizeFormDataText(data.get("telephoneNumber")),
+    location: normalizeFormDataText(data.get("location")),
+    country: normalizeFormDataText(data.get("country")),
+    currentlyEmployed: normalizeFormDataText(data.get("currentlyEmployed")) === "true",
+    willingToRelocate: normalizeFormDataText(data.get("willingToRelocate")) === "true",
   };
+}
+
+function normalizeFormDataText(value: FormDataEntryValue | null) {
+  return typeof value === "string" ? value.trim() : "";
 }
 
 function arrayBufferToBase64(buffer: ArrayBuffer) {
@@ -360,7 +523,18 @@ function extractResponseText(result: OpenAIResponseResult) {
 }
 
 function LandingPage() {
+  const { t } = useTranslation();
+  const [account, setAccount] = useState<AccountSession | null>(null);
+  const [authStatus, setAuthStatus] = useState("");
+  const [authError, setAuthError] = useState("");
+  const [isCheckingAccountProfile, setIsCheckingAccountProfile] = useState(false);
   const [cvFile, setCvFile] = useState<File | null>(null);
+  const [fullNameInput, setFullNameInput] = useState("");
+  const [telephoneInput, setTelephoneInput] = useState("");
+  const [selectedCountry, setSelectedCountry] = useState("");
+  const [cityInput, setCityInput] = useState("");
+  const [currentlyEmployed, setCurrentlyEmployed] = useState("");
+  const [willingToRelocate, setWillingToRelocate] = useState("");
   const [profileId, setProfileId] = useState(() => createProfileId());
   const [profile, setProfile] = useState<CandidateSkillProfile | null>(null);
   const [messages, setMessages] = useState<InterviewMessage[]>([]);
@@ -378,6 +552,72 @@ function LandingPage() {
     ? 100
     : Math.min(100, Math.round((questionCount / MAX_INTERVIEW_QUESTIONS) * 100));
   const latestQuestion = [...messages].reverse().find((message) => message.role === "assistant")?.text;
+  const selectedCountryRecord = getIsoCountry(selectedCountry);
+  const trimmedFullName = fullNameInput.trim();
+  const trimmedTelephone = telephoneInput.trim();
+  const trimmedCity = cityInput.trim();
+  const fixedFields =
+    trimmedFullName && trimmedTelephone && selectedCountryRecord && currentlyEmployed && willingToRelocate
+      ? {
+          fullName: trimmedFullName,
+          telephoneNumber: trimmedTelephone,
+          location: trimmedCity
+            ? `${trimmedCity}, ${selectedCountryRecord.name}`
+            : selectedCountryRecord.name,
+          country: selectedCountryRecord.code,
+          currentlyEmployed: currentlyEmployed === "yes",
+          willingToRelocate: willingToRelocate === "yes",
+        }
+      : null;
+
+  useEffect(() => {
+    const storedAccount = getStoredAccountSession();
+
+    if (!storedAccount) return;
+    setAccount(storedAccount);
+    void redirectToExistingProfile(storedAccount);
+  }, []);
+
+  const redirectToExistingProfile = async (nextAccount: AccountSession) => {
+    setIsCheckingAccountProfile(true);
+    setAuthStatus("");
+    setAuthError("");
+
+    try {
+      const latestProfile = await loadLatestAccountProfile({
+        data: { accountId: nextAccount.id },
+      });
+
+      if (latestProfile?.profileId) {
+        navigate({ to: "/profile/$id", params: { id: latestProfile.profileId } });
+        return;
+      }
+
+      setAuthStatus(`Signed in as ${nextAccount.email}. You can start a new questionnaire.`);
+    } catch (err) {
+      setAuthError(err instanceof Error ? err.message : "Could not check saved profile data.");
+    } finally {
+      setIsCheckingAccountProfile(false);
+    }
+  };
+
+  const saveAccountSession = (nextAccount: AccountSession) => {
+    saveStoredAccountSession(nextAccount);
+    setAccount(nextAccount);
+  };
+
+  const clearAccountSession = () => {
+    clearStoredAccountSession();
+    setAccount(null);
+    setAuthStatus("");
+    setAuthError("");
+  };
+
+  const handleAuthenticated = async (nextAccount: AccountSession, status: string) => {
+    saveAccountSession(nextAccount);
+    setAuthStatus(status);
+    await redirectToExistingProfile(nextAccount);
+  };
 
   const persistProfile = async (
     nextProfile: CandidateSkillProfile,
@@ -387,16 +627,26 @@ function LandingPage() {
     const result = await saveProfileJson({
       data: {
         profileId,
+        accountId: account?.id,
         profile: nextProfile,
         status,
         questionsAnswered,
       },
     });
     setSavedPath(result.path);
+    return result;
   };
 
   const submitCv = async () => {
     if (!cvFile) return;
+    if (!account) {
+      setAuthError("Please register or log in before adding questionnaire data.");
+      return;
+    }
+    if (!fixedFields) {
+      setError("Please add your name, telephone number, location, employment, and relocation before scanning the CV.");
+      return;
+    }
 
     const nextProfileId = createProfileId();
     setProfileId(nextProfileId);
@@ -411,8 +661,10 @@ function LandingPage() {
     try {
       const data = new FormData();
       data.append("cv", cvFile);
+      appendFixedProfileFields(data, fixedFields);
       const result = await analyzeCv({ data });
-      setProfile(result.profile);
+      const fixedProfile = applyFixedProfileFields(result.profile, fixedFields);
+      setProfile(fixedProfile);
       setIsComplete(result.isComplete);
       setMessages(
         result.isComplete
@@ -423,12 +675,17 @@ function LandingPage() {
       const saveResult = await saveProfileJson({
         data: {
           profileId: nextProfileId,
-          profile: result.profile,
+          accountId: account.id,
+          profile: fixedProfile,
           status: result.isComplete ? "complete" : "draft",
           questionsAnswered: 0,
         },
       });
       setSavedPath(saveResult.path);
+
+      if (result.isComplete) {
+        navigate({ to: "/profile/$id", params: { id: nextProfileId } });
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not analyze the CV.");
     } finally {
@@ -436,12 +693,42 @@ function LandingPage() {
     }
   };
 
+  const startNoCvInterview = async () => {
+    if (!account) {
+      setAuthError("Please register or log in before adding questionnaire data.");
+      return;
+    }
+    if (!fixedFields) {
+      setError("Please add your name, telephone number, location, employment, and relocation before starting the questionnaire.");
+      return;
+    }
+
+    const nextProfileId = createProfileId();
+    setProfileId(nextProfileId);
+    setCvFile(null);
+    setProfile(createEmptySkillProfile(fixedFields));
+    setMessages([
+      {
+        role: "assistant",
+        text:
+          "What kind of work would you like to do, and what practical tasks have you already done at work, school, home, in business, or in your community?",
+      },
+    ]);
+    setAnswers([]);
+    setChatInput("");
+    setIsComplete(false);
+    setSavedPath("");
+    setError("");
+    window.requestAnimationFrame(() => {
+      document.getElementById("profile-builder")?.scrollIntoView({ behavior: "smooth" });
+    });
+  };
+
   const submitInterviewAnswer = async () => {
     const answer = chatInput.trim();
     if (!answer || !profile || !latestQuestion) return;
 
     const nextAnswers = [...answers, { question: latestQuestion, answer }];
-    const limitedOut = nextAnswers.length >= MAX_INTERVIEW_QUESTIONS;
 
     setChatInput("");
     setAnswers(nextAnswers);
@@ -450,24 +737,27 @@ function LandingPage() {
     setError("");
 
     try {
-      const result = limitedOut
-        ? { profile, nextQuestion: "", isComplete: true }
-        : await updateProfileFromAnswer({
-            data: {
-              profile,
-              answers: nextAnswers,
-            },
-          });
+      const result = await updateProfileFromAnswer({
+        data: {
+          profile,
+          answers: nextAnswers,
+        },
+      });
 
-      const complete = result.isComplete || limitedOut;
-      setProfile(result.profile);
+      const complete = result.isComplete || nextAnswers.length >= MAX_INTERVIEW_QUESTIONS;
+      const fixedProfile = applyFixedProfileFields(result.profile, readFixedProfileFields(profile));
+      setProfile(fixedProfile);
       setIsComplete(complete);
       setMessages((current) =>
         complete
           ? [...current, { role: "assistant", text: "Done. I saved the completed skill profile." }]
           : [...current, { role: "assistant", text: result.nextQuestion }],
       );
-      await persistProfile(result.profile, complete ? "complete" : "draft", nextAnswers.length);
+      await persistProfile(fixedProfile, complete ? "complete" : "draft", nextAnswers.length);
+
+      if (complete) {
+        navigate({ to: "/profile/$id", params: { id: profileId } });
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not update the profile.");
     } finally {
@@ -475,177 +765,467 @@ function LandingPage() {
     }
   };
 
-  const continueToDynamicOnboarding = () => {
-    navigate({ to: "/onboard", search: { profileId } });
+  const openCandidateProfile = () => {
+    navigate({ to: "/profile/$id", params: { id: profileId } });
   };
 
   return (
     <main className="mx-auto max-w-7xl px-4 pb-24 pt-12 sm:px-6 sm:pt-20">
       <section className="mx-auto max-w-3xl text-center">
         <span className="inline-flex items-center rounded-full bg-navy/5 px-3 py-1 text-xs font-medium text-navy">
-          A skill passport for unmapped youth
+          {t("landing.badge")}
         </span>
         <h1 className="mt-5 text-4xl font-bold text-navy sm:text-5xl md:text-6xl">
-          Your skills, seen. <span className="text-teal">Your opportunity, found.</span>
+          {t("landing.headline")} <span className="text-teal">{t("landing.headlineAccent")}</span>
         </h1>
         <p className="mx-auto mt-5 max-w-2xl text-base text-muted-foreground sm:text-lg">
-          Upload a CV and we will turn it into a structured skill profile, then ask one question at
-          a time to fill the gaps.
+          {t("landing.subheadline")}
         </p>
-        <div className="mt-8 flex justify-center">
-          <Button
-            asChild
-            size="lg"
-            className="rounded-md bg-navy text-navy-foreground hover:bg-navy/90"
-          >
-            <a href="#profile-builder">
-              Build Your Skill Passport
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </a>
-          </Button>
-        </div>
       </section>
 
-      <section id="profile-builder" className="mt-16 grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
-        <div className="rounded-lg border border-border bg-card p-6 shadow-sm sm:p-8">
-          <div className="flex items-start gap-4">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-teal/10 text-teal">
-              <FileText className="h-6 w-6" />
+      <AuthStartPanel
+        account={account}
+        authStatus={authStatus}
+        authError={authError}
+        isCheckingAccountProfile={isCheckingAccountProfile}
+        onAuthenticated={handleAuthenticated}
+        onLogout={clearAccountSession}
+      />
+
+      {account && (
+        <section id="profile-builder" className="mt-16 grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
+          <div className="rounded-lg border border-border bg-card p-6 shadow-sm sm:p-8">
+            <div className="flex items-start gap-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-teal/10 text-teal">
+                <FileText className="h-6 w-6" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-semibold text-navy">{t("landing.buildProfile")}</h2>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {t("landing.buildProfileHint")}
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-2xl font-semibold text-navy">Upload your CV</h2>
-              <p className="mt-2 text-sm text-muted-foreground">
-                PDF and TXT files are supported. The hidden track is inferred, not chosen by the
-                user.
-              </p>
+
+            <label className="mt-6 flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-border bg-surface px-6 py-8 text-center hover:border-navy/40">
+              <FileText className="h-6 w-6 text-muted-foreground" />
+              <span className="mt-2 text-sm font-medium text-foreground">
+                {cvFile ? cvFile.name : t("landing.uploadLabel")}
+              </span>
+              <span className="mt-1 text-xs text-muted-foreground">PDF or TXT</span>
+              <input
+                type="file"
+                accept=".pdf,.txt,application/pdf,text/plain"
+                className="hidden"
+                onChange={(event) => {
+                  setCvFile(event.target.files?.[0] ?? null);
+                  setError("");
+                }}
+              />
+            </label>
+
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-foreground">
+                  {t("landing.fields.fullName")}
+                </label>
+                <Input
+                  value={fullNameInput}
+                  onChange={(event) => {
+                    setFullNameInput(event.target.value);
+                    setError("");
+                  }}
+                  placeholder="e.g. Amara Mensah"
+                  autoComplete="name"
+                  disabled={isAnalyzing || isSendingAnswer || Boolean(profile)}
+                  className="h-11 bg-background"
+                />
+              </div>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-foreground">
+                  {t("landing.fields.telephone")}
+                </label>
+                <Input
+                  type="tel"
+                  value={telephoneInput}
+                  onChange={(event) => {
+                    setTelephoneInput(event.target.value);
+                    setError("");
+                  }}
+                  placeholder="e.g. +233 24 123 4567"
+                  autoComplete="tel"
+                  disabled={isAnalyzing || isSendingAnswer || Boolean(profile)}
+                  className="h-11 bg-background"
+                />
+              </div>
             </div>
-          </div>
 
-          <label className="mt-6 flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-border bg-surface px-6 py-8 text-center hover:border-navy/40">
-            <FileText className="h-6 w-6 text-muted-foreground" />
-            <span className="mt-2 text-sm font-medium text-foreground">
-              {cvFile ? cvFile.name : "Upload your CV"}
-            </span>
-            <span className="mt-1 text-xs text-muted-foreground">PDF or TXT</span>
-            <input
-              type="file"
-              accept=".pdf,.txt,application/pdf,text/plain"
-              className="hidden"
-              onChange={(event) => {
-                setCvFile(event.target.files?.[0] ?? null);
-                setError("");
-              }}
-            />
-          </label>
-
-          <div className="mt-4 flex justify-end">
-            <Button
-              onClick={submitCv}
-              disabled={!cvFile || isAnalyzing || isSendingAnswer}
-              className="rounded-md bg-navy text-navy-foreground hover:bg-navy/90"
-            >
-              {isAnalyzing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Scan CV
-            </Button>
-          </div>
-
-          {error && (
-            <div className="mt-4 rounded-md border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-              {error}
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-2 flex items-center gap-2 text-sm font-medium text-foreground">
+                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                  {t("landing.fields.country")}
+                </label>
+                <CountryCombobox
+                  value={selectedCountry}
+                  onChange={(code) => {
+                    setSelectedCountry(code);
+                    setError("");
+                  }}
+                  placeholder="Select your country"
+                  disabled={isAnalyzing || isSendingAnswer || Boolean(profile)}
+                />
+              </div>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-foreground">
+                  {t("landing.fields.city")} <span className="text-muted-foreground">({t("common.optional")})</span>
+                </label>
+                <Input
+                  value={cityInput}
+                  onChange={(event) => setCityInput(event.target.value)}
+                  placeholder="e.g. Nairobi"
+                  disabled={isAnalyzing || isSendingAnswer || Boolean(profile)}
+                  className="h-11 bg-background"
+                />
+              </div>
             </div>
-          )}
 
-          {profile && (
-            <div className="mt-8 rounded-lg border border-border bg-background p-4">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <div className="flex items-center gap-2 text-xs font-medium uppercase text-muted-foreground">
-                    <MessageCircle className="h-4 w-4" />
-                    Profile interview
-                  </div>
-                  <h3 className="mt-1 text-lg font-semibold text-navy">
-                    {isComplete ? "Profile complete" : `Question ${Math.min(questionCount, MAX_INTERVIEW_QUESTIONS)} of ${MAX_INTERVIEW_QUESTIONS}`}
-                  </h3>
-                </div>
-                {isComplete && <CheckCircle2 className="h-5 w-5 text-teal" />}
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-foreground">
+                  {t("landing.fields.currentlyEmployed")}
+                </label>
+                <Select
+                  value={currentlyEmployed}
+                  onValueChange={(value) => {
+                    setCurrentlyEmployed(value);
+                    setError("");
+                  }}
+                  disabled={isAnalyzing || isSendingAnswer || Boolean(profile)}
+                >
+                  <SelectTrigger className="h-11 bg-background">
+                    <SelectValue placeholder={t("landing.fields.chooseOne")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="yes">{t("common.yes")}</SelectItem>
+                    <SelectItem value="no">{t("common.no")}</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
-              <Progress value={progressValue} className="mt-4" />
+              <div>
+                <label className="mb-2 block text-sm font-medium text-foreground">
+                  {t("landing.fields.willingToRelocate")}
+                </label>
+                <Select
+                  value={willingToRelocate}
+                  onValueChange={(value) => {
+                    setWillingToRelocate(value);
+                    setError("");
+                  }}
+                  disabled={isAnalyzing || isSendingAnswer || Boolean(profile)}
+                >
+                  <SelectTrigger className="h-11 bg-background">
+                    <SelectValue placeholder={t("landing.fields.chooseOne")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="yes">{t("common.yes")}</SelectItem>
+                    <SelectItem value="no">{t("common.no")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
 
-              <div className="mt-5 space-y-3">
-                {messages.map((message, index) => (
-                  <div
-                    key={`${message.role}-${index}`}
-                    className={
-                      message.role === "assistant"
-                        ? "max-w-[88%] rounded-lg bg-muted px-4 py-2 text-sm text-foreground"
-                        : "ml-auto max-w-[88%] rounded-lg border border-border bg-surface px-4 py-2 text-sm text-foreground"
-                    }
-                  >
-                    {message.text}
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={startNoCvInterview}
+                disabled={isCheckingAccountProfile || isAnalyzing || isSendingAnswer || !fixedFields}
+                className="rounded-md"
+              >
+                {t("landing.buttons.startNoCV")}
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+              <Button
+                onClick={submitCv}
+                disabled={!cvFile || !fixedFields || isAnalyzing || isSendingAnswer}
+                className="rounded-md bg-navy text-navy-foreground hover:bg-navy/90"
+              >
+                {isAnalyzing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {t("landing.buttons.scanCv")}
+              </Button>
+            </div>
+
+            {error && (
+              <div className="mt-4 rounded-md border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                {error}
+              </div>
+            )}
+
+            {profile && (
+              <div className="mt-8 rounded-lg border border-border bg-background p-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2 text-xs font-medium uppercase text-muted-foreground">
+                      <MessageCircle className="h-4 w-4" />
+                      {t("landing.profileInterview")}
+                    </div>
+                    <h3 className="mt-1 text-lg font-semibold text-navy">
+                      {isComplete ? t("landing.profileComplete") : `${t("landing.question")} ${Math.min(questionCount, MAX_INTERVIEW_QUESTIONS)} ${t("common.of")} ${MAX_INTERVIEW_QUESTIONS}`}
+                    </h3>
                   </div>
-                ))}
-                {isSendingAnswer && (
-                  <div className="inline-flex items-center rounded-lg bg-muted px-4 py-2 text-sm text-muted-foreground">
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Updating profile
+                  {isComplete && <CheckCircle2 className="h-5 w-5 text-teal" />}
+                </div>
+
+                <Progress value={progressValue} className="mt-4" />
+
+                <div className="mt-5 space-y-3">
+                  {messages.map((message, index) => (
+                    <div
+                      key={`${message.role}-${index}`}
+                      className={
+                        message.role === "assistant"
+                          ? "max-w-[88%] rounded-lg bg-muted px-4 py-2 text-sm text-foreground"
+                          : "ml-auto max-w-[88%] rounded-lg border border-border bg-surface px-4 py-2 text-sm text-foreground"
+                      }
+                    >
+                      {message.text}
+                    </div>
+                  ))}
+                  {isSendingAnswer && (
+                    <div className="inline-flex items-center rounded-lg bg-muted px-4 py-2 text-sm text-muted-foreground">
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      {t("landing.updatingProfile")}
+                    </div>
+                  )}
+                </div>
+
+                {!isComplete && (
+                  <>
+                    <Textarea
+                      value={chatInput}
+                      onChange={(event) => setChatInput(event.target.value)}
+                      rows={4}
+                      className="mt-4"
+                      placeholder={t("landing.answerPlaceholder")}
+                      disabled={isSendingAnswer}
+                    />
+                    <div className="mt-4 flex justify-end">
+                      <Button
+                        onClick={submitInterviewAnswer}
+                        disabled={!chatInput.trim() || isSendingAnswer}
+                        className="rounded-md bg-teal text-white hover:bg-teal/90"
+                      >
+                        {isSendingAnswer && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        {t("landing.buttons.sendAnswer")}
+                      </Button>
+                    </div>
+                  </>
+                )}
+
+                {savedPath && (
+                  <p className="mt-4 text-xs text-muted-foreground">
+                    Saved locally to <span className="font-medium text-foreground">{savedPath}</span>
+                  </p>
+                )}
+
+                {isComplete && (
+                  <div className="mt-4 flex justify-end">
+                    <Button
+                      onClick={openCandidateProfile}
+                      className="rounded-md bg-navy text-navy-foreground hover:bg-navy/90"
+                    >
+                      {t("landing.buttons.viewProfile")}
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
                   </div>
                 )}
               </div>
+            )}
+          </div>
 
-              {!isComplete && (
-                <>
-                  <Textarea
-                    value={chatInput}
-                    onChange={(event) => setChatInput(event.target.value)}
-                    rows={4}
-                    className="mt-4"
-                    placeholder="Answer in your own words"
-                    disabled={isSendingAnswer}
-                  />
-                  <div className="mt-4 flex justify-end">
-                    <Button
-                      onClick={submitInterviewAnswer}
-                      disabled={!chatInput.trim() || isSendingAnswer}
-                      className="rounded-md bg-teal text-white hover:bg-teal/90"
-                    >
-                      {isSendingAnswer && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      Send answer
-                    </Button>
-                  </div>
-                </>
-              )}
+          <ProfileSummary profile={profile} savedPath={savedPath} />
+        </section>
+      )}
 
-              {savedPath && (
-                <p className="mt-4 text-xs text-muted-foreground">
-                  Saved locally to <span className="font-medium text-foreground">{savedPath}</span>
-                </p>
-              )}
+    </main>
+  );
+}
 
-              {isComplete && (
-                <div className="mt-4 flex justify-end">
-                  <Button
-                    onClick={continueToDynamicOnboarding}
-                    className="rounded-md bg-navy text-navy-foreground hover:bg-navy/90"
-                  >
-                    Review dynamic profile
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
-              )}
-            </div>
+function AuthStartPanel({
+  account,
+  authStatus,
+  authError,
+  isCheckingAccountProfile,
+  onAuthenticated,
+  onLogout,
+}: {
+  account: AccountSession | null;
+  authStatus: string;
+  authError: string;
+  isCheckingAccountProfile: boolean;
+  onAuthenticated: (account: AccountSession, status: string) => Promise<void>;
+  onLogout: () => void;
+}) {
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [registerEmail, setRegisterEmail] = useState("");
+  const [registerPassword, setRegisterPassword] = useState("");
+  const [isSubmittingAuth, setIsSubmittingAuth] = useState(false);
+  const [localError, setLocalError] = useState("");
+  const { t } = useTranslation();
+
+  const submitLogin = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsSubmittingAuth(true);
+    setLocalError("");
+
+    try {
+      const nextAccount = await loginAccount({
+        data: { email: loginEmail, password: loginPassword },
+      });
+      setLoginPassword("");
+      await onAuthenticated(nextAccount, `Logged in as ${nextAccount.email}.`);
+    } catch (err) {
+      setLocalError(err instanceof Error ? err.message : "Could not log in.");
+    } finally {
+      setIsSubmittingAuth(false);
+    }
+  };
+
+  const submitRegister = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsSubmittingAuth(true);
+    setLocalError("");
+
+    try {
+      const nextAccount = await registerAccount({
+        data: { email: registerEmail, password: registerPassword },
+      });
+      setRegisterPassword("");
+      await onAuthenticated(nextAccount, `Account created for ${nextAccount.email}.`);
+    } catch (err) {
+      setLocalError(err instanceof Error ? err.message : "Could not create the account.");
+    } finally {
+      setIsSubmittingAuth(false);
+    }
+  };
+
+  return (
+    <section className="mx-auto mb-14 mt-10 max-w-3xl rounded-lg border border-border bg-card p-6 shadow-sm sm:p-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-navy">{t("landing.auth.startTitle")}</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {t("landing.auth.startSubtitle")}
+          </p>
+        </div>
+        {account && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onLogout}
+            className="rounded-md"
+          >
+            {t("nav.logout")}
+          </Button>
+        )}
+      </div>
+
+      {account ? (
+        <div className="mt-6 rounded-md border border-teal/20 bg-teal/10 px-4 py-3 text-sm text-foreground">
+          {isCheckingAccountProfile ? (
+            <span className="inline-flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              {t("landing.auth.checkingProfile")}
+            </span>
+          ) : (
+            authStatus || `Signed in as ${account.email}.`
           )}
         </div>
+      ) : (
+        <Tabs defaultValue="login" className="mt-6">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="login" className="gap-2">
+              <LogIn className="h-4 w-4" />
+              {t("landing.auth.login")}
+            </TabsTrigger>
+            <TabsTrigger value="register" className="gap-2">
+              <UserPlus className="h-4 w-4" />
+              {t("landing.auth.register")}
+            </TabsTrigger>
+          </TabsList>
 
-        <ProfileSummary profile={profile} savedPath={savedPath} />
-      </section>
+          <TabsContent value="login" className="mt-5">
+            <form onSubmit={submitLogin} className="grid gap-4 sm:grid-cols-[1fr_1fr_auto]">
+              <Input
+                type="email"
+                value={loginEmail}
+                onChange={(event) => setLoginEmail(event.target.value)}
+                autoComplete="email"
+                placeholder={t("landing.auth.email")}
+                required
+              />
+              <Input
+                type="password"
+                value={loginPassword}
+                onChange={(event) => setLoginPassword(event.target.value)}
+                autoComplete="current-password"
+                placeholder={t("landing.auth.password")}
+                minLength={8}
+                required
+              />
+              <Button
+                type="submit"
+                disabled={isSubmittingAuth}
+                className="rounded-md bg-navy text-navy-foreground hover:bg-navy/90"
+              >
+                {isSubmittingAuth && <Loader2 className="h-4 w-4 animate-spin" />}
+                {t("landing.auth.login")}
+              </Button>
+            </form>
+          </TabsContent>
 
-      <section className="mx-auto mt-20 grid max-w-4xl grid-cols-1 gap-6 rounded-lg border border-border bg-card p-8 sm:grid-cols-3">
-        <Stat value="5 max" label="profile questions" />
-        <Stat value="JSON" label="local profile handler" />
-        <Stat value="ESCO" label="ready for taxonomy mapping" />
-      </section>
-    </main>
+          <TabsContent value="register" className="mt-5">
+            <form onSubmit={submitRegister} className="grid gap-4 sm:grid-cols-[1fr_1fr_auto]">
+              <Input
+                type="email"
+                value={registerEmail}
+                onChange={(event) => setRegisterEmail(event.target.value)}
+                autoComplete="email"
+                placeholder={t("landing.auth.email")}
+                required
+              />
+              <Input
+                type="password"
+                value={registerPassword}
+                onChange={(event) => setRegisterPassword(event.target.value)}
+                autoComplete="new-password"
+                placeholder={t("landing.auth.password")}
+                minLength={8}
+                required
+              />
+              <Button
+                type="submit"
+                disabled={isSubmittingAuth}
+                className="rounded-md bg-navy text-navy-foreground hover:bg-navy/90"
+              >
+                {isSubmittingAuth && <Loader2 className="h-4 w-4 animate-spin" />}
+                {t("landing.auth.register")}
+              </Button>
+            </form>
+          </TabsContent>
+        </Tabs>
+      )}
+
+      {(localError || authError) && (
+        <div className="mt-4 rounded-md border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          {localError || authError}
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -668,19 +1248,33 @@ function ProfileSummary({
     <aside className="rounded-lg border border-border bg-card p-6 shadow-sm">
       <div className="text-xs font-medium uppercase text-muted-foreground">Live profile</div>
       <h2 className="mt-2 text-xl font-semibold text-navy">
-        {profile?.profile.roleName || "Waiting for CV"}
+        {profile?.profile.roleName || "Waiting for profile"}
       </h2>
       <p className="mt-2 text-sm text-muted-foreground">
         {profile?.profile.summary ||
-          "The structured profile will appear here as soon as the CV is scanned."}
+          "The structured profile will appear here as soon as a CV is scanned or the profile questions begin."}
       </p>
 
       {profile && (
         <>
           <div className="mt-5 grid grid-cols-2 gap-3 text-sm">
+            <SummaryField label="Name" value={profile.fullName ?? "Unknown"} />
+            <SummaryField label="Telephone" value={profile.telephoneNumber ?? "Unknown"} />
+            <SummaryField label="Location" value={profile.location ?? "Unknown"} />
+            <SummaryField label="Country" value={profile.country ?? "Unknown"} />
+            <SummaryField label="Employed" value={formatBoolean(profile.experience.hasJob)} />
+            <SummaryField label="Relocate" value={formatBoolean(profile.willingToRelocate)} />
             <SummaryField label="Track" value={profile.profile.track} />
             <SummaryField label="Confidence" value={profile.profile.confidence} />
             <SummaryField label="Seniority" value={profile.profile.seniority} />
+            <SummaryField
+              label="Education skill"
+              value={profile.education.credentialMapping?.estimatedSkillLevel ?? "Unknown"}
+            />
+            <SummaryField
+              label="Credential"
+              value={profile.education.credentialMapping?.credentialLabel ?? "Unknown"}
+            />
             <SummaryField
               label="Years"
               value={
@@ -743,15 +1337,111 @@ function SummaryField({ label, value }: { label: string; value: string }) {
   );
 }
 
-function Stat({ value, label }: { value: string; label: string }) {
-  return (
-    <div className="text-center">
-      <div className="text-2xl font-bold text-navy">{value}</div>
-      <div className="mt-1 text-xs uppercase text-muted-foreground">{label}</div>
-    </div>
-  );
-}
-
 function createProfileId() {
   return `candidate-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function createEmptySkillProfile(fixedFields: FixedProfileFields): CandidateSkillProfile {
+  return {
+    fullName: fixedFields.fullName,
+    telephoneNumber: fixedFields.telephoneNumber,
+    location: fixedFields.location,
+    country: fixedFields.country,
+    willingToRelocate: fixedFields.willingToRelocate,
+    profile: {
+      roleName: "New skill profile",
+      normalizedRoleName: "",
+      summary: "Answer the profile questions to build a structured skill profile.",
+      seniority: "unknown",
+      track: "other",
+      confidence: "low",
+    },
+    occupation: {
+      iscoCode: "unknown",
+      iscoTitle: "Unknown occupation",
+      alternativeOccupationMatches: [],
+    },
+    experience: {
+      hasJob: fixedFields.currentlyEmployed,
+      industries: [],
+      jobTitles: [],
+      companies: [],
+      responsibilities: [],
+      achievements: [],
+    },
+    education: {
+      degrees: [],
+      fieldsOfStudy: [],
+      certifications: [],
+      trainings: [],
+      credentialMapping: mapEducationCredential({}),
+    },
+    skills: {
+      technical: [],
+      tools: [],
+      domain: [],
+      business: [],
+      soft: [],
+      languages: [],
+    },
+    evidence: [],
+    automationAndReskilling: {
+      riskDrivers: [],
+      resilientSkills: [],
+      missingRecommendedSkills: [],
+      recommendedLearningSkills: [],
+    },
+  };
+}
+
+function normalizeRequiredText(value: string | undefined, fallback: string) {
+  const normalized = value?.trim();
+  return normalized || fallback;
+}
+
+function normalizeOptionalText(value: string | undefined) {
+  const normalized = value?.trim();
+  return normalized || undefined;
+}
+
+function applyFixedProfileFields(
+  profile: CandidateSkillProfile,
+  fixedFields: FixedProfileFields,
+): CandidateSkillProfile {
+  return withEducationCredentialMapping({
+    ...profile,
+    fullName: fixedFields.fullName,
+    telephoneNumber: fixedFields.telephoneNumber,
+    location: fixedFields.location,
+    country: fixedFields.country,
+    willingToRelocate: fixedFields.willingToRelocate,
+    experience: {
+      ...profile.experience,
+      hasJob: fixedFields.currentlyEmployed,
+    },
+  });
+}
+
+function appendFixedProfileFields(data: FormData, fixedFields: FixedProfileFields) {
+  data.set("fullName", fixedFields.fullName);
+  data.set("telephoneNumber", fixedFields.telephoneNumber);
+  data.set("location", fixedFields.location);
+  data.set("country", fixedFields.country);
+  data.set("currentlyEmployed", String(fixedFields.currentlyEmployed));
+  data.set("willingToRelocate", String(fixedFields.willingToRelocate));
+}
+
+function readFixedProfileFields(profile: CandidateSkillProfile): FixedProfileFields {
+  return {
+    fullName: normalizeRequiredText(profile.fullName, "Unknown"),
+    telephoneNumber: normalizeRequiredText(profile.telephoneNumber, "Unknown"),
+    location: normalizeRequiredText(profile.location, "Unknown"),
+    country: normalizeRequiredText(profile.country, "Unknown"),
+    currentlyEmployed: Boolean(profile.experience.hasJob),
+    willingToRelocate: Boolean(profile.willingToRelocate),
+  };
+}
+
+function formatBoolean(value: boolean | undefined) {
+  return value ? "Yes" : "No";
 }

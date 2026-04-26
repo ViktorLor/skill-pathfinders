@@ -1,25 +1,31 @@
 import { Outlet, createRootRoute, HeadContent, Scripts, Link } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 
 import appCss from "../styles.css?url";
 import { CountryProvider } from "@/context/CountryContext";
 import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
 import { DemoButton } from "@/components/DemoButton";
+// Initialise i18next before first render
+import "@/lib/i18n";
 
 function NotFoundComponent() {
+  const { t } = useTranslation();
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-surface px-4">
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-bold text-navy">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
+        <h2 className="mt-4 text-xl font-semibold text-foreground">{t("common.notFound")}</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          The page you're looking for doesn't exist or has been moved.
+          {t("common.notFoundDetail")}
         </p>
         <div className="mt-6">
           <Link
             to="/"
             className="inline-flex items-center justify-center rounded-md bg-navy px-4 py-2 text-sm font-medium text-navy-foreground transition-colors hover:bg-navy/90"
           >
-            Go home
+            {t("common.goHome")}
           </Link>
         </div>
       </div>
@@ -71,8 +77,10 @@ export const Route = createRootRoute({
 });
 
 function RootShell({ children }: { children: React.ReactNode }) {
+  const { i18n } = useTranslation();
+
   return (
-    <html lang="en">
+    <html lang={i18n.language || "en"}>
       <head>
         <HeadContent />
       </head>
@@ -87,9 +95,12 @@ function RootShell({ children }: { children: React.ReactNode }) {
 function RootComponent() {
   return (
     <CountryProvider>
-      <div className="min-h-screen bg-surface">
+      <div className="flex min-h-screen flex-col bg-surface">
         <Navbar />
-        <Outlet />
+        <main className="flex-1">
+          <Outlet />
+        </main>
+        <Footer />
         <DemoButton />
       </div>
     </CountryProvider>

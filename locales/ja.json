@@ -1,0 +1,159 @@
+{
+  "nav": {
+    "buildProfile": "プロフィールを作成する",
+    "liveDashboard": "ライブ・ダッシュボード",
+    "login": "ログイン",
+    "logout": "ログアウト"
+  },
+  "footer": {
+    "tagline": "地図に載っていない若者のためのオープンな技能インフラ。製品ではなくプロトコル - 地域のデータを接続すれば、どこでも機能する。",
+    "product": "製品",
+    "dataSources": "データソース",
+    "about": "について",
+    "aboutText": "LMICsの青少年、NGO、訓練プロバイダー、政策立案者のために作られた。",
+    "github": "ギットハブ",
+    "copyright": "オープンな技能インフラ。",
+    "automationCredit": "自動化のデータFrey & Osborne (2017) - ILO Task Index - World Bank STEP - Wittgenstein Centre 2025-2035"
+  },
+  "landing": {
+    "badge": "地図にない若者のための技能パスポート",
+    "headline": "あなたの技術を見た。",
+    "headlineAccent": "チャンスを見つけた。",
+    "subheadline": "履歴書をアップロードするか、プロフィールの質問にお答えください。",
+    "buildProfile": "スキルプロフィールを作成する",
+    "buildProfileHint": "履歴書をアップロードするか、履歴書がない場合は質問に答えてください。",
+    "uploadLabel": "履歴書のアップロード",
+    "uploadFormats": "PDFまたはTXT",
+    "tabs": {
+      "upload": "履歴書のアップロード",
+      "interview": "履歴書はないのですか？質問に答える"
+    },
+    "fields": {
+      "fullName": "氏名",
+      "fullNamePlaceholder": "例：アマラ・メンサ",
+      "telephone": "電話番号",
+      "telephonePlaceholder": "例：+233 24 123 4567",
+      "country": "国名",
+      "countryPlaceholder": "国を選択",
+      "city": "都市",
+      "cityOptional": "(オプション)",
+      "cityPlaceholder": "例：ナイロビ",
+      "currentlyEmployed": "現在雇用されていますか？",
+      "willingToRelocate": "転勤をいとわないか？",
+      "yes": "はい",
+      "no": "いいえ",
+      "chooseOne": "1つ選ぶ"
+    },
+    "buttons": {
+      "scanCv": "スキャン履歴書",
+      "scanCvLoading": "分析...",
+      "startNoCV": "履歴書なしで始める",
+      "sendAnswer": "送信",
+      "viewProfile": "プロフィールを見る",
+      "saveProfile": "完成したプロフィールを保存する"
+    },
+    "auth": {
+      "signedIn": "ログイン名",
+      "register": "登録",
+      "login": "ログイン",
+      "logout": "サインアウト",
+      "email": "電子メール",
+      "password": "パスワード",
+      "registering": "登録...",
+      "loggingIn": "ログイン...",
+      "continueProfile": "アンケート開始",
+      "startTitle": "アカウントから始める",
+      "startSubtitle": "プロフィールのデータがアカウントに保存されるように、アンケートの前に登録またはログインしてください。",
+      "checkingProfile": "保存されたプロフィールをチェックする"
+    },
+    "errors": {
+      "loginRequired": "アンケートデータを追加する前に、登録またはログインしてください。",
+      "fixedFieldsRequired": "履歴書をスキャンする前に、氏名、電話番号、所在地、勤務先、転居先を記入してください。",
+      "cvRequired": "履歴書をアップロードしてください。"
+    },
+    "progress": {
+      "question": "質問",
+      "of": "の",
+      "complete": "完全"
+    },
+    "profileInterview": "プロフィール・インタビュー",
+    "updatingProfile": "プロフィールの更新",
+    "answerPlaceholder": "自分の言葉で答える"
+  },
+  "dashboard": {
+    "youthTitle": "一目でわかるあなたの国",
+    "policyTitle": "地域スキル・インテリジェンス・ダッシュボード",
+    "youthSubtitle": "世界銀行からのライブ・シグナル。",
+    "policySubtitle": "政策チームやプログラムチームのために、出典を完全に特定したWDIシグナルを集計。",
+    "youthView": "ユースビュー",
+    "youthViewSub": "私のような者にとって",
+    "policyView": "政策決定者の見解",
+    "policyViewSub": "信号の集約",
+    "loadingSignals": "世界銀行からの最新のシグナルを読み込む",
+    "notAvailable": "入手不可",
+    "loading": "読み込み中...",
+    "whatThisMeans": "これが意味するもの",
+    "signals": {
+      "youthUnemployment": "無職の若者たち",
+      "youthUnemploymentDetail": "15～24歳のうち、職に就きたいと考えている人のうち、まだ職に就いていない人の割合が高い。",
+      "wageWorkers": "正規雇用労働者",
+      "wageWorkersDetail": "の労働者が賃金または給与を得ている。残りのほとんどは、日雇いや季節雇いで自分の仕事を営んでいる。",
+      "laborForce": "労働力として活躍する人々",
+      "laborForceDetail": "就労しているか、積極的に求職活動をしている成人の割合"
+    },
+    "sectors": {
+      "title": "部門別雇用",
+      "subtitle": "各主要部門における労働人口のシェア"
+    },
+    "education": {
+      "title": "教育へのリターン",
+      "subtitle": "教育レベル別労働力率",
+      "basic": "ベーシック",
+      "intermediate": "セカンダリー",
+      "advanced": "第三次",
+      "noData": "世界銀行の教育レベル別データはこの国では入手できない。",
+      "higherParticipation": "第三次産業と基礎産業の参加率が高い"
+    },
+    "source": "ソース",
+    "wdiTable": "WDIスナップショット",
+    "profiles": {
+      "title": "候補者プロフィール集計",
+      "totalProfiles": "プロファイル合計",
+      "byTrack": "トラック別",
+      "bySeniority": "年功序列",
+      "topSkills": "トップ・スキル"
+    }
+  },
+  "profile": {
+    "skillPassport": "スキルパスポート",
+    "print": "プリント",
+    "econometrics": "労働市場の背景",
+    "aiRisk": "AI暴露",
+    "jobs": "近隣の機会",
+    "education": "教育",
+    "experience": "経験",
+    "skills": "スキル",
+    "languages": "言語",
+    "coverLetter": "カバーレターの作成",
+    "noData": "データなし"
+  },
+  "common": {
+    "learnMore": "さらに詳しく",
+    "source": "ソース",
+    "year": "年",
+    "country": "国名",
+    "back": "バック",
+    "save": "セーブ",
+    "cancel": "キャンセル",
+    "close": "閉じる",
+    "loading": "読み込み中...",
+    "error": "何かが間違っていた。",
+    "notFound": "ページが見つかりません",
+    "notFoundDetail": "お探しのページは存在しないか、移動されました。",
+    "goHome": "家に帰る",
+    "yes": "はい",
+    "no": "いいえ",
+    "optional": "任意",
+    "of": "の"
+  }
+}
