@@ -56,6 +56,21 @@ export const WORLD_BANK_INDICATORS = {
     label: "Poverty headcount at lower-middle-income line",
     unit: "%",
   },
+  educationBasicLFP: {
+    id: "SL.TLF.BASC.ZS",
+    label: "Labour force participation — basic education",
+    unit: "%",
+  },
+  educationIntermediateLFP: {
+    id: "SL.TLF.INTM.ZS",
+    label: "Labour force participation — intermediate education",
+    unit: "%",
+  },
+  educationAdvancedLFP: {
+    id: "SL.TLF.ADVN.ZS",
+    label: "Labour force participation — advanced education",
+    unit: "%",
+  },
 } as const;
 
 export const INDICATORS = {
@@ -265,4 +280,43 @@ export async function getCountryWdiSnapshot(countryCode: string) {
     snapshot[observation.key] = observation;
     return snapshot;
   }, {});
+}
+
+/**
+ * Labour force participation rate by education attainment level.
+ *
+ * Uses World Bank WDI indicators:
+ *   SL.TLF.BASC.ZS — % of working-age population with basic education in the labour force
+ *   SL.TLF.INTM.ZS — intermediate education equivalent
+ *   SL.TLF.ADVN.ZS — advanced (tertiary) education equivalent
+ *
+ * A higher participation rate for higher education levels is a direct,
+ * visible econometric signal of returns to education in the local labour market.
+ */
+export interface ReturnsToEducation {
+  countryCode: string;
+  countryName: string;
+  year: number;
+  basic: number;
+  intermediate: number;
+  advanced: number;
+  sourceUrl: string;
+}
+
+export async function getReturnsToEducation(countryCode: string): Promise<ReturnsToEducation> {
+  const [basic, intermediate, advanced] = await Promise.all([
+    fetchIndicator(countryCode, "SL.TLF.BASC.ZS"),
+    fetchIndicator(countryCode, "SL.TLF.INTM.ZS"),
+    fetchIndicator(countryCode, "SL.TLF.ADVN.ZS"),
+  ]);
+
+  return {
+    countryCode: basic.countryCode,
+    countryName: basic.countryName,
+    year: Math.min(basic.year, intermediate.year, advanced.year),
+    basic: basic.value,
+    intermediate: intermediate.value,
+    advanced: advanced.value,
+    sourceUrl: basic.sourceUrl,
+  };
 }

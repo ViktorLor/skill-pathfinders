@@ -1,11 +1,5 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import {
   ACCOUNT_SESSION_CHANGED_EVENT,
@@ -13,7 +7,7 @@ import {
   getStoredAccountSession,
   type AccountSession,
 } from "@/lib/accountSession";
-import { ChevronDown, Globe2, LogOut } from "lucide-react";
+import { BarChart3, LogOut, UserCircle2 } from "lucide-react";
 
 export function Navbar() {
   const navigate = useNavigate();
@@ -46,25 +40,36 @@ export function Navbar() {
   return (
     <header className="sticky top-0 z-30 w-full border-b border-border bg-background/90 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
-        <Link to="/" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-navy text-navy-foreground font-bold">
-            U
-          </div>
-          <span className="text-lg font-bold tracking-tight text-navy">
-            Unmapped
-          </span>
-        </Link>
+        {/* Logo + nav grouped left */}
+        <div className="flex items-center gap-4">
+          <Link to="/" className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-navy font-bold text-navy-foreground">
+              U
+            </div>
+            <span className="text-lg font-bold tracking-tight text-navy">Unmapped</span>
+          </Link>
 
-        <nav className="hidden items-center gap-6 md:flex">
+          <nav className="hidden items-center gap-1 md:flex">
+          <Link
+            to="/"
+            className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition hover:bg-muted hover:text-navy"
+            activeProps={{ className: "bg-muted text-navy" }}
+            activeOptions={{ exact: true }}
+          >
+            <UserCircle2 className="h-4 w-4" />
+            Build my profile
+          </Link>
           <Link
             to="/dashboard"
-            className="text-sm font-medium text-muted-foreground hover:text-navy"
-            activeProps={{ className: "text-navy" }}
+            className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition hover:bg-muted hover:text-navy"
+            activeProps={{ className: "bg-muted text-navy" }}
           >
-            For Organizations
+            <BarChart3 className="h-4 w-4" />
+            Live dashboard
           </Link>
         </nav>
-
+        </div>
+        {/* Right side — auth */}
         <div className="flex items-center gap-2 sm:gap-3">
           {account ? (
             <div className="flex items-center gap-2">
@@ -92,25 +97,6 @@ export function Navbar() {
               <Link to="/login">Login</Link>
             </Button>
           )}
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded-md border-border"
-              >
-                <Globe2 className="h-4 w-4" />
-                <span className="hidden sm:inline">English</span>
-                <ChevronDown className="ml-1 h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem>English</DropdownMenuItem>
-              <DropdownMenuItem>France</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
         </div>
       </div>
     </header>
