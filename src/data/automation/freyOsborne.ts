@@ -31,6 +31,7 @@ export const FREY_OSBORNE_2017: Record<string, FreyOsborneEntry> = {
   "15-1242": { socCode: "15-1242", occupation: "Database Administrator", probability: 0.03, iscoCode: "2521" },
   "15-1244": { socCode: "15-1244", occupation: "Network and Computer Systems Administrator", probability: 0.03, iscoCode: "2522" },
   "15-1241": { socCode: "15-1241", occupation: "Computer Network Architect", probability: 0.017 },
+  "15-1232": { socCode: "15-1232", occupation: "Computer User Support Specialist", probability: 0.70, iscoCode: "3512" },
   "15-1212": { socCode: "15-1212", occupation: "Information Security Analyst", probability: 0.21 },
   "15-1211": { socCode: "15-1211", occupation: "Computer Systems Analyst", probability: 0.65 },
   "15-2051": { socCode: "15-2051", occupation: "Data Scientist / Statistician", probability: 0.22 },
@@ -51,6 +52,7 @@ export const FREY_OSBORNE_2017: Record<string, FreyOsborneEntry> = {
   "43-6014": { socCode: "43-6014", occupation: "Secretary or Administrative Assistant", probability: 0.96, iscoCode: "4110" },
   "43-4051": { socCode: "43-4051", occupation: "Customer Service Representative", probability: 0.55, iscoCode: "4222" },
   "43-4171": { socCode: "43-4171", occupation: "Receptionist or Information Clerk", probability: 0.96 },
+  "43-5071": { socCode: "43-5071", occupation: "Stock Clerk or Order Filler", probability: 0.64, iscoCode: "4321" },
   "43-3071": { socCode: "43-3071", occupation: "Teller", probability: 0.98 },
   "41-9041": { socCode: "41-9041", occupation: "Telemarketer", probability: 0.99 },
   "41-3031": { socCode: "41-3031", occupation: "Securities, Commodities, Financial Services Sales Agent", probability: 0.13 },
@@ -76,6 +78,7 @@ export const FREY_OSBORNE_2017: Record<string, FreyOsborneEntry> = {
 
   // --- Health ---
   "29-1141": { socCode: "29-1141", occupation: "Registered Nurse", probability: 0.009, iscoCode: "2221" },
+  "31-1011": { socCode: "31-1011", occupation: "Home Health Aide / Health Care Assistant", probability: 0.39, iscoCode: "5321" },
   "29-1062": { socCode: "29-1062", occupation: "Family or General Practitioner (Physician)", probability: 0.0042 },
   "29-1228": { socCode: "29-1228", occupation: "Surgeon", probability: 0.0042 },
 
@@ -110,6 +113,7 @@ export const FREY_OSBORNE_2017: Record<string, FreyOsborneEntry> = {
   "11-9013-A": { socCode: "11-9013-A", occupation: "Farmer, Rancher, or Agricultural Manager (smallholder)", probability: 0.47, iscoCode: "6111" },
   "45-2092": { socCode: "45-2092", occupation: "Farmworker / Crop Laborer", probability: 0.87, iscoCode: "9211" },
   "45-2011": { socCode: "45-2011", occupation: "Agricultural Inspector", probability: 0.16 },
+  "19-4011": { socCode: "19-4011", occupation: "Agricultural and Food Science Technician", probability: 0.41, iscoCode: "3142" },
   "45-2041": { socCode: "45-2041", occupation: "Grader/Sorter, Agricultural Products", probability: 0.93 },
 
   // --- Tailoring / textile ---
