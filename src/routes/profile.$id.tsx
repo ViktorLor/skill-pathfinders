@@ -2,17 +2,20 @@ import { createFileRoute, useNavigate, useParams, Link } from "@tanstack/react-r
 import { createServerFn } from "@tanstack/react-start";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   getCandidateById,
   getJobMatchesForTrack,
 } from "@/data/mock";
 import type {
+  CandidateProfile,
   CandidateSkillProfile,
   JobMatch,
   SkillItem,
   SkillScore,
   TrackType,
 } from "@/types/unmapped";
+import { getIsoCountry } from "@/data/isoCountries";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -29,6 +32,9 @@ import {
   RefreshCcw,
   Loader2,
   Search,
+  Printer,
+  Link2,
+  Check,
 } from "lucide-react";
 import { useCountry } from "@/context/CountryContext";
 import {
@@ -42,6 +48,7 @@ import {
   computeRiskProfileForCandidateProfile,
   getRiskProfileForCandidate,
   type SkillAIRisk,
+  type SkillRiskProfile,
 } from "@/data/aiRisk";
 import {
   deleteCandidateSkillProfileJson,
@@ -130,9 +137,404 @@ function trustColor(score: number) {
   return "text-danger";
 }
 
+// --- Skill Passport (printable + shareable) ---------------------------------
+
+const PASSPORT_PRINT_STYLES = `
+#skill-passport { display: none; }
+@media print {
+  html, body { background: white !important; margin: 0 !important; padding: 0 !important; height: auto !important; }
+  body > *:not(#skill-passport) { display: none !important; }
+  #skill-passport {
+    display: block !important;
+    padding: 16pt 18pt;
+    color: #000 !important;
+    background: #fff !important;
+    font-family: ui-serif, Georgia, "Times New Roman", serif;
+    font-size: 10.5pt;
+    line-height: 1.45;
+  }
+  #skill-passport .sp-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 18pt; }
+  #skill-passport .sp-label { font-size: 8.5pt; letter-spacing: 0.12em; text-transform: uppercase; color: #444 !important; }
+  #skill-passport h1 { font-size: 22pt; font-weight: 700; margin: 0; line-height: 1.1; }
+  #skill-passport h2 { font-size: 11pt; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; border-bottom: 1px solid #000; padding-bottom: 3pt; margin: 14pt 0 8pt; }
+  #skill-passport h3 { font-size: 10pt; font-weight: 700; margin: 6pt 0 3pt; }
+  #skill-passport .sp-meta { font-size: 9pt; color: #333 !important; margin-top: 4pt; }
+  #skill-passport .sp-pill { display: inline-block; border: 1px solid #000; padding: 1.5pt 6pt; margin: 1pt 2pt 1pt 0; border-radius: 3pt; font-size: 9.5pt; }
+  #skill-passport .sp-classification { margin-top: 6pt; padding: 6pt 8pt; border: 1px solid #000; border-radius: 3pt; font-size: 9pt; }
+  #skill-passport .sp-header { border-bottom: 2pt solid #000; padding-bottom: 10pt; }
+  #skill-passport ul { margin: 0; padding-left: 14pt; }
+  #skill-passport li { margin-top: 2pt; }
+  #skill-passport .sp-footer { margin-top: 18pt; padding-top: 8pt; border-top: 1px solid #000; font-size: 8.5pt; color: #333 !important; }
+  #skill-passport .sp-badge { border: 1pt solid #000; padding: 4pt 8pt; border-radius: 3pt; text-align: center; font-size: 8.5pt; }
+  #skill-passport .sp-badge strong { display: block; font-size: 11pt; letter-spacing: 0.08em; }
+  #skill-passport section { page-break-inside: avoid; }
+  #skill-passport h2 { page-break-after: avoid; }
+  @page { margin: 12mm; }
+}
+`;
+
+interface PassportData {
+  name: string;
+  roleTitle: string;
+  trackLabel?: string;
+  location?: string;
+  countryName?: string;
+  iscoCode?: string;
+  iscoTitle?: string;
+  escoCode?: string;
+  escoTitle?: string;
+  skillsByCategory: { category: string; skills: string[] }[];
+  totalYears?: number;
+  industries: string[];
+  jobTitles: string[];
+  responsibilities: string[];
+  educationLevel?: string;
+  educationItems: string[];
+  riskLevel?: string;
+  riskHeadline?: string;
+  profileUrl: string;
+  generatedAt: Date;
+}
+
+function PassportStyles() {
+  return <style dangerouslySetInnerHTML={{ __html: PASSPORT_PRINT_STYLES }} />;
+}
+
+function formatPassportDate(date: Date): string {
+  return date.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+
+function firstSentence(text: string): string {
+  const trimmed = text.trim();
+  const match = trimmed.match(/^.+?[.!?](?=\s|$)/);
+  return (match?.[0] ?? trimmed).trim();
+}
+
+function PassportDocument({ data }: { data: PassportData }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const classificationParts: string[] = [];
+  if (data.iscoCode) classificationParts.push(`ISCO-08 ${data.iscoCode}`);
+  if (data.iscoTitle && !data.iscoCode) classificationParts.push(data.iscoTitle);
+  else if (data.iscoTitle) classificationParts.push(data.iscoTitle);
+  if (data.escoCode || data.escoTitle) {
+    const escoParts = [data.escoCode, data.escoTitle].filter(Boolean).join(" · ");
+    classificationParts.push(`ESCO ${escoParts}`);
+  }
+  const hasClassification = classificationParts.length > 0;
+
+  const locationLine = [data.location, data.countryName].filter(Boolean).join(", ");
+
+  if (!mounted || typeof document === "undefined") return null;
+
+  const passport = (
+    <div id="skill-passport" aria-hidden="true">
+      <header className="sp-header">
+        <div className="sp-row">
+          <div style={{ flex: 1 }}>
+            <div className="sp-label">Skill Passport</div>
+            <h1 style={{ marginTop: 4 }}>{data.name}</h1>
+            <div style={{ fontSize: "12pt", marginTop: 4 }}>
+              {data.roleTitle}
+              {data.trackLabel ? ` · ${data.trackLabel}` : ""}
+            </div>
+            <div className="sp-meta">
+              {locationLine && `${locationLine} · `}
+              {`Generated ${formatPassportDate(data.generatedAt)}`}
+            </div>
+          </div>
+          <div className="sp-badge" style={{ flex: "0 0 auto" }}>
+            <span className="sp-label">Verified by</span>
+            <strong>UNMAPPED</strong>
+            <span style={{ fontSize: "8pt" }}>unmapped.io</span>
+          </div>
+        </div>
+
+        {hasClassification && (
+          <div className="sp-classification">
+            <div className="sp-label">Internationally recognised classification</div>
+            <div style={{ marginTop: 2 }}>{classificationParts.join(" · ")}</div>
+          </div>
+        )}
+      </header>
+
+      {data.skillsByCategory.length > 0 && (
+        <section>
+          <h2>Skills</h2>
+          {data.skillsByCategory.map((group) => (
+            <div key={group.category} style={{ marginTop: 6 }}>
+              <h3>{group.category}</h3>
+              <div>
+                {group.skills.map((s) => (
+                  <span key={s} className="sp-pill">
+                    {s}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ))}
+        </section>
+      )}
+
+      {(typeof data.totalYears === "number" ||
+        data.industries.length > 0 ||
+        data.jobTitles.length > 0 ||
+        data.responsibilities.length > 0) && (
+        <section>
+          <h2>Experience</h2>
+          <div style={{ display: "flex", gap: 18, flexWrap: "wrap", marginTop: 4 }}>
+            {typeof data.totalYears === "number" && (
+              <div>
+                <div className="sp-label">Total years</div>
+                <div>
+                  {data.totalYears} {data.totalYears === 1 ? "year" : "years"}
+                </div>
+              </div>
+            )}
+            {data.industries.length > 0 && (
+              <div>
+                <div className="sp-label">Industries</div>
+                <div>{data.industries.join(", ")}</div>
+              </div>
+            )}
+          </div>
+          {data.jobTitles.length > 0 && (
+            <>
+              <h3>Recent roles</h3>
+              <div>
+                {data.jobTitles.slice(0, 3).map((t) => (
+                  <span key={t} className="sp-pill">
+                    {t}
+                  </span>
+                ))}
+              </div>
+            </>
+          )}
+          {data.responsibilities.length > 0 && (
+            <>
+              <h3>Selected responsibilities</h3>
+              <ul>
+                {data.responsibilities.slice(0, 4).map((r) => (
+                  <li key={r}>{r}</li>
+                ))}
+              </ul>
+            </>
+          )}
+        </section>
+      )}
+
+      {(data.educationLevel || data.educationItems.length > 0) && (
+        <section>
+          <h2>Education</h2>
+          {data.educationLevel && (
+            <div style={{ marginTop: 4 }}>
+              <span className="sp-label">Highest level: </span>
+              {data.educationLevel}
+            </div>
+          )}
+          {data.educationItems.length > 0 && (
+            <ul style={{ marginTop: 4 }}>
+              {data.educationItems.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
+
+      {data.riskLevel && data.riskHeadline && (
+        <section>
+          <h2>AI Readiness</h2>
+          <div style={{ marginTop: 4 }}>
+            <strong style={{ textTransform: "capitalize" }}>{data.riskLevel}</strong>
+            {` overall risk. ${data.riskHeadline}`}
+          </div>
+          <div className="sp-meta" style={{ marginTop: 4 }}>
+            Source: Frey-Osborne 2017 · ILO Task Index · Wittgenstein Centre 2025–2035
+          </div>
+        </section>
+      )}
+
+      <footer className="sp-footer">
+        {`This passport was generated by Unmapped — open skills infrastructure for unmapped youth. Generated ${formatPassportDate(data.generatedAt)}.`}
+        <br />
+        {data.profileUrl}
+      </footer>
+    </div>
+  );
+
+  return createPortal(passport, document.body);
+}
+
+function PassportActions({ profileUrl }: { profileUrl: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handlePrint = () => {
+    if (typeof window !== "undefined") window.print();
+  };
+
+  const handleCopy = async () => {
+    if (typeof navigator === "undefined" || !navigator.clipboard) return;
+    try {
+      await navigator.clipboard.writeText(profileUrl || window.location.href);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Could not copy profile link", err);
+    }
+  };
+
+  return (
+    <div className="flex flex-wrap gap-2 print:hidden">
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={handlePrint}
+        className="rounded-md"
+      >
+        <Printer className="h-4 w-4" />
+        Print passport
+      </Button>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={handleCopy}
+        className="rounded-md"
+        aria-live="polite"
+      >
+        {copied ? (
+          <>
+            <Check className="h-4 w-4 text-greenT" />
+            Copied!
+          </>
+        ) : (
+          <>
+            <Link2 className="h-4 w-4" />
+            Copy link
+          </>
+        )}
+      </Button>
+    </div>
+  );
+}
+
+function useProfileUrl(): string {
+  const [url, setUrl] = useState("");
+  useEffect(() => {
+    if (typeof window !== "undefined") setUrl(window.location.href);
+  }, []);
+  return url;
+}
+
+function staticPassportData(
+  candidate: CandidateProfile,
+  riskProfile: SkillRiskProfile | null,
+  profileUrl: string,
+): PassportData {
+  const demoOccupation = parseDemoOccupation(candidate.escoOccupation);
+  return {
+    name: candidate.name,
+    roleTitle: demoOccupation?.title ?? candidate.country.sectors[0] ?? "Skill profile",
+    trackLabel: trackMeta[candidate.track].label,
+    location: candidate.location,
+    countryName: candidate.country.name,
+    iscoCode: demoOccupation?.code,
+    iscoTitle: demoOccupation?.title,
+    skillsByCategory: [
+      {
+        category: "Verified skills",
+        skills: candidate.skillScores.map((s) => s.name),
+      },
+    ],
+    industries: [],
+    jobTitles: candidate.experience.map((e) => e.title),
+    responsibilities: candidate.experience.map((e) => e.description),
+    educationItems: [],
+    riskLevel: riskProfile?.summary.overallLevel,
+    riskHeadline: riskProfile ? firstSentence(riskProfile.summary.headline) : undefined,
+    profileUrl,
+    generatedAt: new Date(),
+  };
+}
+
+function dynamicPassportData(
+  snapshot: ProfileSnapshot,
+  riskProfile: SkillRiskProfile | null,
+  profileUrl: string,
+): PassportData {
+  const profile = snapshot.profile;
+  const skills = profile.skills;
+  const skillsByCategory = (
+    [
+      ["Technical", skills.technical],
+      ["Tools", skills.tools],
+      ["Domain", skills.domain],
+      ["Business", skills.business],
+      ["Soft", skills.soft],
+      ["Languages", skills.languages],
+    ] as const
+  )
+    .map(([category, items]) => ({
+      category,
+      skills: (items ?? []).map((s) => s.escoPreferredLabel?.trim() || s.name).filter(Boolean),
+    }))
+    .filter((g) => g.skills.length > 0);
+
+  const educationItems = [
+    ...(profile.education.degrees ?? []),
+    ...(profile.education.certifications ?? []),
+    ...(profile.education.trainings ?? []),
+  ].filter((s): s is string => Boolean(s && s.trim()));
+
+  const countryName = profile.country
+    ? (getIsoCountry(profile.country)?.name ?? profile.country)
+    : undefined;
+
+  return {
+    name: profile.profile.roleName?.trim() || "Skill profile",
+    roleTitle:
+      profile.occupation.escoOccupationTitle ||
+      profile.occupation.iscoTitle ||
+      profile.profile.roleName,
+    trackLabel:
+      profile.profile.track === "tech" ||
+      profile.profile.track === "trade" ||
+      profile.profile.track === "agriculture"
+        ? trackMeta[profile.profile.track].label
+        : `${profile.profile.track[0]?.toUpperCase()}${profile.profile.track.slice(1)} track`,
+    location: profile.location,
+    countryName,
+    iscoCode: profile.occupation.iscoCode || undefined,
+    iscoTitle: profile.occupation.iscoTitle || undefined,
+    escoCode: profile.occupation.escoOccupationCode || undefined,
+    escoTitle: profile.occupation.escoOccupationTitle || undefined,
+    skillsByCategory,
+    totalYears: profile.experience.totalYears,
+    industries: profile.experience.industries ?? [],
+    jobTitles: profile.experience.jobTitles ?? [],
+    responsibilities: profile.experience.responsibilities ?? [],
+    educationLevel: profile.education.highestLevel,
+    educationItems,
+    riskLevel: riskProfile?.summary.overallLevel,
+    riskHeadline: riskProfile ? firstSentence(riskProfile.summary.headline) : undefined,
+    profileUrl,
+    generatedAt: new Date(),
+  };
+}
+
 function ProfilePage() {
   const { id } = useParams({ from: "/profile/$id" });
   const candidate = getCandidateById(id);
+  const profileUrl = useProfileUrl();
   const [dynamicSnapshot, setDynamicSnapshot] = useState<ProfileSnapshot | null>(null);
   const [dynamicLoading, setDynamicLoading] = useState(!candidate);
   const [dynamicError, setDynamicError] = useState("");
@@ -204,9 +606,17 @@ function ProfilePage() {
     .map((n) => n[0])
     .join("")
     .slice(0, 2);
+  const passportData = staticPassportData(candidate, riskProfile, profileUrl);
 
   return (
     <main className="mx-auto max-w-5xl px-4 pb-20 pt-8 sm:px-6">
+      <PassportStyles />
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-xs text-muted-foreground">
+          Share or print your passport — works at copy shops, on WhatsApp, anywhere.
+        </p>
+        <PassportActions profileUrl={profileUrl} />
+      </div>
       {/* Header */}
       <section className="rounded-xl border border-border bg-card p-6 sm:p-8">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
@@ -363,6 +773,7 @@ function ProfilePage() {
           onClose={() => setActiveJob(null)}
         />
       )}
+      <PassportDocument data={passportData} />
     </main>
   );
 }
@@ -374,6 +785,8 @@ function DynamicProfilePage({ snapshot }: { snapshot: ProfileSnapshot }) {
   const skills = Object.values(profile.skills).flat();
   const effectiveCountryCode = profile.country?.trim() || country.code;
   const riskProfile = computeRiskProfileForCandidateProfile(profile, effectiveCountryCode);
+  const profileUrl = useProfileUrl();
+  const passportData = dynamicPassportData(snapshot, riskProfile, profileUrl);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
   const [showJobSearch, setShowJobSearch] = useState(false);
@@ -476,6 +889,13 @@ function DynamicProfilePage({ snapshot }: { snapshot: ProfileSnapshot }) {
 
   return (
     <main className="mx-auto max-w-5xl px-4 pb-20 pt-8 sm:px-6">
+      <PassportStyles />
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-xs text-muted-foreground">
+          Share or print your passport — works at copy shops, on WhatsApp, anywhere.
+        </p>
+        <PassportActions profileUrl={profileUrl} />
+      </div>
       <section className="rounded-xl border border-border bg-card p-6 sm:p-8">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-4">
@@ -728,6 +1148,7 @@ function DynamicProfilePage({ snapshot }: { snapshot: ProfileSnapshot }) {
           </div>
         )}
       </section>
+      <PassportDocument data={passportData} />
     </main>
   );
 }
