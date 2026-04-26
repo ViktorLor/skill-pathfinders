@@ -15,6 +15,9 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProfileIdRouteImport } from './routes/profile.$id'
+import { Route as OnboardTradeRouteImport } from './routes/onboard.trade'
+import { Route as OnboardTechRouteImport } from './routes/onboard.tech'
+import { Route as OnboardAgricultureRouteImport } from './routes/onboard.agriculture'
 
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
@@ -46,21 +49,42 @@ const ProfileIdRoute = ProfileIdRouteImport.update({
   path: '/profile/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OnboardTradeRoute = OnboardTradeRouteImport.update({
+  id: '/trade',
+  path: '/trade',
+  getParentRoute: () => OnboardRoute,
+} as any)
+const OnboardTechRoute = OnboardTechRouteImport.update({
+  id: '/tech',
+  path: '/tech',
+  getParentRoute: () => OnboardRoute,
+} as any)
+const OnboardAgricultureRoute = OnboardAgricultureRouteImport.update({
+  id: '/agriculture',
+  path: '/agriculture',
+  getParentRoute: () => OnboardRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
-  '/onboard': typeof OnboardRoute
+  '/onboard': typeof OnboardRouteWithChildren
   '/register': typeof RegisterRoute
+  '/onboard/agriculture': typeof OnboardAgricultureRoute
+  '/onboard/tech': typeof OnboardTechRoute
+  '/onboard/trade': typeof OnboardTradeRoute
   '/profile/$id': typeof ProfileIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
-  '/onboard': typeof OnboardRoute
+  '/onboard': typeof OnboardRouteWithChildren
   '/register': typeof RegisterRoute
+  '/onboard/agriculture': typeof OnboardAgricultureRoute
+  '/onboard/tech': typeof OnboardTechRoute
+  '/onboard/trade': typeof OnboardTradeRoute
   '/profile/$id': typeof ProfileIdRoute
 }
 export interface FileRoutesById {
@@ -68,8 +92,11 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
-  '/onboard': typeof OnboardRoute
+  '/onboard': typeof OnboardRouteWithChildren
   '/register': typeof RegisterRoute
+  '/onboard/agriculture': typeof OnboardAgricultureRoute
+  '/onboard/tech': typeof OnboardTechRoute
+  '/onboard/trade': typeof OnboardTradeRoute
   '/profile/$id': typeof ProfileIdRoute
 }
 export interface FileRouteTypes {
@@ -80,9 +107,21 @@ export interface FileRouteTypes {
     | '/login'
     | '/onboard'
     | '/register'
+    | '/onboard/agriculture'
+    | '/onboard/tech'
+    | '/onboard/trade'
     | '/profile/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/login' | '/onboard' | '/register' | '/profile/$id'
+  to:
+    | '/'
+    | '/dashboard'
+    | '/login'
+    | '/onboard'
+    | '/register'
+    | '/onboard/agriculture'
+    | '/onboard/tech'
+    | '/onboard/trade'
+    | '/profile/$id'
   id:
     | '__root__'
     | '/'
@@ -90,6 +129,9 @@ export interface FileRouteTypes {
     | '/login'
     | '/onboard'
     | '/register'
+    | '/onboard/agriculture'
+    | '/onboard/tech'
+    | '/onboard/trade'
     | '/profile/$id'
   fileRoutesById: FileRoutesById
 }
@@ -97,7 +139,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
-  OnboardRoute: typeof OnboardRoute
+  OnboardRoute: typeof OnboardRouteWithChildren
   RegisterRoute: typeof RegisterRoute
   ProfileIdRoute: typeof ProfileIdRoute
 }
@@ -146,14 +188,50 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProfileIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/onboard/trade': {
+      id: '/onboard/trade'
+      path: '/trade'
+      fullPath: '/onboard/trade'
+      preLoaderRoute: typeof OnboardTradeRouteImport
+      parentRoute: typeof OnboardRoute
+    }
+    '/onboard/tech': {
+      id: '/onboard/tech'
+      path: '/tech'
+      fullPath: '/onboard/tech'
+      preLoaderRoute: typeof OnboardTechRouteImport
+      parentRoute: typeof OnboardRoute
+    }
+    '/onboard/agriculture': {
+      id: '/onboard/agriculture'
+      path: '/agriculture'
+      fullPath: '/onboard/agriculture'
+      preLoaderRoute: typeof OnboardAgricultureRouteImport
+      parentRoute: typeof OnboardRoute
+    }
   }
 }
+
+interface OnboardRouteChildren {
+  OnboardAgricultureRoute: typeof OnboardAgricultureRoute
+  OnboardTechRoute: typeof OnboardTechRoute
+  OnboardTradeRoute: typeof OnboardTradeRoute
+}
+
+const OnboardRouteChildren: OnboardRouteChildren = {
+  OnboardAgricultureRoute: OnboardAgricultureRoute,
+  OnboardTechRoute: OnboardTechRoute,
+  OnboardTradeRoute: OnboardTradeRoute,
+}
+
+const OnboardRouteWithChildren =
+  OnboardRoute._addFileChildren(OnboardRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
-  OnboardRoute: OnboardRoute,
+  OnboardRoute: OnboardRouteWithChildren,
   RegisterRoute: RegisterRoute,
   ProfileIdRoute: ProfileIdRoute,
 }
