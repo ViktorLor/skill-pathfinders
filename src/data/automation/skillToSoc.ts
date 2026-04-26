@@ -39,6 +39,9 @@ export const SKILL_TO_SOC: Record<string, string[]> = {
   "fullstack development": ["15-1252", "15-1254"],
   "frontend development": ["15-1254"],
   "backend development": ["15-1252"],
+  "software developer": ["15-1252"],
+  "software development": ["15-1252"],
+  "web developer": ["15-1254"],
 
   // --- Data / databases / cloud ---
   sql: ["15-1242"],
@@ -77,6 +80,9 @@ export const SKILL_TO_SOC: Record<string, string[]> = {
   "issue analysis": ["15-1232"], // computer user support specialist (FO 0.70 typical)
   "system maintenance": ["15-1244"],
   "application support": ["15-1232", "15-1244"],
+  "ict user support technician": ["15-1232"],
+  "user support technician": ["15-1232"],
+  "computer user support": ["15-1232"],
   "level 1 support": ["15-1232"],
   "level 2 support": ["15-1232"],
   "incident management": ["15-1244"],
@@ -119,6 +125,7 @@ export const SKILL_TO_SOC: Record<string, string[]> = {
   hvac: ["49-9021"],
   plumbing: ["47-2152"],
   electrical: ["47-2111"],
+  electrician: ["47-2111"],
   carpentry: ["47-2031"],
   welding: ["51-4121"],
   "auto repair": ["49-3023"],
@@ -130,6 +137,8 @@ export const SKILL_TO_SOC: Record<string, string[]> = {
   cashier: ["41-2011"],
   inventory: ["43-5071"],
   "inventory management": ["43-5071"],
+  "stock clerk": ["43-5071"],
+  "order filler": ["43-5071"],
 
   // --- Service / hospitality ---
   cooking: ["35-2014"],
@@ -147,12 +156,16 @@ export const SKILL_TO_SOC: Record<string, string[]> = {
   "pest control": ["45-2092"],
   "record keeping": ["43-3031", "43-9061"],
   "cooperative management": ["11-9013-A"],
+  "agricultural technician": ["19-4011"],
   "post-harvest": ["45-2041"],
   "agricultural inspection": ["45-2011"],
 
   // --- Health ---
   nursing: ["29-1141"],
   "patient care": ["29-1141"],
+  "health care assistant": ["31-1011"],
+  "healthcare assistant": ["31-1011"],
+  "home health aide": ["31-1011"],
   "medical informatics": ["11-9111", "15-1252"],
 
   // --- Soft skills (low risk anchors via teacher / manager) ---

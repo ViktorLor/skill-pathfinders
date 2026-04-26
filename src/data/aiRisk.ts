@@ -58,6 +58,12 @@ export interface TrajectoryEntry {
 export interface SkillRiskProfile {
   /** Per-skill AI exposure (key = skill.name) */
   bySkill: Record<string, SkillAIRisk>;
+  /** Number of extracted skills with a direct curated or occupation-index match */
+  indexedSkillCount?: number;
+  /** Number of extracted skills considered for the profile-level summary */
+  totalSkillCount?: number;
+  /** Skills kept out of per-skill exposure because no direct index match exists */
+  unindexedSkills?: string[];
   /** Overall track-level summary */
   summary: {
     overallLevel: AIRiskLevel;
@@ -467,16 +473,22 @@ function attachOutlook(risk: SkillAIRisk, outlook: SkillClusterOutlook | null): 
  * automation probability (0–1). When the skill maps to multiple SOC codes,
  * we average — a single skill rarely lives in exactly one occupation.
  */
-function freyOsborneProbabilityForSkill(skillName: string): {
+interface FreyOsborneProbabilityMatch {
   probability: number;
   occupations: string[];
   socCodes: string[];
   iscoCodes: string[];
-} | null {
-  const socs = lookupSocForSkill(skillName);
+  matchedTerm?: string;
+}
+
+function freyOsborneProbabilityForSocCodes(
+  socs: string[],
+  matchedTerm?: string,
+): FreyOsborneProbabilityMatch | null {
   if (!socs.length) return null;
 
-  const matches = socs
+  const uniqueSocs = Array.from(new Set(socs));
+  const matches = uniqueSocs
     .map((soc) => FREY_OSBORNE_2017[soc])
     .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry));
   if (!matches.length) return null;
@@ -490,7 +502,122 @@ function freyOsborneProbabilityForSkill(skillName: string): {
     iscoCodes: matches
       .map((m) => m.iscoCode)
       .filter((c): c is string => Boolean(c)),
+    matchedTerm,
   };
+}
+
+function freyOsborneProbabilityForSkill(skillName: string): FreyOsborneProbabilityMatch | null {
+  const socs = lookupSocForSkill(skillName);
+  return freyOsborneProbabilityForSocCodes(socs, skillName);
+}
+
+function freyOsborneProbabilityForSkillTerms(
+  terms: Array<string | undefined>,
+): FreyOsborneProbabilityMatch | null {
+  const seen = new Set<string>();
+  for (const term of terms) {
+    const cleaned = term?.trim();
+    if (!cleaned) continue;
+    const key = cleaned.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+
+    const match = freyOsborneProbabilityForSkill(cleaned);
+    if (match) return match;
+  }
+  return null;
+}
+
+function normalizeIscoCode(value?: string) {
+  const digits = value?.replace(/[^0-9]/g, "") ?? "";
+  return digits.length >= 4 ? digits.slice(0, 4) : "";
+}
+
+function freyOsborneProbabilityForIsco(iscoCode?: string): FreyOsborneProbabilityMatch | null {
+  const normalizedIsco = normalizeIscoCode(iscoCode);
+  if (!normalizedIsco) return null;
+
+  const socs = Object.values(FREY_OSBORNE_2017)
+    .filter((entry) => normalizeIscoCode(entry.iscoCode) === normalizedIsco)
+    .map((entry) => entry.socCode);
+  return freyOsborneProbabilityForSocCodes(socs, `ISCO ${normalizedIsco}`);
+}
+
+function occupationTitle(profile: CandidateSkillProfile) {
+  return (
+    profile.occupation.escoOccupationTitle?.trim() ||
+    profile.occupation.iscoTitle?.trim() ||
+    profile.profile.roleName?.trim() ||
+    "mapped occupation"
+  );
+}
+
+function riskFromFreyOsborneMatch(
+  fo: FreyOsborneProbabilityMatch,
+  countryCtx: CountryAutomationContext,
+  anchorLabel?: string,
+): SkillAIRisk {
+  const baseline = Math.round(fo.probability * 100);
+  const adjusted = Math.round(fo.probability * countryCtx.modifier * 100);
+  const occupationLabel = fo.occupations[0];
+
+  const isAdjusted = countryCtx.modifier !== 1.0;
+  const adjustmentClause = isAdjusted
+    ? ` Adjusted to ${adjusted}/100 for ${countryCtx.countryName} labor market context (modifier ×${countryCtx.modifier.toFixed(2)}, ${countryCtx.source}).`
+    : "";
+
+  const iloShares = getIloTaskShares(fo.iscoCodes[0]);
+  const iloClause = iloShares ? ` ${describeIloShares(iloShares)}` : "";
+  const iloSourceClause = iloShares ? ` · ${ILO_TASK_INDEX_CITATION}` : "";
+
+  const level = levelFromExposure(adjusted);
+  const chips: string[] = [`Auto risk ${baseline}% (Frey-Osborne)`];
+  if (iloShares) {
+    const routinePct = Math.round(
+      (iloShares.routineCognitive + iloShares.routineManual) * 100,
+    );
+    chips.push(`${routinePct}% routine (ILO)`);
+  }
+  if (isAdjusted) {
+    chips.push(`${countryCtx.countryName} adjustment ×${countryCtx.modifier.toFixed(2)}`);
+  }
+
+  const anchorClause = anchorLabel
+    ? ` Anchored from ESCO/ISCO role "${anchorLabel}".`
+    : fo.matchedTerm
+      ? ` Matched from "${fo.matchedTerm}".`
+      : "";
+
+  return {
+    level,
+    exposure: adjusted,
+    baselineExposure: baseline,
+    headline: composeHeadline(level),
+    chips,
+    rationale: `Anchored to "${occupationLabel}" (SOC ${fo.socCodes[0]}) in Frey & Osborne 2017, automation probability ${fo.probability.toFixed(2)}.${anchorClause}${adjustmentClause}${iloClause}`,
+    source: `${FREY_OSBORNE_CITATION}${iloSourceClause}${isAdjusted ? ` · ${countryCtx.source}` : ""}`,
+  };
+}
+
+function riskFromEscoOccupation(
+  profile: CandidateSkillProfile,
+  countryCtx: CountryAutomationContext,
+): SkillAIRisk | null {
+  const codeMatch =
+    freyOsborneProbabilityForIsco(profile.occupation.iscoCode) ??
+    freyOsborneProbabilityForIsco(profile.automationAndReskilling?.automationRiskOccupationCode);
+  const title = occupationTitle(profile);
+  const titleMatch =
+    codeMatch ??
+    freyOsborneProbabilityForSkillTerms([
+      profile.occupation.escoOccupationTitle,
+      profile.occupation.iscoTitle,
+      profile.profile.roleName,
+      profile.profile.normalizedRoleName,
+      ...(profile.experience.jobTitles ?? []),
+    ]);
+
+  return titleMatch ? riskFromFreyOsborneMatch(titleMatch, countryCtx, title) : null;
 }
 
 function describeIloShares(shares: IloTaskShares): string {
@@ -656,6 +783,157 @@ const TRACK_HEADLINE: Record<CandidateTrack, string> = {
     "AI exposure varies by task within this profile. Routine cognitive work is heavily exposed; in-person, judgment-based and locally-rooted work is more durable.",
 };
 
+interface AdjacentSkillRule {
+  name: string;
+  tracks?: CandidateTrack[];
+  triggers: string[];
+  categories?: SkillItem["category"][];
+  reason: string;
+  fallback?: boolean;
+}
+
+interface ScoredAdjacentSkill extends AdjacentSkill {
+  score: number;
+  matchedSkills: string[];
+}
+
+const ADJACENT_SKILL_RULES: AdjacentSkillRule[] = [
+  {
+    name: "TypeScript",
+    tracks: ["tech"],
+    triggers: ["javascript", "react", "node", "frontend", "web development"],
+    reason:
+      "Direct next step from JavaScript or React work; it improves reliability and makes AI-generated code easier to review.",
+  },
+  {
+    name: "Cloud deployment",
+    tracks: ["tech"],
+    triggers: ["node", "backend", "api", "javascript", "react", "web development"],
+    reason:
+      "Moves the candidate from writing app code into deploying, operating and integrating production systems.",
+  },
+  {
+    name: "API security",
+    tracks: ["tech"],
+    triggers: ["node", "api", "backend", "express", "javascript"],
+    reason:
+      "Builds on backend/API work and shifts value toward security judgment that is harder to automate.",
+  },
+  {
+    name: "Testing automation",
+    tracks: ["tech"],
+    triggers: ["react", "javascript", "frontend", "qa", "web development"],
+    reason:
+      "Pairs with coding skills while strengthening verification, debugging and release confidence.",
+  },
+  {
+    name: "Data engineering & analytics",
+    tracks: ["tech", "other"],
+    triggers: ["postgresql", "sql", "database", "excel", "data", "analytics"],
+    reason:
+      "Uses existing data or database skills and points toward higher-demand analytical workflows.",
+  },
+  {
+    name: "AI-tool orchestration (LLM APIs, RAG)",
+    tracks: ["tech"],
+    triggers: ["javascript", "node", "python", "api", "react", "data"],
+    reason:
+      "Turns existing technical skills into building and supervising AI-enabled workflows.",
+  },
+  {
+    name: "Solar / battery repair",
+    tracks: ["trade"],
+    triggers: ["phone repair", "electronics", "repair", "electrical", "battery", "hardware"],
+    reason:
+      "Builds on hands-on repair skills and moves toward a growing energy-maintenance market.",
+  },
+  {
+    name: "IoT & smart-device diagnostics",
+    tracks: ["trade"],
+    triggers: ["phone repair", "electronics", "repair", "diagnostics", "hardware"],
+    reason:
+      "Extends repair experience into connected devices, where local troubleshooting remains valuable.",
+  },
+  {
+    name: "Spare-parts e-commerce / WhatsApp sales",
+    tracks: ["trade"],
+    triggers: ["inventory", "sales", "customer service", "retail", "repair"],
+    reason:
+      "Connects inventory, sales or repair experience to a practical digital commerce channel.",
+  },
+  {
+    name: "Customer training & technical demos",
+    tracks: ["trade", "other"],
+    triggers: ["customer service", "sales", "training", "support", "communication"],
+    reason:
+      "Uses communication strengths in non-routine, in-person work that AI does not easily replace.",
+  },
+  {
+    name: "Mobile bookkeeping",
+    tracks: ["trade", "agriculture", "other"],
+    triggers: ["bookkeeping", "accounting", "cash", "inventory", "record keeping"],
+    reason:
+      "Upgrades routine manual records into app-supported financial tracking and decision-making.",
+  },
+  {
+    name: "Agri-tech app literacy (PlantVillage, Esoko)",
+    tracks: ["agriculture"],
+    triggers: ["crop", "farming", "agriculture", "pest", "irrigation", "cultivation"],
+    reason:
+      "Builds on farm knowledge while using digital tools for diagnosis, prices and extension advice.",
+  },
+  {
+    name: "Post-harvest processing & storage",
+    tracks: ["agriculture"],
+    triggers: ["crop", "cultivation", "harvest", "farming", "agriculture"],
+    reason:
+      "Adds value beyond field work and is less exposed than routine record-keeping tasks.",
+  },
+  {
+    name: "Climate-smart agriculture (drought-resilient varieties)",
+    tracks: ["agriculture"],
+    triggers: ["crop", "cultivation", "irrigation", "soil", "farming", "agriculture"],
+    reason:
+      "Connects existing farming skills to climate adaptation and resilient production methods.",
+  },
+  {
+    name: "Farm data analysis",
+    tracks: ["agriculture"],
+    triggers: ["record keeping", "bookkeeping", "excel", "data", "yield", "farm"],
+    reason:
+      "Turns routine farm records into planning, pricing and yield decisions.",
+  },
+  {
+    name: "Cooperative finance & group savings (VSLA)",
+    tracks: ["agriculture"],
+    triggers: ["cooperative", "community", "finance", "leadership", "management"],
+    reason:
+      "Extends cooperative or leadership work into practical financial coordination.",
+  },
+  {
+    name: "AI tool literacy",
+    tracks: ["other"],
+    triggers: ["admin", "writing", "communication", "customer service", "data entry", "office"],
+    categories: ["business", "soft", "language"],
+    reason:
+      "Helps the candidate use AI on routine writing, admin and research tasks instead of competing with it.",
+  },
+  {
+    name: "Data quality & human-in-the-loop QA",
+    tracks: ["other", "tech"],
+    triggers: ["data entry", "quality", "excel", "admin", "support", "testing"],
+    reason:
+      "Moves routine input work toward checking, correcting and supervising automated outputs.",
+  },
+  {
+    name: "CRM and digital customer records",
+    tracks: ["other", "trade"],
+    triggers: ["customer service", "sales", "admin", "reception", "support"],
+    reason:
+      "Builds on service experience and makes customer workflows more portable across employers.",
+  },
+];
+
 function enrichAdjacentWithOutlook(adjacent: AdjacentSkill): AdjacentSkill {
   const outlook = lookupWittgensteinOutlook(adjacent.name);
   if (!outlook) return adjacent;
@@ -670,6 +948,139 @@ function enrichAdjacentWithOutlook(adjacent: AdjacentSkill): AdjacentSkill {
   };
 }
 
+function normalizeSkillText(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9+#.]+/g, " ").trim();
+}
+
+function skillMatchesTrigger(skill: SkillItem, trigger: string) {
+  const needle = normalizeSkillText(trigger);
+  const haystack = [
+    skill.name,
+    skill.normalizedName,
+    skill.escoPreferredLabel ?? "",
+    ...(skill.evidence ?? []),
+  ]
+    .map(normalizeSkillText)
+    .join(" ");
+  return haystack.includes(needle) || needle.includes(normalizeSkillText(skill.name));
+}
+
+function heldSkillMatchesName(heldSkillNames: Set<string>, candidateName: string) {
+  const normalizedCandidate = normalizeSkillText(candidateName);
+  for (const held of heldSkillNames) {
+    const normalizedHeld = normalizeSkillText(held);
+    if (normalizedHeld === normalizedCandidate) return true;
+    if (normalizedHeld.includes(normalizedCandidate) || normalizedCandidate.includes(normalizedHeld)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function scoreOutlook(skillName: string) {
+  const outlook = lookupWittgensteinOutlook(skillName);
+  if (!outlook) return { outlook: "stable" as const, score: 0 };
+  if (outlook.outlook === "rising") return { outlook: "rising" as const, score: 12 };
+  return { outlook: "stable" as const, score: 4 };
+}
+
+function addScoredAdjacent(
+  recommendations: Map<string, ScoredAdjacentSkill>,
+  adjacent: AdjacentSkill,
+  score: number,
+  matchedSkills: string[],
+) {
+  const enriched = enrichAdjacentWithOutlook(adjacent);
+  const key = normalizeSkillText(enriched.name);
+  const existing = recommendations.get(key);
+  const mergedScore = score + (enriched.outlook === "rising" ? 8 : 2);
+  if (!existing || mergedScore > existing.score) {
+    recommendations.set(key, {
+      ...enriched,
+      score: mergedScore,
+      matchedSkills,
+    });
+  }
+}
+
+function buildAdjacentSkills(
+  profile: CandidateSkillProfile,
+  bySkill: Record<string, SkillAIRisk>,
+): AdjacentSkill[] {
+  const allSkills = Object.values(profile.skills).flat();
+  const track = profile.profile.track;
+  const heldSkillNames = new Set(allSkills.map((s) => s.name.toLowerCase()));
+  const recommendations = new Map<string, ScoredAdjacentSkill>();
+
+  for (const rule of ADJACENT_SKILL_RULES) {
+    if (rule.tracks && !rule.tracks.includes(track)) continue;
+    if (heldSkillMatchesName(heldSkillNames, rule.name)) continue;
+
+    const matchedSkills = allSkills.filter((skill) => {
+      const categoryMatch = rule.categories?.includes(skill.category) ?? false;
+      return categoryMatch || rule.triggers.some((trigger) => skillMatchesTrigger(skill, trigger));
+    });
+    if (!matchedSkills.length) continue;
+
+    const highRiskMatches = matchedSkills.filter((skill) => bySkill[skill.name]?.level === "high").length;
+    const categoryBreadth = new Set(matchedSkills.map((skill) => skill.category)).size;
+    const outlook = scoreOutlook(rule.name);
+    const score =
+      25 +
+      matchedSkills.length * 9 +
+      highRiskMatches * 12 +
+      categoryBreadth * 3 +
+      outlook.score;
+    const matchedNames = matchedSkills.slice(0, 3).map((skill) => skill.name);
+    const reason =
+      matchedNames.length > 0
+        ? `${rule.reason} Matched from: ${matchedNames.join(", ")}.`
+        : rule.reason;
+    addScoredAdjacent(
+      recommendations,
+      {
+        name: rule.name,
+        reason,
+        outlook: outlook.outlook,
+      },
+      score,
+      matchedNames,
+    );
+  }
+
+  for (const name of profile.automationAndReskilling?.recommendedLearningSkills ?? []) {
+    if (!name || heldSkillMatchesName(heldSkillNames, name)) continue;
+    const outlook = scoreOutlook(name);
+    addScoredAdjacent(
+      recommendations,
+      {
+        name,
+        reason:
+          "Suggested from the candidate profile, then ranked behind directly matched next-step skills.",
+        outlook: outlook.outlook,
+      },
+      12 + outlook.score,
+      [],
+    );
+  }
+
+  const minimumRulesBeforeFallback = recommendations.size >= 3;
+  const fallbackScore = minimumRulesBeforeFallback ? 2 : 16;
+  for (const fallback of TRACK_ADJACENT_FALLBACK[track]) {
+    if (heldSkillMatchesName(heldSkillNames, fallback.name)) continue;
+    addScoredAdjacent(recommendations, fallback, fallbackScore, []);
+  }
+
+  return Array.from(recommendations.values())
+    .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name))
+    .slice(0, 5)
+    .map((adjacent) => ({
+      name: adjacent.name,
+      reason: adjacent.reason,
+      outlook: adjacent.outlook,
+    }));
+}
+
 export function computeRiskProfileForCandidateProfile(
   profile: CandidateSkillProfile,
   countryCode?: string,
@@ -679,16 +1090,45 @@ export function computeRiskProfileForCandidateProfile(
   const countryCtx = getCountryModifier(countryCode);
 
   const bySkill: Record<string, SkillAIRisk> = {};
+  const summaryRisks: SkillAIRisk[] = [];
+  const unindexedSkills: string[] = [];
+  const occupationRisk = riskFromEscoOccupation(profile, countryCtx);
+  if (occupationRisk) {
+    summaryRisks.push(occupationRisk);
+  }
   for (const skill of allSkills) {
     const curated = KNOWN_SKILL_RISKS[skill.name.toLowerCase()];
-    const fromFreyOsborne = curated ? null : riskFromFreyOsborne(skill.name, countryCtx);
-    const base = curated ?? fromFreyOsborne ?? inferRiskFromCategory(skill.category, track, countryCtx);
-    bySkill[skill.name] = ensurePresentationFields(
-      attachOutlook(base, lookupWittgensteinOutlook(skill.name)),
-    );
+    const fromFreyOsborne = curated
+      ? null
+      : freyOsborneProbabilityForSkillTerms([
+          skill.name,
+          skill.normalizedName,
+          skill.escoPreferredLabel,
+          ...(skill.evidence ?? []),
+        ]);
+    const outlook = lookupWittgensteinOutlook(skill.escoPreferredLabel ?? skill.name);
+    const indexedBase = curated ?? fromFreyOsborne;
+
+    if (indexedBase) {
+      const indexedRisk = ensurePresentationFields(
+        attachOutlook(
+          "probability" in indexedBase
+            ? riskFromFreyOsborneMatch(indexedBase, countryCtx)
+            : indexedBase,
+          outlook,
+        ),
+      );
+      bySkill[skill.name] = indexedRisk;
+      summaryRisks.push(indexedRisk);
+      continue;
+    }
+
+    unindexedSkills.push(skill.name);
+    const fallbackRisk = inferRiskFromCategory(skill.category, track, countryCtx);
+    summaryRisks.push(ensurePresentationFields(attachOutlook(fallbackRisk, outlook)));
   }
 
-  const exposures = Object.values(bySkill).map((r) => r.exposure);
+  const exposures = summaryRisks.map((r) => r.exposure);
   const overallExposure = exposures.length
     ? Math.round(exposures.reduce((a, b) => a + b, 0) / exposures.length)
     : 50;
@@ -700,41 +1140,32 @@ export function computeRiskProfileForCandidateProfile(
       resilient.push(name);
     }
   }
+  if (occupationRisk?.level === "low" && !resilient.includes(occupationTitle(profile))) {
+    resilient.push(occupationTitle(profile));
+  }
   const llmResilient = profile.automationAndReskilling?.resilientSkills ?? [];
   for (const name of llmResilient) {
     if (name && !resilient.includes(name)) resilient.push(name);
   }
 
-  const heldSkillNames = new Set(allSkills.map((s) => s.name.toLowerCase()));
-  const llmAdjacent: AdjacentSkill[] = (
-    profile.automationAndReskilling?.recommendedLearningSkills ?? []
-  )
-    .filter((s) => s && !heldSkillNames.has(s.toLowerCase()))
-    .map((s) => ({
-      name: s,
-      reason: "Recommended next-step skill from your interview answers and CV.",
-      outlook: "rising" as const,
-    }));
-
-  const fallbackAdjacent = TRACK_ADJACENT_FALLBACK[track].filter(
-    (a) => !heldSkillNames.has(a.name.toLowerCase()),
-  );
-
-  const adjacentByName = new Map<string, AdjacentSkill>();
-  for (const a of [...llmAdjacent, ...fallbackAdjacent]) {
-    const key = a.name.toLowerCase();
-    if (!adjacentByName.has(key)) {
-      adjacentByName.set(key, enrichAdjacentWithOutlook(a));
-    }
-  }
-  const adjacent = Array.from(adjacentByName.values()).slice(0, 5);
+  const adjacent = buildAdjacentSkills(profile, bySkill);
 
   const isAdjusted = countryCtx.modifier !== 1.0;
+  const indexedSkillCount = Object.keys(bySkill).length;
+  const coverageClause =
+    allSkills.length && indexedSkillCount < allSkills.length
+      ? ` Direct per-skill indexes are shown for ${indexedSkillCount} of ${allSkills.length} extracted skills; unmatched skills are included only in the broader profile estimate.`
+      : "";
+  const occupationClause = occupationRisk
+    ? ` Overall exposure is anchored to the mapped ESCO/ISCO role "${occupationTitle(profile)}".`
+    : "";
   const headline = isAdjusted
     ? `${TRACK_HEADLINE[track]} Risk levels shown have been calibrated to ${countryCtx.countryName} via a ×${countryCtx.modifier.toFixed(2)} LMIC modifier (${countryCtx.source}). 2025–2035 outlook uses ${WITTGENSTEIN_CITATION}.`
     : `${TRACK_HEADLINE[track]} 2025–2035 outlook uses ${WITTGENSTEIN_CITATION}.`;
 
   // Build Wittgenstein 2025–2035 trajectory snapshot for the candidate's skills.
+  const coveredHeadline = `${headline}${occupationClause}${coverageClause}`;
+
   const rising: TrajectoryEntry[] = [];
   const declining: TrajectoryEntry[] = [];
   for (const skill of allSkills) {
@@ -767,9 +1198,12 @@ export function computeRiskProfileForCandidateProfile(
     summary: {
       overallLevel,
       overallExposure,
-      headline,
+      headline: coveredHeadline,
     },
     bySkill,
+    indexedSkillCount,
+    totalSkillCount: allSkills.length,
+    unindexedSkills,
     resilient: resilient.slice(0, 8),
     adjacent,
     trajectory: {

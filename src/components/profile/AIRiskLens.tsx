@@ -47,6 +47,10 @@ const outlookStyles: Record<
 export function AIRiskLens({ profile }: { profile: SkillRiskProfile }) {
   const summary = levelStyles[profile.summary.overallLevel];
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const riskEntries = Object.entries(profile.bySkill);
+  const indexedSkillCount = profile.indexedSkillCount ?? riskEntries.length;
+  const totalSkillCount = profile.totalSkillCount ?? riskEntries.length;
+  const unindexedSkills = profile.unindexedSkills ?? [];
 
   const toggleExpanded = (name: string) => {
     setExpanded((prev) => {
@@ -87,13 +91,52 @@ export function AIRiskLens({ profile }: { profile: SkillRiskProfile }) {
         {profile.summary.headline}
       </p>
 
+      {totalSkillCount > 0 && (
+        <div className="mt-3 rounded-lg border border-border bg-background px-4 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs font-medium text-foreground">
+              Directly indexed skills: {indexedSkillCount}/{totalSkillCount}
+            </p>
+            {unindexedSkills.length > 0 && (
+              <span className="text-[11px] text-muted-foreground">
+                Unmatched skills stay in the profile-level estimate only.
+              </span>
+            )}
+          </div>
+          {unindexedSkills.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {unindexedSkills.slice(0, 10).map((skill) => (
+                <span
+                  key={skill}
+                  className="rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground"
+                >
+                  {skill}
+                </span>
+              ))}
+              {unindexedSkills.length > 10 && (
+                <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
+                  +{unindexedSkills.length - 10} more
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Per-skill exposure */}
       <div className="mt-6">
         <h3 className="text-sm font-semibold text-navy">
-          Per-skill exposure
+          Matched per-skill exposure
         </h3>
         <div className="mt-3 space-y-3">
-          {Object.entries(profile.bySkill).map(([name, risk]) => {
+          {riskEntries.length === 0 && (
+            <div className="rounded-lg border border-border bg-background p-4 text-sm text-muted-foreground">
+              No extracted skills matched a direct automation or occupation
+              index yet. The overall view uses the candidate's track,
+              categories and 2025â€“2035 trajectory instead.
+            </div>
+          )}
+          {riskEntries.map(([name, risk]) => {
             const s = levelStyles[risk.level];
             const outlook = risk.outlook ? outlookStyles[risk.outlook] : null;
             const OutlookIcon = outlook?.icon;
