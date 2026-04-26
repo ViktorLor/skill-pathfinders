@@ -1007,7 +1007,7 @@ function buildAdjacentSkills(
   profile: CandidateSkillProfile,
   bySkill: Record<string, SkillAIRisk>,
 ): AdjacentSkill[] {
-  const allSkills = Object.values(profile.skills).flat();
+  const allSkills = Object.values(profile.skills).flat().filter((s) => s?.name);
   const track = profile.profile.track;
   const heldSkillNames = new Set(allSkills.map((s) => s.name.toLowerCase()));
   const recommendations = new Map<string, ScoredAdjacentSkill>();
@@ -1085,7 +1085,7 @@ export function computeRiskProfileForCandidateProfile(
   profile: CandidateSkillProfile,
   countryCode?: string,
 ): SkillRiskProfile {
-  const allSkills = Object.values(profile.skills).flat();
+  const allSkills = Object.values(profile.skills).flat().filter((s) => s?.name);
   const track = profile.profile.track;
   const countryCtx = getCountryModifier(countryCode);
 
