@@ -10,7 +10,7 @@ import {
   type PolicyOccupationProfileGroup,
   type PolicyProfileAggregates,
 } from "@/services/policyAggregates";
-import { getCountryWdiSnapshot, type WorldBankIndicatorData } from "@/services/worldBank";
+import { getCountryWdiSnapshot, getReturnsToEducation, type ReturnsToEducation, type WorldBankIndicatorData } from "@/services/worldBank";
 import type { CountryConfig } from "@/types/unmapped";
 import {
   AlertCircle,
@@ -60,25 +60,32 @@ function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [view, setView] = useState<DashboardView>("youth");
+  const [returnsToEducation, setReturnsToEducation] = useState<ReturnsToEducation | null>(null);
 
   useEffect(() => {
     let isCurrent = true;
     setWdiSnapshot({});
     setIsLoading(true);
     setLoadError(null);
+    setReturnsToEducation(null);
 
-    getCountryWdiSnapshot(country.wbCountryCode)
-      .then((snapshot) => {
+    Promise.allSettled([
+      getCountryWdiSnapshot(country.wbCountryCode),
+      getReturnsToEducation(country.wbCountryCode),
+    ]).then(([snapshotResult, educationResult]) => {
         if (!isCurrent) return;
-        setWdiSnapshot(snapshot);
-        setIsLoading(false);
-      })
-      .catch((error) => {
-        console.error("Failed to load World Bank WDI snapshot", error);
-        if (!isCurrent) return;
-        setLoadError(
-          error instanceof Error ? error.message : "World Bank WDI data could not be loaded.",
-        );
+        if (snapshotResult.status === "fulfilled") {
+          setWdiSnapshot(snapshotResult.value);
+        } else {
+          setLoadError(
+            snapshotResult.reason instanceof Error
+              ? snapshotResult.reason.message
+              : "World Bank WDI data could not be loaded.",
+          );
+        }
+        if (educationResult.status === "fulfilled") {
+          setReturnsToEducation(educationResult.value);
+        }
         setIsLoading(false);
       });
 
@@ -137,6 +144,7 @@ function DashboardPage() {
           sectorShares={wdiSectorShares}
           snapshot={wdiSnapshot}
           isLoading={isLoading}
+          returnsToEducation={returnsToEducation}
         />
       )}
     </main>
@@ -337,12 +345,14 @@ function PolicymakerView({
   sectorShares,
   snapshot,
   isLoading,
+  returnsToEducation,
 }: {
   country: CountryConfig;
   cards: WorldBankIndicatorData[];
   sectorShares: LiveBarSignal[];
   snapshot: WdiSnapshot;
   isLoading: boolean;
+  returnsToEducation: ReturnsToEducation | null;
 }) {
   const [profileAggregates, setProfileAggregates] = useState<PolicyProfileAggregates | null>(null);
   const [aggregateError, setAggregateError] = useState<string | null>(null);
@@ -450,6 +460,7 @@ function PolicymakerView({
           max={100}
           isLoading={isLoading}
         />
+        <ReturnsToEducationCard data={returnsToEducation} isLoading={isLoading} />
       </section>
 
       <section className="mt-6 rounded-xl border border-border bg-card p-5">
@@ -893,6 +904,81 @@ function BarChart({
       <p className="mt-4 text-[10px] text-muted-foreground">
         Source: World Bank WDI API. Values are fetched live for the selected country.
       </p>
+    </div>
+  );
+}
+
+function ReturnsToEducationCard({
+  data,
+  isLoading,
+}: {
+  data: ReturnsToEducation | null;
+  isLoading: boolean;
+}) {
+  return (
+    <div className="rounded-xl border border-border bg-card p-5">
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="text-sm font-semibold text-navy">Returns to education</h3>
+        {data && (
+          <a
+            href={data.sourceUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-navy"
+          >
+            World Bank WDI
+            <ExternalLink className="h-3 w-3" />
+          </a>
+        )}
+      </div>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Labour force participation rate by education attainment — a direct signal of wage returns to
+        staying in school longer.
+      </p>
+      {isLoading ? (
+        <LoadingState message="Fetching education attainment indicators…" />
+      ) : data ? (
+        <>
+          <p className="mt-2 text-[11px] text-muted-foreground">
+            {data.countryName}, {data.year} · SL.TLF.BASC/INTM/ADVN.ZS
+          </p>
+          <div className="mt-4 space-y-3">
+            {(
+              [
+                { label: "Basic (primary)", value: data.basic },
+                { label: "Secondary", value: data.intermediate },
+                { label: "Tertiary", value: data.advanced },
+              ] as const
+            ).map(({ label, value }) => (
+              <div key={label}>
+                <div className="mb-1 flex items-center justify-between text-xs">
+                  <span className="font-medium text-foreground">{label}</span>
+                  <span className="tabular-nums text-muted-foreground">{value.toFixed(1)}%</span>
+                </div>
+                <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                  <div
+                    className="h-full bg-sky"
+                    style={{ width: `${Math.min(value, 100).toFixed(1)}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+          {data.advanced > data.basic && (
+            <p className="mt-3 text-xs text-muted-foreground">
+              <span className="font-semibold text-greenT">
+                +{(data.advanced - data.basic).toFixed(1)} pp
+              </span>{" "}
+              higher participation for tertiary vs. basic education holders.
+            </p>
+          )}
+          <p className="mt-4 text-[10px] text-muted-foreground">
+            Source: World Bank WDI API · Values fetched live for the selected country.
+          </p>
+        </>
+      ) : (
+        <EmptyState message="Returns-to-education indicators are not available for this country." />
+      )}
     </div>
   );
 }
