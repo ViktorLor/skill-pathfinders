@@ -56,6 +56,8 @@ const MAX_INTERVIEW_QUESTIONS = 5;
 
 
 type FixedProfileFields = {
+  fullName: string;
+  telephoneNumber: string;
   location: string;
   country: string;
   currentlyEmployed: boolean;
@@ -238,6 +240,8 @@ You create structured CandidateSkillProfile JSON for employment matching.
 Use only evidence from the CV if provided and the interview answers. Do not invent employers, degrees, certifications, taxonomies, countries or years.
 Return JSON with this shape:
 {
+  "fullName": string,
+  "telephoneNumber": string,
   "location": string,
   "country": string,
   "willingToRelocate": boolean,
@@ -251,6 +255,7 @@ Return JSON with this shape:
   "nextQuestion": string,
   "isComplete": boolean
 }
+Preserve the candidate's fullName and telephoneNumber exactly from the provided profile fields or interview answers. Do not invent either value.
 Each skill item must include name, normalizedName, category, evidence, and confidence. Add proficiency or yearsExperience only when supported.
 Always include escoOccupationCode when an ESCO occupation is mapped. Use the ESCO concept identifier or notation, not the full URL. Keep escoOccupationUri only for internal linking.
 For "country", return an ISO 3166-1 alpha-3 code (e.g. "GHA", "BGD", "NGA", "KEN", "AUT", "IND") inferred from the CV or the candidate's answers. Leave it as an empty string only if the candidate's country is genuinely unknown. For "location" use a "City, Country" string when known.
@@ -320,6 +325,11 @@ const profileDraftSchema = {
   additionalProperties: false,
   required: ["profile", "occupation", "experience", "education", "skills", "evidence", "nextQuestion", "isComplete"],
   properties: {
+    fullName: { type: "string" },
+    telephoneNumber: { type: "string" },
+    location: { type: "string" },
+    country: { type: "string" },
+    willingToRelocate: { type: "boolean" },
     profile: {
       type: "object",
       additionalProperties: true,
@@ -385,6 +395,8 @@ type RawCandidateProfile = {
   skills?: Partial<CandidateSkillProfile["skills"]>;
   evidence?: CandidateSkillProfile["evidence"];
   automationAndReskilling?: Partial<NonNullable<CandidateSkillProfile["automationAndReskilling"]>>;
+  fullName?: string;
+  telephoneNumber?: string;
   location?: string;
   country?: string;
   willingToRelocate?: boolean;
@@ -392,6 +404,8 @@ type RawCandidateProfile = {
 
 function withProfileDefaults(profile: RawCandidateProfile): CandidateSkillProfile {
   return {
+    fullName: normalizeOptionalText(profile.fullName),
+    telephoneNumber: normalizeOptionalText(profile.telephoneNumber),
     location: normalizeOptionalText(profile.location),
     country: normalizeOptionalText(profile.country),
     willingToRelocate: profile.willingToRelocate,
@@ -482,6 +496,8 @@ function LandingPage() {
   const [authError, setAuthError] = useState("");
   const [isCheckingAccountProfile, setIsCheckingAccountProfile] = useState(false);
   const [cvFile, setCvFile] = useState<File | null>(null);
+  const [fullNameInput, setFullNameInput] = useState("");
+  const [telephoneInput, setTelephoneInput] = useState("");
   const [selectedCountry, setSelectedCountry] = useState("");
   const [cityInput, setCityInput] = useState("");
   const [currentlyEmployed, setCurrentlyEmployed] = useState("");
@@ -504,10 +520,14 @@ function LandingPage() {
     : Math.min(100, Math.round((questionCount / MAX_INTERVIEW_QUESTIONS) * 100));
   const latestQuestion = [...messages].reverse().find((message) => message.role === "assistant")?.text;
   const selectedCountryRecord = getIsoCountry(selectedCountry);
+  const trimmedFullName = fullNameInput.trim();
+  const trimmedTelephone = telephoneInput.trim();
   const trimmedCity = cityInput.trim();
   const fixedFields =
-    selectedCountryRecord && currentlyEmployed && willingToRelocate
+    trimmedFullName && trimmedTelephone && selectedCountryRecord && currentlyEmployed && willingToRelocate
       ? {
+          fullName: trimmedFullName,
+          telephoneNumber: trimmedTelephone,
           location: trimmedCity
             ? `${trimmedCity}, ${selectedCountryRecord.name}`
             : selectedCountryRecord.name,
@@ -591,7 +611,7 @@ function LandingPage() {
       return;
     }
     if (!fixedFields) {
-      setError("Please answer location, employment, and relocation before scanning the CV.");
+      setError("Please add your name, telephone number, location, employment, and relocation before scanning the CV.");
       return;
     }
 
@@ -645,7 +665,7 @@ function LandingPage() {
       return;
     }
     if (!fixedFields) {
-      setError("Please answer location, employment, and relocation before starting the questionnaire.");
+      setError("Please add your name, telephone number, location, employment, and relocation before starting the questionnaire.");
       return;
     }
 
@@ -771,6 +791,42 @@ function LandingPage() {
                 }}
               />
             </label>
+
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-foreground">
+                  Full name
+                </label>
+                <Input
+                  value={fullNameInput}
+                  onChange={(event) => {
+                    setFullNameInput(event.target.value);
+                    setError("");
+                  }}
+                  placeholder="e.g. Amara Mensah"
+                  autoComplete="name"
+                  disabled={isAnalyzing || isSendingAnswer || Boolean(profile)}
+                  className="h-11 bg-background"
+                />
+              </div>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-foreground">
+                  Telephone number
+                </label>
+                <Input
+                  type="tel"
+                  value={telephoneInput}
+                  onChange={(event) => {
+                    setTelephoneInput(event.target.value);
+                    setError("");
+                  }}
+                  placeholder="e.g. +233 24 123 4567"
+                  autoComplete="tel"
+                  disabled={isAnalyzing || isSendingAnswer || Boolean(profile)}
+                  className="h-11 bg-background"
+                />
+              </div>
+            </div>
 
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <div>
@@ -1175,6 +1231,8 @@ function ProfileSummary({
       {profile && (
         <>
           <div className="mt-5 grid grid-cols-2 gap-3 text-sm">
+            <SummaryField label="Name" value={profile.fullName ?? "Unknown"} />
+            <SummaryField label="Telephone" value={profile.telephoneNumber ?? "Unknown"} />
             <SummaryField label="Location" value={profile.location ?? "Unknown"} />
             <SummaryField label="Country" value={profile.country ?? "Unknown"} />
             <SummaryField label="Employed" value={formatBoolean(profile.experience.hasJob)} />
@@ -1259,6 +1317,8 @@ function createProfileId() {
 
 function createEmptySkillProfile(fixedFields: FixedProfileFields): CandidateSkillProfile {
   return {
+    fullName: fixedFields.fullName,
+    telephoneNumber: fixedFields.telephoneNumber,
     location: fixedFields.location,
     country: fixedFields.country,
     willingToRelocate: fixedFields.willingToRelocate,
@@ -1323,6 +1383,8 @@ function applyFixedProfileFields(
 ): CandidateSkillProfile {
   return {
     ...profile,
+    fullName: fixedFields.fullName,
+    telephoneNumber: fixedFields.telephoneNumber,
     location: fixedFields.location,
     country: fixedFields.country,
     willingToRelocate: fixedFields.willingToRelocate,
@@ -1335,6 +1397,8 @@ function applyFixedProfileFields(
 
 function readFixedProfileFields(profile: CandidateSkillProfile): FixedProfileFields {
   return {
+    fullName: normalizeRequiredText(profile.fullName, "Unknown"),
+    telephoneNumber: normalizeRequiredText(profile.telephoneNumber, "Unknown"),
     location: normalizeRequiredText(profile.location, "Unknown"),
     country: normalizeRequiredText(profile.country, "Unknown"),
     currentlyEmployed: Boolean(profile.experience.hasJob),

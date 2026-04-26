@@ -10,6 +10,8 @@ CREATE TABLE IF NOT EXISTS accounts (
 CREATE TABLE IF NOT EXISTS account_skill_profiles (
   profile_id TEXT PRIMARY KEY,
   account_id TEXT,
+  full_name TEXT NOT NULL DEFAULT '',
+  telephone_number TEXT NOT NULL DEFAULT '',
   isco_code TEXT NOT NULL,
   isco_title TEXT NOT NULL,
   years_experience REAL NOT NULL,
@@ -31,3 +33,7 @@ CREATE INDEX IF NOT EXISTS idx_account_skill_profiles_isco
 
 CREATE INDEX IF NOT EXISTS idx_account_skill_profiles_has_job
   ON account_skill_profiles (has_job);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_account_skill_profiles_phone_unique
+  ON account_skill_profiles (telephone_number)
+  WHERE telephone_number <> '';

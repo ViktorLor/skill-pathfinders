@@ -44,6 +44,8 @@ export interface SkillItem {
 }
 
 export interface CandidateSkillProfile {
+  fullName?: string;
+  telephoneNumber?: string;
   location?: string;
   country?: string;
   willingToRelocate?: boolean;

@@ -3,6 +3,8 @@ import type { ProfileSnapshot } from "@/services/profileHandler";
 import { getLocalDatabase } from "@/services/localDb.server";
 
 type AnalyticsFields = {
+  fullName: string;
+  telephoneNumber: string;
   iscoCode: string;
   iscoTitle: string;
   yearsExperience: number;
@@ -26,6 +28,8 @@ export async function saveAccountProfileSnapshot(snapshot: ProfileSnapshot) {
     `INSERT INTO account_skill_profiles (
         profile_id,
         account_id,
+        full_name,
+        telephone_number,
         isco_code,
         isco_title,
         years_experience,
@@ -41,9 +45,11 @@ export async function saveAccountProfileSnapshot(snapshot: ProfileSnapshot) {
         created_at,
         updated_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(profile_id) DO UPDATE SET
         account_id = excluded.account_id,
+        full_name = excluded.full_name,
+        telephone_number = excluded.telephone_number,
         isco_code = excluded.isco_code,
         isco_title = excluded.isco_title,
         years_experience = excluded.years_experience,
@@ -60,6 +66,8 @@ export async function saveAccountProfileSnapshot(snapshot: ProfileSnapshot) {
   ).run(
     snapshot.profileId,
     snapshot.accountId ?? null,
+    analytics.fullName,
+    analytics.telephoneNumber,
     analytics.iscoCode,
     analytics.iscoTitle,
     analytics.yearsExperience,
@@ -148,6 +156,8 @@ async function ensureAccountProfilesTable(db: ReturnType<typeof getLocalDatabase
     `CREATE TABLE IF NOT EXISTS account_skill_profiles (
         profile_id TEXT PRIMARY KEY,
         account_id TEXT,
+        full_name TEXT NOT NULL DEFAULT '',
+        telephone_number TEXT NOT NULL DEFAULT '',
         isco_code TEXT NOT NULL,
         isco_title TEXT NOT NULL,
         years_experience REAL NOT NULL,
@@ -165,6 +175,8 @@ async function ensureAccountProfilesTable(db: ReturnType<typeof getLocalDatabase
       )`,
   );
 
+  ensureColumn(db, "account_skill_profiles", "full_name", "TEXT NOT NULL DEFAULT ''");
+  ensureColumn(db, "account_skill_profiles", "telephone_number", "TEXT NOT NULL DEFAULT ''");
   ensureColumn(db, "account_skill_profiles", "location", "TEXT NOT NULL DEFAULT ''");
   ensureColumn(db, "account_skill_profiles", "country", "TEXT NOT NULL DEFAULT ''");
   ensureColumn(db, "account_skill_profiles", "currently_employed", "INTEGER NOT NULL DEFAULT 0");
@@ -176,10 +188,15 @@ async function ensureAccountProfilesTable(db: ReturnType<typeof getLocalDatabase
   db.exec(
     "CREATE INDEX IF NOT EXISTS idx_account_skill_profiles_has_job ON account_skill_profiles (has_job)",
   );
+  db.exec(
+    "CREATE UNIQUE INDEX IF NOT EXISTS idx_account_skill_profiles_phone_unique ON account_skill_profiles (telephone_number) WHERE telephone_number <> ''",
+  );
 }
 
 function getAnalyticsFields(profile: CandidateSkillProfile): AnalyticsFields {
   return {
+    fullName: normalizeText(profile.fullName),
+    telephoneNumber: normalizeText(profile.telephoneNumber),
     iscoCode: normalizeRequired(profile.occupation.iscoCode, "unknown"),
     iscoTitle: normalizeRequired(profile.occupation.iscoTitle, "Unknown occupation"),
     yearsExperience: normalizeYears(profile.experience.totalYears),

@@ -70,6 +70,23 @@ export interface LocalLaborMarketInsight {
     confidence: "low" | "medium" | "high";
     notes: string;
   };
+  economicMetrics: {
+    averagePay: {
+      label: string;
+      value: string;
+      period: "hour" | "day" | "week" | "month" | "year" | "project" | "unknown";
+      currency: string;
+      confidence: "low" | "medium" | "high";
+      notes: string;
+    };
+    employmentInAgeGroup: {
+      label: string;
+      value: string;
+      ageGroup: string;
+      confidence: "low" | "medium" | "high";
+      notes: string;
+    };
+  };
   selfEmployment: {
     suitable: boolean;
     viability: "poor" | "possible" | "good" | "unclear";
@@ -222,7 +239,7 @@ async function callOpenAIForMarketInsight(
           role: "user",
           content: JSON.stringify(
             {
-              task: "Explain how this occupation is commonly done in the location, expected salary/pay pattern, formal vs gig/self-employment availability, and whether an entrepreneur/freelancer route should be shown next to job listings.",
+              task: "Explain how this occupation is commonly done in the location, expected salary/pay pattern, formal vs gig/self-employment availability, whether an entrepreneur/freelancer route should be shown next to job listings, and two economic metrics for the job-opportunity area: average pay for this role and an estimate of how many people in the candidate's likely age/youth group are employed in this occupation or closest available occupation group. If exact occupation-by-age-by-area data is unavailable, say so and provide the closest cautious proxy instead of inventing precision.",
               profile: summarizeProfileForInsight(input.profile),
               location: input.location,
               tavilyQuery: input.query,
@@ -328,6 +345,7 @@ const marketInsightSchema = {
     "summary",
     "howWorkIsDone",
     "salaryExpectation",
+    "economicMetrics",
     "selfEmployment",
     "formalEmployment",
     "credentialsOrBarriers",
@@ -356,6 +374,41 @@ const marketInsightSchema = {
         currency: { type: "string" },
         confidence: { type: "string", enum: ["low", "medium", "high"] },
         notes: { type: "string" },
+      },
+    },
+    economicMetrics: {
+      type: "object",
+      additionalProperties: false,
+      required: ["averagePay", "employmentInAgeGroup"],
+      properties: {
+        averagePay: {
+          type: "object",
+          additionalProperties: false,
+          required: ["label", "value", "period", "currency", "confidence", "notes"],
+          properties: {
+            label: { type: "string" },
+            value: { type: "string" },
+            period: {
+              type: "string",
+              enum: ["hour", "day", "week", "month", "year", "project", "unknown"],
+            },
+            currency: { type: "string" },
+            confidence: { type: "string", enum: ["low", "medium", "high"] },
+            notes: { type: "string" },
+          },
+        },
+        employmentInAgeGroup: {
+          type: "object",
+          additionalProperties: false,
+          required: ["label", "value", "ageGroup", "confidence", "notes"],
+          properties: {
+            label: { type: "string" },
+            value: { type: "string" },
+            ageGroup: { type: "string" },
+            confidence: { type: "string", enum: ["low", "medium", "high"] },
+            notes: { type: "string" },
+          },
+        },
       },
     },
     selfEmployment: {
@@ -543,19 +596,11 @@ function inferOpportunityType(result: TavilySearchResult): JobMatch["type"] {
 
 function buildGapAnalysis(
   result: TavilySearchResult,
-  matchedSkills: string[],
-  missingSkills: string[],
-  profile: CandidateSkillProfile,
+  _matchedSkills: string[],
+  _missingSkills: string[],
+  _profile: CandidateSkillProfile,
 ) {
-  const basis = matchedSkills.length
-    ? `Matches ${matchedSkills.join(", ")} from this ESCO skill profile.`
-    : `Relevant to ${profile.occupation.escoOccupationTitle || profile.profile.roleName}.`;
-  const gap = missingSkills.length
-    ? `Check the listing for ${missingSkills.join(", ")} before applying.`
-    : "No obvious skill gap was detected from the listing summary.";
-  const sourceNote = result.content ? ` Tavily found: ${truncate(result.content, 120)}` : "";
-
-  return `${basis} ${gap}${sourceNote}`;
+  return result.content ? `Tavily found: ${truncate(result.content, 160)}` : "";
 }
 
 function matchStatus(score: number): JobMatch["matchStatus"] {
@@ -641,6 +686,55 @@ function normalizeMarketInsight(
       currency: cleanText(insight.salaryExpectation?.currency) || "unknown",
       confidence: enumValue(insight.salaryExpectation?.confidence, ["high", "medium", "low"]),
       notes: cleanText(insight.salaryExpectation?.notes) || "Use this as a directional estimate.",
+    },
+    economicMetrics: {
+      averagePay: {
+        label: cleanText(insight.economicMetrics?.averagePay?.label) || "Average pay",
+        value:
+          cleanText(insight.economicMetrics?.averagePay?.value) ||
+          cleanText(insight.salaryExpectation?.range) ||
+          "Not enough evidence",
+        period: enumValue(insight.economicMetrics?.averagePay?.period, [
+          "hour",
+          "day",
+          "week",
+          "month",
+          "year",
+          "project",
+          "unknown",
+        ]),
+        currency:
+          cleanText(insight.economicMetrics?.averagePay?.currency) ||
+          cleanText(insight.salaryExpectation?.currency) ||
+          "unknown",
+        confidence: enumValue(insight.economicMetrics?.averagePay?.confidence, [
+          "high",
+          "medium",
+          "low",
+        ]),
+        notes:
+          cleanText(insight.economicMetrics?.averagePay?.notes) ||
+          "Based on available listings and labor-market snippets.",
+      },
+      employmentInAgeGroup: {
+        label:
+          cleanText(insight.economicMetrics?.employmentInAgeGroup?.label) ||
+          "People employed in age group",
+        value:
+          cleanText(insight.economicMetrics?.employmentInAgeGroup?.value) ||
+          "Not enough evidence",
+        ageGroup:
+          cleanText(insight.economicMetrics?.employmentInAgeGroup?.ageGroup) ||
+          "youth or working-age group",
+        confidence: enumValue(insight.economicMetrics?.employmentInAgeGroup?.confidence, [
+          "high",
+          "medium",
+          "low",
+        ]),
+        notes:
+          cleanText(insight.economicMetrics?.employmentInAgeGroup?.notes) ||
+          "Exact occupation-by-age employment counts are often unavailable for local areas.",
+      },
     },
     selfEmployment: {
       suitable: Boolean(insight.selfEmployment?.suitable),

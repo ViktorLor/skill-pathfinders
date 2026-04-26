@@ -24,6 +24,7 @@ import {
   XCircle,
   Star,
   MapPin,
+  Phone,
   BarChart3,
   TrendingDown,
   ExternalLink,
@@ -829,7 +830,8 @@ function DynamicProfilePage({ snapshot }: { snapshot: ProfileSnapshot }) {
       cancelled = true;
     };
   }, [effectiveCountryCode, isIsoAlpha3]);
-  const initials = (profile.profile.roleName || "Candidate")
+  const displayName = profile.fullName?.trim() || "Candidate";
+  const initials = (profile.fullName || profile.profile.roleName || "Candidate")
     .split(" ")
     .map((part) => part[0])
     .join("")
@@ -904,17 +906,28 @@ function DynamicProfilePage({ snapshot }: { snapshot: ProfileSnapshot }) {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-navy">
-                {profile.profile.roleName || "Candidate profile"}
+                {displayName}
               </h1>
+              <div className="mt-1 text-sm font-medium text-foreground">
+                {profile.profile.roleName || "Candidate profile"}
+              </div>
               <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
                 {profile.profile.summary}
               </p>
-              {profile.location && (
-                <p className="mt-2 inline-flex items-center gap-1 text-sm text-muted-foreground">
-                  <MapPin className="h-3.5 w-3.5" />
-                  {profile.location}
-                </p>
-              )}
+              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                {profile.location && (
+                  <span className="inline-flex items-center gap-1">
+                    <MapPin className="h-3.5 w-3.5" />
+                    {profile.location}
+                  </span>
+                )}
+                {profile.telephoneNumber && (
+                  <span className="inline-flex items-center gap-1">
+                    <Phone className="h-3.5 w-3.5" />
+                    {profile.telephoneNumber}
+                  </span>
+                )}
+              </div>
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <span className="rounded-md bg-navy/10 px-2.5 py-1 text-xs font-medium capitalize text-navy">
                   {profile.profile.track}
@@ -1131,6 +1144,9 @@ function DynamicProfilePage({ snapshot }: { snapshot: ProfileSnapshot }) {
             {jobSearch && (
               <div className="mt-4">
                 <div className="text-xs text-muted-foreground">Tavily query: {jobSearch.query}</div>
+                {jobSearch.marketInsight && (
+                  <JobOpportunityMetrics insight={jobSearch.marketInsight} />
+                )}
                 {jobSearch.jobs.length > 0 ? (
                   <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-2">
                     {jobSearch.jobs.map((job) => (
@@ -1625,6 +1641,41 @@ function CompactList({ items, empty }: { items: string[]; empty: string }) {
         </li>
       ))}
     </ul>
+  );
+}
+
+function JobOpportunityMetrics({ insight }: { insight: LocalLaborMarketInsight }) {
+  const averagePay = insight.economicMetrics.averagePay;
+  const employment = insight.economicMetrics.employmentInAgeGroup;
+
+  return (
+    <div className="mt-3 grid gap-3 md:grid-cols-2">
+      <div className="rounded-lg border border-border bg-background p-4">
+        <div className="text-xs font-medium uppercase text-muted-foreground">
+          Avg pay in market
+        </div>
+        <p className="mt-1 text-sm font-semibold text-foreground">{averagePay.value}</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {averagePay.currency} / {averagePay.period}; confidence {averagePay.confidence}
+        </p>
+        <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+          {averagePay.notes}
+        </p>
+      </div>
+
+      <div className="rounded-lg border border-border bg-background p-4">
+        <div className="text-xs font-medium uppercase text-muted-foreground">
+          Employment in age group
+        </div>
+        <p className="mt-1 text-sm font-semibold text-foreground">{employment.value}</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {employment.ageGroup}; confidence {employment.confidence}
+        </p>
+        <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+          {employment.notes}
+        </p>
+      </div>
+    </div>
   );
 }
 
