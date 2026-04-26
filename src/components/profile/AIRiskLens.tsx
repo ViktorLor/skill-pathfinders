@@ -1,4 +1,5 @@
-import { Bot, Shield, Sparkles, TrendingDown, TrendingUp } from "lucide-react";
+import { useState } from "react";
+import { Bot, ChevronDown, ChevronUp, Shield, Sparkles, TrendingDown, TrendingUp } from "lucide-react";
 import type { SkillRiskProfile, AIRiskLevel } from "@/data/aiRisk";
 
 const levelStyles: Record<
@@ -45,6 +46,16 @@ const outlookStyles: Record<
 
 export function AIRiskLens({ profile }: { profile: SkillRiskProfile }) {
   const summary = levelStyles[profile.summary.overallLevel];
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+
+  const toggleExpanded = (name: string) => {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+  };
 
   return (
     <section className="mt-10 rounded-xl border border-border bg-card p-6">
@@ -136,17 +147,54 @@ export function AIRiskLens({ profile }: { profile: SkillRiskProfile }) {
                     style={{ width: `${risk.exposure}%` }}
                   />
                 </div>
-                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-                  {risk.rationale}
-                </p>
-                {risk.outlookNote && (
-                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                    {risk.outlookNote}
+                {risk.headline && (
+                  <p className="mt-3 text-sm font-medium text-foreground">
+                    {risk.headline}
                   </p>
                 )}
-                <p className="mt-1 text-[10px] uppercase tracking-wide text-muted-foreground/80">
-                  Source: {risk.source}
-                </p>
+                {risk.chips && risk.chips.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {risk.chips.map((chip) => (
+                      <span
+                        key={chip}
+                        className="rounded-md bg-muted px-2 py-0.5 font-mono text-[11px] text-foreground"
+                      >
+                        {chip}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => toggleExpanded(name)}
+                  className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-navy"
+                  aria-expanded={expanded.has(name)}
+                >
+                  {expanded.has(name) ? (
+                    <>
+                      Hide sources <ChevronUp className="h-3 w-3" />
+                    </>
+                  ) : (
+                    <>
+                      Show sources <ChevronDown className="h-3 w-3" />
+                    </>
+                  )}
+                </button>
+                {expanded.has(name) && (
+                  <div className="mt-2 rounded-md border border-border bg-muted/40 p-3">
+                    <p className="text-xs leading-relaxed text-muted-foreground">
+                      {risk.rationale}
+                    </p>
+                    {risk.outlookNote && (
+                      <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                        {risk.outlookNote}
+                      </p>
+                    )}
+                    <p className="mt-2 text-[10px] uppercase tracking-wide text-muted-foreground/80">
+                      Source: {risk.source}
+                    </p>
+                  </div>
+                )}
               </div>
             );
           })}

@@ -19,8 +19,16 @@ export interface SkillAIRisk {
   level: AIRiskLevel;
   /** 0–100, calibrated for LMIC labor markets */
   exposure: number;
+  /** Plain-English one-sentence summary for the candidate (always visible) */
+  headline?: string;
+  /** Compact data chips like "FO 0.98", "73% routine", "+45% by 2035" */
+  chips?: string[];
+  /**
+   * Detailed rationale (citations, full clauses). Surfaced behind a "Sources"
+   * disclosure in the UI so the candidate doesn't see a wall of text by default.
+   */
   rationale: string;
-  /** Short source attribution shown in the UI */
+  /** Short source attribution shown alongside the rationale in the disclosure */
   source: string;
   /** Wittgenstein 2025–2035 demand outlook for this skill, when known */
   outlook?: "rising" | "stable" | "declining";
@@ -297,16 +305,17 @@ export const AGRI_RISK_PROFILE: SkillRiskProfile = {
 export function getRiskProfileForCandidate(
   candidateId: string,
 ): SkillRiskProfile | null {
-  if (candidateId === "demo-trade" || candidateId === "cand_002") {
-    return TRADE_RISK_PROFILE;
+  let base: SkillRiskProfile | null = null;
+  if (candidateId === "demo-trade" || candidateId === "cand_002") base = TRADE_RISK_PROFILE;
+  else if (candidateId === "demo-tech" || candidateId === "cand_001") base = TECH_RISK_PROFILE;
+  else if (candidateId === "demo-agri" || candidateId === "cand_003") base = AGRI_RISK_PROFILE;
+  if (!base) return null;
+
+  const bySkill: Record<string, SkillAIRisk> = {};
+  for (const [name, risk] of Object.entries(base.bySkill)) {
+    bySkill[name] = ensurePresentationFields(risk);
   }
-  if (candidateId === "demo-tech" || candidateId === "cand_001") {
-    return TECH_RISK_PROFILE;
-  }
-  if (candidateId === "demo-agri" || candidateId === "cand_003") {
-    return AGRI_RISK_PROFILE;
-  }
-  return null;
+  return { ...base, bySkill };
 }
 
 // --- Dynamic risk computation -------------------------------------------------
@@ -435,11 +444,21 @@ function levelFromExposure(exposure: number): AIRiskLevel {
 
 function attachOutlook(risk: SkillAIRisk, outlook: SkillClusterOutlook | null): SkillAIRisk {
   if (!outlook) return risk;
+  const deltaPct = Math.round(outlook.changeIndex * 100);
+  const deltaChip =
+    deltaPct === 0
+      ? null
+      : `${deltaPct > 0 ? "+" : ""}${deltaPct}% by 2035`;
+  const chips =
+    deltaChip && !(risk.chips ?? []).some((c) => c.includes("by 2035"))
+      ? [...(risk.chips ?? []), deltaChip]
+      : risk.chips;
   return {
     ...risk,
     outlook: outlook.outlook,
     outlookNote: `Wittgenstein SSP2 2025–35: ${outlook.cluster} — ${outlook.rationale}`,
     changeIndex: outlook.changeIndex,
+    chips,
   };
 }
 
@@ -482,6 +501,35 @@ function describeIloShares(shares: IloTaskShares): string {
   return `ILO 2021 Task Index for ISCO ${shares.iscoCode} (${shares.title}): ${routine}% routine, ${nonRoutine}% non-routine task content.`;
 }
 
+/**
+ * Compose a one-sentence plain-English headline from level + outlook.
+ * The candidate sees this; the dense rationale lives behind a "Sources" toggle.
+ */
+function composeHeadline(
+  level: AIRiskLevel,
+  outlook?: SkillClusterOutlook["outlook"],
+): string {
+  if (level === "high") {
+    if (outlook === "declining")
+      return "AI is doing most of this work — pivot toward judgment-heavy roles.";
+    if (outlook === "rising")
+      return "Routine parts automate fast, but the field is growing — focus on the human-judgment layer.";
+    return "Routine parts automate fast — durable value is in oversight and integration.";
+  }
+  if (level === "moderate") {
+    if (outlook === "declining")
+      return "Mixed exposure plus shrinking demand — start building adjacent skills now.";
+    if (outlook === "rising")
+      return "Mixed exposure but rising demand — focus on the non-routine parts.";
+    return "Mixed exposure — automation handles routine pieces; judgment stays human.";
+  }
+  if (outlook === "declining")
+    return "Resilient work but demand may shrink — keep an eye on adjacent skills.";
+  if (outlook === "rising")
+    return "Strong durable skill — demand is growing through 2035.";
+  return "AI-resilient: non-routine, in-person work AI cannot easily replace.";
+}
+
 function riskFromFreyOsborne(
   skillName: string,
   countryCtx: CountryAutomationContext,
@@ -502,10 +550,24 @@ function riskFromFreyOsborne(
   const iloClause = iloShares ? ` ${describeIloShares(iloShares)}` : "";
   const iloSourceClause = iloShares ? ` · ${ILO_TASK_INDEX_CITATION}` : "";
 
+  const level = levelFromExposure(adjusted);
+  const chips: string[] = [`Auto risk ${baseline}% (Frey-Osborne)`];
+  if (iloShares) {
+    const routinePct = Math.round(
+      (iloShares.routineCognitive + iloShares.routineManual) * 100,
+    );
+    chips.push(`${routinePct}% routine (ILO)`);
+  }
+  if (isAdjusted) {
+    chips.push(`${countryCtx.countryName} adjustment ×${countryCtx.modifier.toFixed(2)}`);
+  }
+
   return {
-    level: levelFromExposure(adjusted),
+    level,
     exposure: adjusted,
     baselineExposure: baseline,
+    headline: composeHeadline(level),
+    chips,
     rationale: `Anchored to "${occupationLabel}" (SOC ${fo.socCodes[0]}) in Frey & Osborne 2017, automation probability ${fo.probability.toFixed(2)}.${adjustmentClause}${iloClause}`,
     source: `${FREY_OSBORNE_CITATION}${iloSourceClause}${isAdjusted ? ` · ${countryCtx.source}` : ""}`,
   };
@@ -520,11 +582,19 @@ function inferRiskFromCategory(
   const cell = bucket[track] ?? bucket.default;
   const adjustedExposure = Math.round(cell.exposure * countryCtx.modifier);
   const isAdjusted = countryCtx.modifier !== 1.0;
+  const level = levelFromExposure(adjustedExposure);
+
+  const chips: string[] = ["Category-level estimate"];
+  if (isAdjusted) {
+    chips.push(`${countryCtx.countryName} adjustment ×${countryCtx.modifier.toFixed(2)}`);
+  }
 
   return {
-    level: levelFromExposure(adjustedExposure),
+    level,
     exposure: adjustedExposure,
     baselineExposure: cell.exposure,
+    headline: composeHeadline(level),
+    chips,
     rationale: `${cell.rationale}${
       isAdjusted
         ? ` Calibrated to ${countryCtx.countryName} (×${countryCtx.modifier.toFixed(2)}).`
@@ -533,6 +603,28 @@ function inferRiskFromCategory(
     source: `ILO 2023 · Frey-Osborne 2017 (category-level estimate)${
       isAdjusted ? ` · ${countryCtx.source}` : ""
     }`,
+  };
+}
+
+/**
+ * For curated risks (TECH/TRADE/AGRI mock profiles) the rationale is
+ * already handwritten prose. Synthesize a headline from its first sentence
+ * if no headline was set, so the UI's plain-English layer always has content.
+ */
+function ensurePresentationFields(risk: SkillAIRisk): SkillAIRisk {
+  if (risk.headline && risk.chips) return risk;
+  const headline =
+    risk.headline ??
+    (() => {
+      const firstSentence = risk.rationale.split(/(?<=[.!?])\s+/)[0]?.trim();
+      return firstSentence && firstSentence.length <= 180
+        ? firstSentence
+        : composeHeadline(risk.level, risk.outlook);
+    })();
+  return {
+    ...risk,
+    headline,
+    chips: risk.chips ?? [],
   };
 }
 
@@ -591,7 +683,9 @@ export function computeRiskProfileForCandidateProfile(
     const curated = KNOWN_SKILL_RISKS[skill.name.toLowerCase()];
     const fromFreyOsborne = curated ? null : riskFromFreyOsborne(skill.name, countryCtx);
     const base = curated ?? fromFreyOsborne ?? inferRiskFromCategory(skill.category, track, countryCtx);
-    bySkill[skill.name] = attachOutlook(base, lookupWittgensteinOutlook(skill.name));
+    bySkill[skill.name] = ensurePresentationFields(
+      attachOutlook(base, lookupWittgensteinOutlook(skill.name)),
+    );
   }
 
   const exposures = Object.values(bySkill).map((r) => r.exposure);
