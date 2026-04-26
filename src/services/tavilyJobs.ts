@@ -5,10 +5,39 @@ const TAVILY_SEARCH_URL = "https://api.tavily.com/search";
 const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses";
 
 const COUNTRY_NAMES: Record<string, string> = {
-  BGD: "bangladesh",
+  // Sub-Saharan Africa
   GHA: "ghana",
   KEN: "kenya",
   NGA: "nigeria",
+  ETH: "ethiopia",
+  TZA: "tanzania",
+  UGA: "uganda",
+  ZMB: "zambia",
+  ZWE: "zimbabwe",
+  RWA: "rwanda",
+  MOZ: "mozambique",
+  CMR: "cameroon",
+  CIV: "ivory coast",
+  SEN: "senegal",
+  // South & Southeast Asia
+  BGD: "bangladesh",
+  IND: "india",
+  PAK: "pakistan",
+  NPL: "nepal",
+  PHL: "philippines",
+  IDN: "indonesia",
+  VNM: "vietnam",
+  KHM: "cambodia",
+  MMR: "myanmar",
+  // Latin America
+  GTM: "guatemala",
+  HND: "honduras",
+  BOL: "bolivia",
+  HTI: "haiti",
+  // Middle East & North Africa
+  EGY: "egypt",
+  MAR: "morocco",
+  TUN: "tunisia",
 };
 
 const COUNTRY_CODES_BY_NAME = Object.fromEntries(

@@ -105,6 +105,10 @@ const analyzeCv = createServerFn({ method: "POST" })
       throw new Error("Please upload a CV file.");
     }
 
+    if (file.size > 5 * 1024 * 1024) {
+      throw new Error("CV file must be smaller than 5 MB.");
+    }
+
     const apiKey = process.env.APIKEY;
     if (!apiKey) {
       throw new Error("Missing OpenAI API key in .env as APIKEY.");
