@@ -54,28 +54,28 @@ const HARDCODED_POLICY_AGGREGATES: PolicyProfileAggregates = {
   unemployedProfiles: 66,
   sourceLabel: `${PROFILE_AGGREGATE_HARD_CAP} profiles shown`,
   iscoEscoTop10: [
-    row(1, "2512", "ISCO 2512 / ESCO software developer", "Software and web developers", 30, 6),
-    row(2, "5223", "ISCO 5223 / ESCO shop sales assistant", "Retail and customer sales workers", 24, 10),
-    row(3, "6111", "ISCO 6111 / ESCO crop farm worker", "Crop production and farm workers", 19, 8),
-    row(4, "5120", "ISCO 5120 / ESCO cook", "Cooks and food preparation workers", 15, 5),
-    row(5, "7411", "ISCO 7411 / ESCO electrician", "Building and related electricians", 12, 3),
-    row(6, "8322", "ISCO 8322 / ESCO car driver", "Drivers and delivery workers", 12, 4),
-    row(7, "4226", "ISCO 4226 / ESCO receptionist", "Front desk and client service clerks", 11, 4),
-    row(8, "3313", "ISCO 3313 / ESCO bookkeeper", "Bookkeeping and accounting clerks", 9, 3),
-    row(9, "5322", "ISCO 5322 / ESCO home-based care worker", "Care and community support workers", 8, 4),
-    row(10, "7126", "ISCO 7126 / ESCO plumber", "Plumbers and pipe fitters", 7, 2),
+    row(1, "2512", "ISCO-08 2512", "Software and web developers", 30, 6),
+    row(2, "5223", "ISCO-08 5223", "Retail and customer sales workers", 24, 10),
+    row(3, "6111", "ISCO-08 6111", "Crop production and farm workers", 19, 8),
+    row(4, "5120", "ISCO-08 5120", "Cooks and food preparation workers", 15, 5),
+    row(5, "7411", "ISCO-08 7411", "Building and related electricians", 12, 3),
+    row(6, "8322", "ISCO-08 8322", "Drivers and delivery workers", 12, 4),
+    row(7, "4226", "ISCO-08 4226", "Front desk and client service clerks", 11, 4),
+    row(8, "3313", "ISCO-08 3313", "Bookkeeping and accounting clerks", 9, 3),
+    row(9, "5322", "ISCO-08 5322", "Care and community support workers", 8, 4),
+    row(10, "7126", "ISCO-08 7126", "Plumbers and pipe fitters", 7, 2),
   ],
   unemploymentTop10: [
-    row(1, "5223", "ISCO 5223 / ESCO shop sales assistant", "Retail and customer sales workers", 10, 10),
-    row(2, "6111", "ISCO 6111 / ESCO crop farm worker", "Crop production and farm workers", 8, 8),
-    row(3, "2512", "ISCO 2512 / ESCO software developer", "Software and web developers", 6, 6),
-    row(4, "5120", "ISCO 5120 / ESCO cook", "Cooks and food preparation workers", 5, 5),
-    row(5, "8322", "ISCO 8322 / ESCO car driver", "Drivers and delivery workers", 4, 4),
-    row(6, "4226", "ISCO 4226 / ESCO receptionist", "Front desk and client service clerks", 4, 4),
-    row(7, "5322", "ISCO 5322 / ESCO home-based care worker", "Care and community support workers", 4, 4),
-    row(8, "7411", "ISCO 7411 / ESCO electrician", "Building and related electricians", 3, 3),
-    row(9, "3313", "ISCO 3313 / ESCO bookkeeper", "Bookkeeping and accounting clerks", 3, 3),
-    row(10, "7126", "ISCO 7126 / ESCO plumber", "Plumbers and pipe fitters", 2, 2),
+    row(1, "5223", "ISCO-08 5223", "Retail and customer sales workers", 10, 10),
+    row(2, "6111", "ISCO-08 6111", "Crop production and farm workers", 8, 8),
+    row(3, "2512", "ISCO-08 2512", "Software and web developers", 6, 6),
+    row(4, "5120", "ISCO-08 5120", "Cooks and food preparation workers", 5, 5),
+    row(5, "8322", "ISCO-08 8322", "Drivers and delivery workers", 4, 4),
+    row(6, "4226", "ISCO-08 4226", "Front desk and client service clerks", 4, 4),
+    row(7, "5322", "ISCO-08 5322", "Care and community support workers", 4, 4),
+    row(8, "7411", "ISCO-08 7411", "Building and related electricians", 3, 3),
+    row(9, "3313", "ISCO-08 3313", "Bookkeeping and accounting clerks", 3, 3),
+    row(10, "7126", "ISCO-08 7126", "Plumbers and pipe fitters", 2, 2),
   ],
 };
 
@@ -222,7 +222,9 @@ export async function getPolicyOccupationProfileGroup({
 
 function ensurePolicyProfileColumns(db: ReturnType<typeof getLocalDatabase>) {
   const tables = db
-    .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'account_skill_profiles'")
+    .prepare(
+      "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'account_skill_profiles'",
+    )
     .all() as Array<{ name: string }>;
   if (tables.length === 0) return;
 
@@ -231,11 +233,7 @@ function ensurePolicyProfileColumns(db: ReturnType<typeof getLocalDatabase>) {
   ensureColumn(db, "credential_category", "TEXT NOT NULL DEFAULT 'unknown'");
 }
 
-function ensureColumn(
-  db: ReturnType<typeof getLocalDatabase>,
-  column: string,
-  definition: string,
-) {
+function ensureColumn(db: ReturnType<typeof getLocalDatabase>, column: string, definition: string) {
   const columns = db.prepare("PRAGMA table_info(account_skill_profiles)").all() as Array<{
     name: string;
   }>;
@@ -278,7 +276,7 @@ function readAggregateRows(
     row(
       index + 1,
       item.iscoCode || "unknown",
-      `ISCO ${item.iscoCode || "unknown"}`,
+      `ISCO-08 ${item.iscoCode || "unknown"}`,
       item.iscoTitle || "Unknown occupation",
       item.profiles,
       item.unemployedProfiles,
