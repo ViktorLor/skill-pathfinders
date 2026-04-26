@@ -281,18 +281,18 @@ Set isComplete true when the profile is useful for matching or after 5 answered 
 `;
 
 async function callOpenAIForProfile(apiKey: string, input: unknown[]) {
-  const response = await fetch("https://api.openai.com/v1/responses", {
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "gpt-4.1-mini",
-      input,
-      text: {
-        format: {
-          type: "json_schema",
+      model: "gpt-4-mini",
+      messages: input,
+      response_format: {
+        type: "json_schema",
+        json_schema: {
           name: "candidate_skill_profile_interview",
           strict: false,
           schema: profileDraftSchema,
@@ -307,7 +307,7 @@ async function callOpenAIForProfile(apiKey: string, input: unknown[]) {
   }
 
   const result = await response.json();
-  return JSON.parse(extractResponseText(result)) as unknown;
+  return JSON.parse(result.choices[0]?.message?.content ?? "{}") as unknown;
 }
 
 const skillItemSchema = {

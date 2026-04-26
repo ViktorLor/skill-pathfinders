@@ -552,7 +552,7 @@ function resultToJobMatch(
 
   const haystack = `${result.title} ${result.content ?? ""}`.toLowerCase();
   const matchedSkills = skills
-    .filter((skill) => haystack.includes(skill.name.toLowerCase()))
+    .filter((skill) => skill?.name && haystack.includes(skill.name.toLowerCase()))
     .slice(0, 5)
     .map((skill) => skill.name);
   const missingSkills = inferMissingSkills(skills, matchedSkills);
@@ -584,7 +584,7 @@ function resultToJobMatch(
 function inferMissingSkills(skills: SkillItem[], matchedSkills: string[]) {
   const matched = new Set(matchedSkills.map((skill) => skill.toLowerCase()));
   return skills
-    .filter((skill) => !matched.has(skill.name.toLowerCase()))
+    .filter((skill) => skill?.name && !matched.has(skill.name.toLowerCase()))
     .slice(0, 2)
     .map((skill) => skill.name);
 }

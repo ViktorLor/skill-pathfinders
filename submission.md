@@ -178,6 +178,11 @@ TypeScript, Vite, Bun, JSON Data Pipelines, Localization , Cloudflare/Wrangler-r
 
 # Github Link
 
+https://github.com/ViktorLor/skill-pathfinders
+
+# Live Project Link, do via Network
+
+
 Additional 8 images,
 
 A 2 Video presentation for local
