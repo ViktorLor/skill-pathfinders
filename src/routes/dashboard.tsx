@@ -1,321 +1,138 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { CountryCombobox } from "@/components/CountryCombobox";
 import { useCountry } from "@/context/CountryContext";
-import { FEATURED_COUNTRIES } from "@/data/countries.config";
-import {
-  getEmploymentBySector,
-  getLaborForceParticipation,
-  getYouthUnemploymentData,
-  type EmploymentBySector,
-  type IndicatorObservation,
-} from "@/services/worldBank";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
-import { Users, Briefcase, AlertCircle, Gauge } from "lucide-react";
+import { getCountryWdiSnapshot, type WorldBankIndicatorData } from "@/services/worldBank";
+import { AlertCircle, Database } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
     meta: [
-      { title: "Regional Skills Intelligence Dashboard · Unmapped" },
+      { title: "Live Country Indicators - Unmapped" },
       {
         name: "description",
-        content:
-          "Live policy view of verified youth skills across Ghana, Bangladesh and Nigeria.",
+        content: "Live World Bank WDI indicators for ISO countries.",
       },
     ],
   }),
   component: DashboardPage,
 });
 
-const TRACK_DISTRIBUTION = [
-  { label: "Tech", value: 23, color: "bg-navy" },
-  { label: "Trade", value: 51, color: "bg-sky" },
-  { label: "Agriculture", value: 26, color: "bg-greenT" },
-];
+type WdiSnapshot = Awaited<ReturnType<typeof getCountryWdiSnapshot>>;
 
-const SKILLS = {
-  tech: ["JavaScript", "React", "Python", "Node.js", "SQL"],
-  trade: [
-    "Phone repair",
-    "Customer service",
-    "Inventory",
-    "Basic accounting",
-    "Tailoring",
-  ],
-  agri: [
-    "Crop cultivation",
-    "Irrigation",
-    "Pest control",
-    "Cooperative mgmt",
-    "Record keeping",
-  ],
-};
+interface LiveBarSignal {
+  label: string;
+  value: number;
+  detail: string;
+  sourceUrl: string;
+}
 
 function DashboardPage() {
   const { country, setCountryCode } = useCountry();
-  const [youthUnemployment, setYouthUnemployment] = useState("Loading World Bank data…");
-  const [laborForce, setLaborForce] = useState<IndicatorObservation | null>(null);
-  const [employmentBySector, setEmploymentBySector] = useState<EmploymentBySector | null>(null);
-  const [signalsError, setSignalsError] = useState("");
+  const [wdiSnapshot, setWdiSnapshot] = useState<WdiSnapshot>({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     let isCurrent = true;
-    setYouthUnemployment("Loading World Bank data…");
-    setLaborForce(null);
-    setEmploymentBySector(null);
-    setSignalsError("");
+    setWdiSnapshot({});
+    setIsLoading(true);
+    setLoadError(null);
 
-    Promise.all([
-      getYouthUnemploymentData(country.wbCountryCode),
-      getLaborForceParticipation(country.wbCountryCode),
-      getEmploymentBySector(country.wbCountryCode),
-    ])
-      .then(([youth, lfp, sector]) => {
+    getCountryWdiSnapshot(country.wbCountryCode)
+      .then((snapshot) => {
         if (!isCurrent) return;
-        setYouthUnemployment(`${youth.value.toFixed(1)}% (${youth.countryName}, ${youth.year})`);
-        setLaborForce(lfp);
-        setEmploymentBySector(sector);
+        setWdiSnapshot(snapshot);
+        setIsLoading(false);
       })
       .catch((error) => {
-        console.error("Failed to load World Bank econometric signals", error);
+        console.error("Failed to load World Bank WDI snapshot", error);
         if (!isCurrent) return;
-        setSignalsError(
-          error instanceof Error ? error.message : "Could not load World Bank data.",
+        setLoadError(
+          error instanceof Error ? error.message : "World Bank WDI data could not be loaded.",
         );
+        setIsLoading(false);
       });
 
     return () => {
       isCurrent = false;
     };
-  }, [country]);
+  }, [country.wbCountryCode]);
+
+  const wdiCards = useMemo(() => buildWdiCards(wdiSnapshot), [wdiSnapshot]);
+  const wdiSectorShares = useMemo(() => buildWdiSectorShares(wdiSnapshot), [wdiSnapshot]);
 
   return (
     <main className="mx-auto max-w-7xl px-4 pb-20 pt-10 sm:px-6">
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-2xl font-bold text-navy">
-            Regional Skills Intelligence Dashboard
-          </h1>
+          <h1 className="text-2xl font-bold text-navy">Live Country Indicators</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Verified youth skills + econometric signals from ILO &amp; World
-            Bank.
+            Only data fetched live from the World Bank WDI service is shown here.
           </p>
         </div>
-        <Select value={country.code} onValueChange={setCountryCode}>
-          <SelectTrigger className="w-44">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {FEATURED_COUNTRIES.map((c) => (
-              <SelectItem key={c.code} value={c.code}>
-                {c.flag} {c.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <CountryCombobox
+          value={country.code}
+          onChange={setCountryCode}
+          className="w-full sm:w-72"
+        />
       </div>
 
-      {/* Metric cards */}
-      <section className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Metric
-          icon={<Users className="h-5 w-5 text-navy" />}
-          label="Profiles verified this month"
-          value="1,247"
-        />
-        <Metric
-          icon={<AlertCircle className="h-5 w-5 text-amber" />}
-          label="Youth unemployment"
-          value={youthUnemployment}
-          sub="World Bank WDI · SL.UEM.1524.ZS"
-        />
-        <Metric
-          icon={<Briefcase className="h-5 w-5 text-sky" />}
-          label="Labor force participation (15+)"
-          value={
-            laborForce
-              ? `${laborForce.value.toFixed(1)}% (${laborForce.countryName}, ${laborForce.year})`
-              : signalsError || "Loading…"
-          }
-          sub="World Bank WDI · SL.TLF.CACT.ZS"
-        />
-        <Metric
-          icon={<Gauge className="h-5 w-5 text-greenT" />}
-          label="Avg. trust score"
-          value="74/100"
-        />
-      </section>
-
-      {/* Track distribution */}
-      <section className="mt-8 rounded-xl border border-border bg-card p-6">
-        <h2 className="text-base font-semibold text-navy">
-          Track distribution
-        </h2>
-        <div className="mt-4 flex h-3 w-full overflow-hidden rounded-full bg-muted">
-          {TRACK_DISTRIBUTION.map((t) => (
-            <div
-              key={t.label}
-              className={t.color}
-              style={{ width: `${t.value}%` }}
-              title={`${t.label}: ${t.value}%`}
-            />
-          ))}
+      {loadError && (
+        <div className="mt-8 rounded-xl border border-amber/30 bg-amber/10 p-4 text-sm text-foreground">
+          <div className="flex items-center gap-2 font-medium text-navy">
+            <AlertCircle className="h-5 w-5 text-amber" />
+            {loadError}
+          </div>
         </div>
-        <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-xs text-muted-foreground">
-          {TRACK_DISTRIBUTION.map((t) => (
-            <span key={t.label} className="inline-flex items-center gap-1.5">
-              <span className={`h-2.5 w-2.5 rounded-sm ${t.color}`} />
-              {t.label} {t.value}%
-            </span>
-          ))}
+      )}
+
+      <section className="mt-8 rounded-xl border border-border bg-card p-5">
+        <div className="flex items-center gap-2 text-sm font-semibold text-navy">
+          <Database className="h-5 w-5 text-teal" />
+          World Bank WDI snapshot for {country.name}
         </div>
+        {isLoading ? (
+          <LoadingState message="Fetching live WDI indicators..." />
+        ) : wdiCards.length > 0 ? (
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {wdiCards.map((indicator) => (
+              <IndicatorCard key={indicator.indicatorId} indicator={indicator} />
+            ))}
+          </div>
+        ) : (
+          <EmptyState message="No live WDI indicators were returned for this country." />
+        )}
       </section>
 
-      {/* Top skills */}
-      <section className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-3">
-        <SkillsCard
-          title="Top tech skills"
-          color="border-navy"
-          skills={SKILLS.tech}
-        />
-        <SkillsCard
-          title="Top trade skills"
-          color="border-sky"
-          skills={SKILLS.trade}
-        />
-        <SkillsCard
-          title="Top agri skills"
-          color="border-greenT"
-          skills={SKILLS.agri}
-        />
-      </section>
-
-      {/* Econometrics */}
-      <section className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2">
+      <section className="mt-8">
         <BarChart
-          title={
-            employmentBySector
-              ? `Employment by sector (%) · ${employmentBySector.countryName} ${employmentBySector.year}`
-              : "Employment by sector (loading World Bank…)"
-          }
-          data={
-            employmentBySector
-              ? [
-                  { label: "Agriculture", value: Math.round(employmentBySector.agriculture) },
-                  { label: "Industry", value: Math.round(employmentBySector.industry) },
-                  { label: "Services", value: Math.round(employmentBySector.services) },
-                ]
-              : []
-          }
-          color="bg-amber"
+          title="Live WDI employment structure"
+          data={wdiSectorShares}
+          color="bg-navy"
           unit="%"
           max={100}
+          isLoading={isLoading}
         />
-        <div className="rounded-xl border border-border bg-card p-6">
-          <h3 className="text-sm font-semibold text-navy">Live signals · World Bank WDI</h3>
-          <p className="mt-2 text-xs text-muted-foreground">
-            Three indicators load live from{" "}
-            <a
-              href="https://api.worldbank.org/v2"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline hover:text-sky"
-            >
-              api.worldbank.org/v2
-            </a>{" "}
-            for {country.name} on every country switch:
-          </p>
-          <ul className="mt-4 space-y-2 text-xs">
-            <li>
-              <span className="font-medium text-foreground">Youth unemployment</span>{" "}
-              <span className="text-muted-foreground">(SL.UEM.1524.ZS)</span> ·{" "}
-              {youthUnemployment}
-            </li>
-            <li>
-              <span className="font-medium text-foreground">Labor force participation</span>{" "}
-              <span className="text-muted-foreground">(SL.TLF.CACT.ZS)</span> ·{" "}
-              {laborForce
-                ? `${laborForce.value.toFixed(1)}% (${laborForce.year})`
-                : "Loading…"}
-            </li>
-            <li>
-              <span className="font-medium text-foreground">Employment by sector</span>{" "}
-              <span className="text-muted-foreground">
-                (SL.AGR.EMPL.ZS / SL.IND.EMPL.ZS / SL.SRV.EMPL.ZS)
-              </span>{" "}
-              · {employmentBySector
-                ? `agriculture ${Math.round(employmentBySector.agriculture)}%, industry ${Math.round(employmentBySector.industry)}%, services ${Math.round(employmentBySector.services)}% (${employmentBySector.year})`
-                : "Loading…"}
-            </li>
-          </ul>
-          {signalsError && (
-            <p className="mt-3 rounded-md bg-danger/5 px-3 py-2 text-xs text-danger">
-              {signalsError}
-            </p>
-          )}
-        </div>
       </section>
-
-      <p className="mt-6 text-xs text-muted-foreground">
-        Data represents verified profiles on Unmapped + live World Bank WDI
-        econometric signals. World Bank refreshes WDI series annually.
-      </p>
     </main>
   );
 }
 
-function Metric({
-  icon,
-  label,
-  value,
-  sub,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  sub?: string;
-}) {
+function IndicatorCard({ indicator }: { indicator: WorldBankIndicatorData }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-5">
-      <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
-        {icon}
-        <span>{label}</span>
+    <a
+      href={indicator.sourceUrl}
+      target="_blank"
+      rel="noreferrer"
+      className="rounded-lg bg-muted/50 p-3 transition hover:bg-muted"
+    >
+      <div className="text-xs text-muted-foreground">{indicator.indicatorName}</div>
+      <div className="mt-1 text-lg font-bold text-navy">{formatWdiValue(indicator)}</div>
+      <div className="mt-0.5 text-[11px] text-muted-foreground">
+        {indicator.countryName}, {indicator.year}
       </div>
-      <div className="mt-2 text-xl font-bold text-navy">{value}</div>
-      {sub && (
-        <div className="mt-0.5 text-xs text-muted-foreground">{sub}</div>
-      )}
-    </div>
-  );
-}
-
-function SkillsCard({
-  title,
-  color,
-  skills,
-}: {
-  title: string;
-  color: string;
-  skills: string[];
-}) {
-  return (
-    <div className={`rounded-xl border-l-4 ${color} bg-card p-5 shadow-sm`}>
-      <h3 className="text-sm font-semibold text-navy">{title}</h3>
-      <ol className="mt-3 space-y-1.5 text-sm text-foreground">
-        {skills.map((s, i) => (
-          <li key={s} className="flex items-baseline gap-2">
-            <span className="text-xs font-mono text-muted-foreground">
-              {i + 1}.
-            </span>
-            {s}
-          </li>
-        ))}
-      </ol>
-    </div>
+    </a>
   );
 }
 
@@ -325,38 +142,102 @@ function BarChart({
   color,
   unit,
   max,
+  isLoading,
 }: {
   title: string;
-  data: { label: string; value: number }[];
+  data: LiveBarSignal[];
   color: string;
   unit: string;
   max: number;
+  isLoading: boolean;
 }) {
   return (
     <div className="rounded-xl border border-border bg-card p-5">
       <h3 className="text-sm font-semibold text-navy">{title}</h3>
-      <div className="mt-4 space-y-3">
-        {data.map((d) => (
-          <div key={d.label}>
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-foreground">{d.label}</span>
-              <span className="font-medium text-muted-foreground">
-                {d.value.toLocaleString()}
-                {unit}
-              </span>
-            </div>
-            <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-muted">
-              <div
-                className={`h-full ${color}`}
-                style={{ width: `${Math.min(100, (d.value / max) * 100)}%` }}
-              />
-            </div>
-          </div>
-        ))}
-      </div>
+      {isLoading ? (
+        <LoadingState message="Fetching live employment indicators..." />
+      ) : data.length > 0 ? (
+        <div className="mt-4 space-y-3">
+          {data.map((item) => (
+            <a
+              key={item.label}
+              href={item.sourceUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="block"
+            >
+              <div className="flex items-center justify-between gap-3 text-xs">
+                <span className="text-foreground">{item.label}</span>
+                <span className="shrink-0 font-medium text-muted-foreground">
+                  {item.value.toLocaleString(undefined, { maximumFractionDigits: 1 })}
+                  {unit}
+                </span>
+              </div>
+              <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-muted">
+                <div
+                  className={`h-full ${color}`}
+                  style={{ width: `${Math.min(100, (item.value / max) * 100)}%` }}
+                />
+              </div>
+              <div className="mt-1 text-[11px] text-muted-foreground">{item.detail}</div>
+            </a>
+          ))}
+        </div>
+      ) : (
+        <EmptyState message="No live sector employment indicators were returned for this country." />
+      )}
       <p className="mt-4 text-[10px] text-muted-foreground">
-        Source: ILO ILOSTAT + World Bank WDI
+        Source: World Bank WDI API. Values are fetched live for the selected country.
       </p>
     </div>
   );
+}
+
+function LoadingState({ message }: { message: string }) {
+  return (
+    <div className="mt-4 rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">{message}</div>
+  );
+}
+
+function EmptyState({ message }: { message: string }) {
+  return (
+    <div className="mt-4 rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">{message}</div>
+  );
+}
+
+function buildWdiCards(snapshot: WdiSnapshot) {
+  return [
+    snapshot.youthUnemployment,
+    snapshot.laborForceParticipation,
+    snapshot.wageAndSalariedShare,
+    snapshot.gdpPerCapita,
+    snapshot.secondaryEnrollment,
+    snapshot.povertyLowerMiddleIncome,
+  ].filter(Boolean) as WorldBankIndicatorData[];
+}
+
+function buildWdiSectorShares(snapshot: WdiSnapshot): LiveBarSignal[] {
+  return [
+    ["Agriculture", snapshot.employmentAgriculture],
+    ["Industry", snapshot.employmentIndustry],
+    ["Services", snapshot.employmentServices],
+  ]
+    .filter(([, indicator]) => Boolean(indicator))
+    .map(([label, indicator]) => {
+      const value = indicator as WorldBankIndicatorData;
+      return {
+        label: String(label),
+        value: value.value,
+        detail: `${value.countryName}, ${value.year}`,
+        sourceUrl: value.sourceUrl,
+      };
+    });
+}
+
+function formatWdiValue(indicator: WorldBankIndicatorData) {
+  if (indicator.unit === "US$") {
+    return `${indicator.unit}${Math.round(indicator.value).toLocaleString()}`;
+  }
+
+  return `${indicator.value.toFixed(1)}${indicator.unit}`;
 }

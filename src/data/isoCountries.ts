@@ -5,10 +5,10 @@
  * picker on the landing page. It is intentionally complete (all 249 ISO
  * entries) so any candidate can pick their country.
  *
- * Calibration data (Frey-Osborne LMIC modifier, ILO Task Index, World Bank
- * WDI signals) only exists for a subset of these countries — codes outside
- * `FEATURED_COUNTRIES` fall back to the `LMIC_DEFAULT` modifier and won't
- * render the live signal strip on the profile page.
+ * Calibration data (Frey-Osborne LMIC modifier, ILO Task Index) only exists
+ * for a subset of these countries. Codes outside `FEATURED_COUNTRIES` fall
+ * back to the `LMIC_DEFAULT` modifier, while live World Bank WDI requests use
+ * the selected ISO alpha-3 code directly.
  */
 
 export interface IsoCountry {
