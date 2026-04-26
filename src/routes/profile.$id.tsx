@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate, useParams, Link } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
+import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import {
   getCandidateById,
@@ -50,6 +51,7 @@ import {
 import { Input } from "@/components/ui/input";
 import {
   searchTavilyJobsForProfile,
+  type LocalLaborMarketInsight,
   type TavilyJobSearchResult,
 } from "@/services/tavilyJobs";
 
@@ -696,6 +698,16 @@ function DynamicProfilePage({ snapshot }: { snapshot: ProfileSnapshot }) {
               </p>
             )}
 
+            {jobSearch?.marketInsight && (
+              <LaborMarketInsightCard insight={jobSearch.marketInsight} />
+            )}
+
+            {jobSearch?.marketInsightError && (
+              <div className="mt-4 rounded-md border border-amber/30 bg-amber/10 px-4 py-3 text-sm text-foreground">
+                Market insight unavailable: {jobSearch.marketInsightError}
+              </div>
+            )}
+
             {jobSearch && (
               <div className="mt-4">
                 <div className="text-xs text-muted-foreground">Tavily query: {jobSearch.query}</div>
@@ -1064,6 +1076,134 @@ function SkillRow({
         )}
       </div>
     </div>
+  );
+}
+
+function LaborMarketInsightCard({ insight }: { insight: LocalLaborMarketInsight }) {
+  const modeLabel: Record<LocalLaborMarketInsight["commonWorkMode"], string> = {
+    mostly_formal: "Mostly formal",
+    mixed: "Mixed market",
+    mostly_self_employed: "Mostly self-employed",
+    mostly_gig: "Mostly gig-based",
+    unclear: "Unclear",
+  };
+  const selfEmploymentTone = insight.selfEmployment.suitable
+    ? "bg-teal/10 text-teal"
+    : "bg-muted text-muted-foreground";
+
+  return (
+    <div className="mt-4 rounded-xl border border-border bg-background p-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <div className="text-xs font-medium uppercase text-muted-foreground">
+            LLM labor-market read
+          </div>
+          <h3 className="mt-1 font-semibold text-foreground">
+            {insight.occupationTitle} in {insight.location}
+          </h3>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+            {insight.summary}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2 sm:justify-end">
+          <span className="rounded-full bg-sky/10 px-2.5 py-1 text-xs font-semibold text-sky">
+            {modeLabel[insight.commonWorkMode]}
+          </span>
+          <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${selfEmploymentTone}`}>
+            {insight.selfEmployment.suitable ? "Freelance route worth showing" : "Freelance route weak"}
+          </span>
+        </div>
+      </div>
+
+      <div className="mt-5 grid gap-4 md:grid-cols-3">
+        <InsightMiniPanel title="Pay expectation">
+          <p className="text-sm font-semibold text-foreground">{insight.salaryExpectation.range}</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {insight.salaryExpectation.currency} / {insight.salaryExpectation.period}; confidence{" "}
+            {insight.salaryExpectation.confidence}
+          </p>
+          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+            {insight.salaryExpectation.notes}
+          </p>
+        </InsightMiniPanel>
+
+        <InsightMiniPanel title="Formal work">
+          <p className="text-sm font-semibold capitalize text-foreground">
+            {insight.formalEmployment.availability}
+          </p>
+          <CompactList
+            items={insight.formalEmployment.typicalEmployers}
+            empty="No typical employers identified."
+          />
+        </InsightMiniPanel>
+
+        <InsightMiniPanel title="Self-employment">
+          <p className="text-sm font-semibold capitalize text-foreground">
+            {insight.selfEmployment.viability}; confidence {insight.selfEmployment.confidence}
+          </p>
+          <CompactList
+            items={insight.selfEmployment.starterOffers}
+            empty="No starter offers identified."
+          />
+        </InsightMiniPanel>
+      </div>
+
+      <div className="mt-5 grid gap-4 md:grid-cols-2">
+        <InsightList title="How the work is done" items={insight.howWorkIsDone} />
+        <InsightList title="Customer channels" items={insight.selfEmployment.customerChannels} />
+        <InsightList title="Reasons to show freelance" items={insight.selfEmployment.reasons} />
+        <InsightList
+          title="Risks and barriers"
+          items={[...insight.selfEmployment.risks, ...insight.credentialsOrBarriers]}
+        />
+      </div>
+
+      {insight.evidence.length > 0 && (
+        <div className="mt-5 rounded-md bg-muted px-3 py-2">
+          <div className="text-xs font-semibold text-foreground">Evidence used</div>
+          <CompactList items={insight.evidence} empty="" />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function InsightMiniPanel({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="rounded-lg border border-border bg-card p-4">
+      <div className="text-xs font-medium uppercase text-muted-foreground">{title}</div>
+      <div className="mt-2">{children}</div>
+    </div>
+  );
+}
+
+function InsightList({ title, items }: { title: string; items: string[] }) {
+  return (
+    <div>
+      <div className="text-xs font-semibold uppercase text-muted-foreground">{title}</div>
+      <CompactList items={items} empty="No details returned." />
+    </div>
+  );
+}
+
+function CompactList({ items, empty }: { items: string[]; empty: string }) {
+  const visible = items.filter(Boolean).slice(0, 5);
+  if (!visible.length) return <p className="mt-2 text-xs text-muted-foreground">{empty}</p>;
+
+  return (
+    <ul className="mt-2 space-y-1.5">
+      {visible.map((item) => (
+        <li key={item} className="text-xs leading-relaxed text-muted-foreground">
+          {item}
+        </li>
+      ))}
+    </ul>
   );
 }
 

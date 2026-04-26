@@ -3,10 +3,10 @@ ToDo List:
 A) Skills Signal Engine
 1) youth user, training provider, or community navigator inputs their education level,
 informal experience, and demonstrated competencies.
-[CV Parsing is done] , do ISCO + ESCO taxonomies
+[CV Parsing is done] , do ISCO + ESCO taxonomies [DONE]
 2) The system maps these to a
 standardized, portable skills profile grounded in real taxonomies (ISCO, ESCO, O∗NET or
-equivalent). 
+equivalent). [DONE]
 3) Display those skills to be human-readable. The person which puts it in should be able to understand and own it.
 
 Side Requirement: Profile must be portable across borders & sectors, and explainable to a non-expert
@@ -29,6 +29,8 @@ ILO task indices, World Bank STEP).
 ----
 C) Econometric Dashboard:
 
-1) Get Wage floor, Sector employmenth growth, returns to education by level (Must show atleast two real econometric signals visibly to the user, not buried in the algorithm) @NABIL
-2) Match user skills profile to realistic reachable opportunities
+1) Get Wage floor, Sector employmenth growth, returns to education by level (Must show atleast two real econometric signals visibly to the user, not buried in the algorithm) 
+2) Match user skills profile to realistic reachable opportunities [DONE]
+
+
 
