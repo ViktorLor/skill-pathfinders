@@ -600,7 +600,7 @@ function buildGapAnalysis(
   _missingSkills: string[],
   _profile: CandidateSkillProfile,
 ) {
-  return result.content ? `Tavily found: ${truncate(result.content, 160)}` : "";
+  return result.content ? ` ${truncate(result.content, 160)}` : "";
 }
 
 function matchStatus(score: number): JobMatch["matchStatus"] {

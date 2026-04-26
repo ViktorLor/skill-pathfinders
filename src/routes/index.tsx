@@ -36,6 +36,7 @@ import { resolveEscoOccupation } from "@/services/esco";
 import { saveCandidateSkillProfileJson } from "@/services/profileHandler";
 import { CountryCombobox } from "@/components/CountryCombobox";
 import { getIsoCountry } from "@/data/isoCountries";
+import { mapEducationCredential, withEducationCredentialMapping } from "@/data/educationTaxonomy";
 import type { CandidateSkillProfile } from "@/types/unmapped";
 
 export const Route = createFileRoute("/")({
@@ -248,7 +249,7 @@ Return JSON with this shape:
   "profile": { "roleName": string, "normalizedRoleName": string, "summary": string, "seniority": "entry|junior|mid|senior|lead|manager|executive|unknown", "track": "tech|trade|agriculture|other", "confidence": "high|medium|low" },
   "occupation": { "iscoCode": string, "iscoTitle": string, "escoOccupationCode": string, "escoOccupationUri": string, "escoOccupationTitle": string, "alternativeOccupationMatches": [] },
   "experience": { "hasJob": boolean, "totalYears": number, "relevantYears": number, "industries": [], "jobTitles": [], "companies": [], "responsibilities": [], "achievements": [] },
-  "education": { "highestLevel": string, "degrees": [], "fieldsOfStudy": [], "certifications": [], "trainings": [] },
+  "education": { "highestLevel": string, "degrees": [], "fieldsOfStudy": [], "certifications": [], "trainings": [], "credentialMapping": { "taxonomyLevel": "no_formal|primary|lower_secondary|upper_secondary|vocational|certificate|diploma|bachelor|postgraduate|unknown", "taxonomyLabel": string, "credentialCategory": "none|school|vocational_training|short_certificate|diploma|degree|postgraduate_degree|unknown", "credentialLabel": string, "estimatedSkillLevel": "foundational|basic|intermediate|advanced|specialized|unknown", "confidence": "high|medium|low", "rationale": string } },
   "skills": { "technical": [], "tools": [], "domain": [], "business": [], "soft": [], "languages": [] },
   "evidence": [],
   "automationAndReskilling": { "automationRiskOccupationCode": string, "automationRiskScore": number, "riskDrivers": [], "resilientSkills": [], "missingRecommendedSkills": [], "recommendedLearningSkills": [] },
@@ -257,6 +258,7 @@ Return JSON with this shape:
 }
 Preserve the candidate's fullName and telephoneNumber exactly from the provided profile fields or interview answers. Do not invent either value.
 Each skill item must include name, normalizedName, category, evidence, and confidence. Add proficiency or yearsExperience only when supported.
+Map the education entry to credentialMapping. This is an estimated parameter: normalize the person's stated highest education/training/credential into the taxonomy, then estimate the education-based skill level. If uncertain, use unknown with low confidence.
 Always include escoOccupationCode when an ESCO occupation is mapped. Use the ESCO concept identifier or notation, not the full URL. Keep escoOccupationUri only for internal linking.
 For "country", return an ISO 3166-1 alpha-3 code (e.g. "GHA", "BGD", "NGA", "KEN", "AUT", "IND") inferred from the CV or the candidate's answers. Leave it as an empty string only if the candidate's country is genuinely unknown. For "location" use a "City, Country" string when known.
 Ask one natural chatbot question at a time. If there is no CV, start by discovering the person's target work, whether they currently have a job, past practical experience, tools, tasks, languages, education/training, country/city of residence, and learning goals. Prioritize missing role, ISCO code/title, current job status, years, responsibilities, achievements, education/certifications, tools, languages, country, and learning goals.
@@ -403,7 +405,7 @@ type RawCandidateProfile = {
 };
 
 function withProfileDefaults(profile: RawCandidateProfile): CandidateSkillProfile {
-  return {
+  return withEducationCredentialMapping({
     fullName: normalizeOptionalText(profile.fullName),
     telephoneNumber: normalizeOptionalText(profile.telephoneNumber),
     location: normalizeOptionalText(profile.location),
@@ -449,7 +451,7 @@ function withProfileDefaults(profile: RawCandidateProfile): CandidateSkillProfil
       recommendedLearningSkills: [],
       ...profile.automationAndReskilling,
     },
-  };
+  });
 }
 
 function arrayBufferToBase64(buffer: ArrayBuffer) {
@@ -1017,11 +1019,6 @@ function LandingPage() {
         </section>
       )}
 
-      <section className="mx-auto mt-20 grid max-w-4xl grid-cols-1 gap-6 rounded-lg border border-border bg-card p-8 sm:grid-cols-3">
-        <Stat value="5 max" label="profile questions" />
-        <Stat value="JSON" label="local profile handler" />
-        <Stat value="ESCO" label="ready for taxonomy mapping" />
-      </section>
     </main>
   );
 }
@@ -1241,6 +1238,14 @@ function ProfileSummary({
             <SummaryField label="Confidence" value={profile.profile.confidence} />
             <SummaryField label="Seniority" value={profile.profile.seniority} />
             <SummaryField
+              label="Education skill"
+              value={profile.education.credentialMapping?.estimatedSkillLevel ?? "Unknown"}
+            />
+            <SummaryField
+              label="Credential"
+              value={profile.education.credentialMapping?.credentialLabel ?? "Unknown"}
+            />
+            <SummaryField
               label="Years"
               value={
                 typeof profile.experience.totalYears === "number"
@@ -1302,15 +1307,6 @@ function SummaryField({ label, value }: { label: string; value: string }) {
   );
 }
 
-function Stat({ value, label }: { value: string; label: string }) {
-  return (
-    <div className="text-center">
-      <div className="text-2xl font-bold text-navy">{value}</div>
-      <div className="mt-1 text-xs uppercase text-muted-foreground">{label}</div>
-    </div>
-  );
-}
-
 function createProfileId() {
   return `candidate-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
@@ -1348,6 +1344,7 @@ function createEmptySkillProfile(fixedFields: FixedProfileFields): CandidateSkil
       fieldsOfStudy: [],
       certifications: [],
       trainings: [],
+      credentialMapping: mapEducationCredential({}),
     },
     skills: {
       technical: [],
@@ -1381,7 +1378,7 @@ function applyFixedProfileFields(
   profile: CandidateSkillProfile,
   fixedFields: FixedProfileFields,
 ): CandidateSkillProfile {
-  return {
+  return withEducationCredentialMapping({
     ...profile,
     fullName: fixedFields.fullName,
     telephoneNumber: fixedFields.telephoneNumber,
@@ -1392,7 +1389,7 @@ function applyFixedProfileFields(
       ...profile.experience,
       hasJob: fixedFields.currentlyEmployed,
     },
-  };
+  });
 }
 
 function readFixedProfileFields(profile: CandidateSkillProfile): FixedProfileFields {

@@ -4,8 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import { CountryCombobox } from "@/components/CountryCombobox";
 import { useCountry } from "@/context/CountryContext";
 import {
+  getPolicyOccupationProfileGroup,
   getPolicyProfileAggregates,
   type PolicyAggregateRow,
+  type PolicyOccupationProfileGroup,
   type PolicyProfileAggregates,
 } from "@/services/policyAggregates";
 import { getCountryWdiSnapshot, getReturnsToEducation, type ReturnsToEducation, type WorldBankIndicatorData } from "@/services/worldBank";
@@ -24,6 +26,10 @@ import {
 const loadPolicyProfileAggregates = createServerFn({ method: "GET" }).handler(() =>
   getPolicyProfileAggregates(),
 );
+
+const loadPolicyOccupationProfileGroup = createServerFn({ method: "POST" })
+  .inputValidator((data: { iscoCode: string; onlyUnemployed?: boolean }) => data)
+  .handler(async ({ data }) => getPolicyOccupationProfileGroup(data));
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -374,6 +380,9 @@ function PolicymakerView({
 }) {
   const [profileAggregates, setProfileAggregates] = useState<PolicyProfileAggregates | null>(null);
   const [aggregateError, setAggregateError] = useState<string | null>(null);
+  const [selectedGroup, setSelectedGroup] = useState<PolicyOccupationProfileGroup | null>(null);
+  const [selectedGroupError, setSelectedGroupError] = useState<string | null>(null);
+  const [isGroupLoading, setIsGroupLoading] = useState(false);
 
   useEffect(() => {
     let isCurrent = true;
@@ -397,6 +406,27 @@ function PolicymakerView({
     };
   }, []);
 
+  function handleSelectUnemployedGroup(row: PolicyAggregateRow) {
+    setSelectedGroup(null);
+    setSelectedGroupError(null);
+    setIsGroupLoading(true);
+
+    loadPolicyOccupationProfileGroup({
+      data: { iscoCode: row.iscoCode, onlyUnemployed: true },
+    })
+      .then((group) => {
+        setSelectedGroup(group);
+        setIsGroupLoading(false);
+      })
+      .catch((error) => {
+        console.error("Failed to load occupation profile group", error);
+        setSelectedGroupError(
+          error instanceof Error ? error.message : "Occupation profile group could not be loaded.",
+        );
+        setIsGroupLoading(false);
+      });
+  }
+
   return (
     <>
       <section className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -414,31 +444,36 @@ function PolicymakerView({
         />
         <Metric
           icon={<Briefcase className="h-5 w-5 text-amber" />}
-          label="Currently unemployed"
+          label="Not employed"
           value={formatCount(profileAggregates?.unemployedProfiles)}
-          sub="Aggregate profile signal"
+          sub="Filtered from profiles shown"
         />
         <Metric
           icon={<ListChecks className="h-5 w-5 text-navy" />}
           label="Ranked lists"
-          value="Top 10"
+          value={profileAggregates ? `Top ${profileAggregates.rowLimit}` : "Loading"}
           sub="No individual profile data shown"
         />
       </section>
 
-      <ProfileAggregateSection aggregates={profileAggregates} error={aggregateError} />
-
-      <section className="mt-6 rounded-xl border border-border bg-card p-5">
-        <div className="flex items-center gap-2 text-sm font-semibold text-navy">
-          <Database className="h-5 w-5 text-teal" />
-          World Bank WDI snapshot for {country.name}
-        </div>
-        {isLoading ? (
-          <LoadingState message="Fetching live WDI indicators…" />
-        ) : (
-          <EmptyState message="WDI values are listed once in the source table below." />
-        )}
-      </section>
+      {selectedGroup || isGroupLoading || selectedGroupError ? (
+        <OccupationProfileGroupView
+          group={selectedGroup}
+          error={selectedGroupError}
+          isLoading={isGroupLoading}
+          onBack={() => {
+            setSelectedGroup(null);
+            setSelectedGroupError(null);
+            setIsGroupLoading(false);
+          }}
+        />
+      ) : (
+        <ProfileAggregateSection
+          aggregates={profileAggregates}
+          error={aggregateError}
+          onSelectUnemployedGroup={handleSelectUnemployedGroup}
+        />
+      )}
 
       <section className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <BarChart
@@ -516,27 +551,32 @@ function PolicymakerView({
 function ProfileAggregateSection({
   aggregates,
   error,
+  onSelectUnemployedGroup,
 }: {
   aggregates: PolicyProfileAggregates | null;
   error: string | null;
+  onSelectUnemployedGroup: (row: PolicyAggregateRow) => void;
 }) {
   return (
     <section className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
       <AggregateList
-        title="Top ISCO/ESCO profile groups"
-        description="Hardcoded demo aggregation grouped by occupation profile."
+        title="Aggregate: all profiles"
+        description="Most common occupation groups among the profiles shown."
         rows={aggregates?.iscoEscoTop10 ?? []}
         valueLabel="Profiles"
         valueKey="profiles"
+        rowLimit={aggregates?.rowLimit ?? 10}
         isLoading={!aggregates && !error}
         error={error}
       />
       <AggregateList
-        title="Top unemployed profile groups"
-        description="Aggregate count of profiles marked currently unemployed."
+        title="Aggregate: not employed profiles"
+        description="Occupation groups after filtering to profiles marked not currently employed."
         rows={aggregates?.unemploymentTop10 ?? []}
-        valueLabel="Unemployed"
+        valueLabel="Not employed"
         valueKey="unemployedProfiles"
+        rowLimit={aggregates?.rowLimit ?? 10}
+        onRowClick={onSelectUnemployedGroup}
         isLoading={!aggregates && !error}
         error={error}
       />
@@ -550,6 +590,8 @@ function AggregateList({
   rows,
   valueLabel,
   valueKey,
+  rowLimit,
+  onRowClick,
   isLoading,
   error,
 }: {
@@ -558,6 +600,8 @@ function AggregateList({
   rows: PolicyAggregateRow[];
   valueLabel: string;
   valueKey: "profiles" | "unemployedProfiles";
+  rowLimit: number;
+  onRowClick?: (row: PolicyAggregateRow) => void;
   isLoading: boolean;
   error: string | null;
 }) {
@@ -569,7 +613,7 @@ function AggregateList({
           <p className="mt-1 text-xs text-muted-foreground">{description}</p>
         </div>
         <span className="shrink-0 rounded-md bg-muted px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-          Top 10
+          Top {rowLimit}
         </span>
       </div>
       {isLoading ? (
@@ -591,7 +635,17 @@ function AggregateList({
                 <tr key={`${title}-${row.code}`} className="border-t border-border">
                   <td className="px-3 py-2 font-medium text-muted-foreground">{row.rank}</td>
                   <td className="px-3 py-2">
-                    <div className="font-medium text-foreground">{row.title}</div>
+                    {onRowClick ? (
+                      <button
+                        type="button"
+                        onClick={() => onRowClick(row)}
+                        className="text-left font-medium text-navy underline-offset-2 hover:text-teal hover:underline"
+                      >
+                        {row.title}
+                      </button>
+                    ) : (
+                      <div className="font-medium text-foreground">{row.title}</div>
+                    )}
                     <div className="mt-0.5 font-mono text-[10px] text-muted-foreground">
                       {row.code} · {row.shareLabel}
                     </div>
@@ -608,6 +662,113 @@ function AggregateList({
         <EmptyState message="No aggregate profile rows are available yet." />
       )}
     </div>
+  );
+}
+
+function OccupationProfileGroupView({
+  group,
+  error,
+  isLoading,
+  onBack,
+}: {
+  group: PolicyOccupationProfileGroup | null;
+  error: string | null;
+  isLoading: boolean;
+  onBack: () => void;
+}) {
+  return (
+    <section className="mt-6 rounded-xl border border-border bg-card p-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <button
+            type="button"
+            onClick={onBack}
+            className="text-xs font-medium text-navy underline-offset-2 hover:text-teal hover:underline"
+          >
+            Back to aggregates
+          </button>
+          <h3 className="mt-3 text-base font-semibold text-navy">
+            {group ? group.title : "Occupation group"}
+          </h3>
+          <p className="mt-1 font-mono text-[11px] text-muted-foreground">
+            {group ? `ISCO ${group.iscoCode}` : "Loading ISCO group"}
+          </p>
+        </div>
+        {group && (
+          <div className="grid grid-cols-2 gap-2 text-right text-xs sm:min-w-64">
+            <div className="rounded-md bg-muted/60 px-3 py-2">
+              <div className="text-muted-foreground">Profiles shown</div>
+              <div className="mt-1 text-lg font-bold text-navy">
+                {group.totalProfiles.toLocaleString()}
+              </div>
+            </div>
+            <div className="rounded-md bg-muted/60 px-3 py-2">
+              <div className="text-muted-foreground">Not employed</div>
+              <div className="mt-1 text-lg font-bold text-navy">
+                {group.unemployedProfiles.toLocaleString()}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {isLoading ? (
+        <LoadingState message="Fetching candidates in this occupation group..." />
+      ) : error ? (
+        <EmptyState message={error} />
+      ) : group && group.candidates.length > 0 ? (
+        <div className="mt-4 overflow-hidden rounded-md border border-border">
+          <table className="w-full border-collapse text-left text-xs">
+            <thead className="bg-muted/60 text-muted-foreground">
+              <tr>
+                <th className="px-3 py-2 font-medium">Candidate</th>
+                <th className="px-3 py-2 font-medium">Location</th>
+                <th className="px-3 py-2 text-right font-medium">Experience</th>
+                <th className="px-3 py-2 text-right font-medium">Education skill</th>
+                <th className="px-3 py-2 text-right font-medium">Relocation</th>
+                <th className="px-3 py-2 text-right font-medium">Profile</th>
+              </tr>
+            </thead>
+            <tbody>
+              {group.candidates.map((candidate) => (
+                <tr key={candidate.profileId} className="border-t border-border">
+                  <td className="px-3 py-2 font-medium text-foreground">
+                    {candidate.fullName}
+                  </td>
+                  <td className="px-3 py-2 text-muted-foreground">
+                    {[candidate.location, candidate.country].filter(Boolean).join(", ") ||
+                      "Unknown"}
+                  </td>
+                  <td className="px-3 py-2 text-right text-muted-foreground">
+                    {candidate.yearsExperience.toLocaleString(undefined, {
+                      maximumFractionDigits: 1,
+                    })}{" "}
+                    yrs
+                  </td>
+                  <td className="px-3 py-2 text-right capitalize text-muted-foreground">
+                    {candidate.educationSkillLevel.replace(/_/g, " ")}
+                  </td>
+                  <td className="px-3 py-2 text-right text-muted-foreground">
+                    {candidate.willingToRelocate ? "Yes" : "No"}
+                  </td>
+                  <td className="px-3 py-2 text-right">
+                    <a
+                      href={`/profile/${candidate.profileId}`}
+                      className="inline-flex items-center justify-end gap-1 text-navy hover:text-teal"
+                    >
+                      Open
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <EmptyState message="No not-employed candidates are shown for this occupation group." />
+      )}
+    </section>
   );
 }
 

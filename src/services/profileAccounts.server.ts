@@ -13,6 +13,9 @@ type AnalyticsFields = {
   country: string;
   currentlyEmployed: boolean;
   willingToRelocate: boolean;
+  educationTaxonomyLevel: string;
+  educationSkillLevel: string;
+  credentialCategory: string;
   skillsJson: string;
   profileJson: string;
 };
@@ -38,6 +41,9 @@ export async function saveAccountProfileSnapshot(snapshot: ProfileSnapshot) {
         country,
         currently_employed,
         willing_to_relocate,
+        education_taxonomy_level,
+        education_skill_level,
+        credential_category,
         skills_json,
         profile_json,
         status,
@@ -45,7 +51,7 @@ export async function saveAccountProfileSnapshot(snapshot: ProfileSnapshot) {
         created_at,
         updated_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(profile_id) DO UPDATE SET
         account_id = excluded.account_id,
         full_name = excluded.full_name,
@@ -58,6 +64,9 @@ export async function saveAccountProfileSnapshot(snapshot: ProfileSnapshot) {
         country = excluded.country,
         currently_employed = excluded.currently_employed,
         willing_to_relocate = excluded.willing_to_relocate,
+        education_taxonomy_level = excluded.education_taxonomy_level,
+        education_skill_level = excluded.education_skill_level,
+        credential_category = excluded.credential_category,
         skills_json = excluded.skills_json,
         profile_json = excluded.profile_json,
         status = excluded.status,
@@ -76,6 +85,9 @@ export async function saveAccountProfileSnapshot(snapshot: ProfileSnapshot) {
     analytics.country,
     analytics.currentlyEmployed ? 1 : 0,
     analytics.willingToRelocate ? 1 : 0,
+    analytics.educationTaxonomyLevel,
+    analytics.educationSkillLevel,
+    analytics.credentialCategory,
     analytics.skillsJson,
     analytics.profileJson,
     snapshot.status,
@@ -166,6 +178,9 @@ async function ensureAccountProfilesTable(db: ReturnType<typeof getLocalDatabase
         country TEXT NOT NULL DEFAULT '',
         currently_employed INTEGER NOT NULL DEFAULT 0,
         willing_to_relocate INTEGER NOT NULL DEFAULT 0,
+        education_taxonomy_level TEXT NOT NULL DEFAULT 'unknown',
+        education_skill_level TEXT NOT NULL DEFAULT 'unknown',
+        credential_category TEXT NOT NULL DEFAULT 'unknown',
         skills_json TEXT NOT NULL,
         profile_json TEXT NOT NULL,
         status TEXT NOT NULL,
@@ -181,6 +196,24 @@ async function ensureAccountProfilesTable(db: ReturnType<typeof getLocalDatabase
   ensureColumn(db, "account_skill_profiles", "country", "TEXT NOT NULL DEFAULT ''");
   ensureColumn(db, "account_skill_profiles", "currently_employed", "INTEGER NOT NULL DEFAULT 0");
   ensureColumn(db, "account_skill_profiles", "willing_to_relocate", "INTEGER NOT NULL DEFAULT 0");
+  ensureColumn(
+    db,
+    "account_skill_profiles",
+    "education_taxonomy_level",
+    "TEXT NOT NULL DEFAULT 'unknown'",
+  );
+  ensureColumn(
+    db,
+    "account_skill_profiles",
+    "education_skill_level",
+    "TEXT NOT NULL DEFAULT 'unknown'",
+  );
+  ensureColumn(
+    db,
+    "account_skill_profiles",
+    "credential_category",
+    "TEXT NOT NULL DEFAULT 'unknown'",
+  );
 
   db.exec(
     "CREATE INDEX IF NOT EXISTS idx_account_skill_profiles_isco ON account_skill_profiles (isco_code, isco_title)",
@@ -194,6 +227,7 @@ async function ensureAccountProfilesTable(db: ReturnType<typeof getLocalDatabase
 }
 
 function getAnalyticsFields(profile: CandidateSkillProfile): AnalyticsFields {
+  const credentialMapping = profile.education.credentialMapping;
   return {
     fullName: normalizeText(profile.fullName),
     telephoneNumber: normalizeText(profile.telephoneNumber),
@@ -205,6 +239,18 @@ function getAnalyticsFields(profile: CandidateSkillProfile): AnalyticsFields {
     country: normalizeText(profile.country),
     currentlyEmployed: Boolean(profile.experience.hasJob),
     willingToRelocate: Boolean(profile.willingToRelocate),
+    educationTaxonomyLevel: normalizeRequired(
+      credentialMapping?.taxonomyLevel,
+      "unknown",
+    ),
+    educationSkillLevel: normalizeRequired(
+      credentialMapping?.estimatedSkillLevel,
+      "unknown",
+    ),
+    credentialCategory: normalizeRequired(
+      credentialMapping?.credentialCategory,
+      "unknown",
+    ),
     skillsJson: JSON.stringify(profile.skills),
     profileJson: JSON.stringify(profile),
   };
