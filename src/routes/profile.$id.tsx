@@ -27,6 +27,7 @@ import {
   Shield,
   RefreshCcw,
   Loader2,
+  Search,
 } from "lucide-react";
 import { useCountry } from "@/context/CountryContext";
 import {
@@ -46,6 +47,11 @@ import {
   readCandidateSkillProfileJson,
   type ProfileSnapshot,
 } from "@/services/profileHandler";
+import { Input } from "@/components/ui/input";
+import {
+  searchTavilyJobsForProfile,
+  type TavilyJobSearchResult,
+} from "@/services/tavilyJobs";
 
 export const Route = createFileRoute("/profile/$id")({
   head: ({ params }) => {
@@ -84,6 +90,10 @@ const loadProfileSnapshot = createServerFn({ method: "POST" })
 const deleteProfileSnapshot = createServerFn({ method: "POST" })
   .inputValidator((data: { profileId: string; accountId?: string }) => data)
   .handler(async ({ data }) => deleteCandidateSkillProfileJson(data.profileId, data.accountId));
+
+const searchLocalJobs = createServerFn({ method: "POST" })
+  .inputValidator((data: { profile: CandidateSkillProfile; location: string }) => data)
+  .handler(async ({ data }) => searchTavilyJobsForProfile(data));
 
 const ESCO_OCCUPATION_BROWSER_URL = "https://esco.ec.europa.eu/en/classification/occupation-main";
 const ISCO_08_BROWSER_URL = "https://isco.ilo.org/en/isco-08/codelist/";
@@ -364,6 +374,11 @@ function DynamicProfilePage({ snapshot }: { snapshot: ProfileSnapshot }) {
   const riskProfile = computeRiskProfileForCandidateProfile(profile, effectiveCountryCode);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
+  const [showJobSearch, setShowJobSearch] = useState(false);
+  const [jobLocation, setJobLocation] = useState(profile.location ?? "");
+  const [jobSearch, setJobSearch] = useState<TavilyJobSearchResult | null>(null);
+  const [jobSearchLoading, setJobSearchLoading] = useState(false);
+  const [jobSearchError, setJobSearchError] = useState("");
   const [signals, setSignals] = useState<{
     wageShare?: { value: number; year: number; countryName: string };
     laborForce?: { value: number; year: number; countryName: string };
@@ -428,6 +443,32 @@ function DynamicProfilePage({ snapshot }: { snapshot: ProfileSnapshot }) {
       setDeleteError(err instanceof Error ? err.message : "Could not delete the saved profile.");
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const runJobSearch = async () => {
+    const location = jobLocation.trim();
+    if (!location) {
+      setJobSearchError("Enter a city, region, or country before searching.");
+      return;
+    }
+
+    setJobSearchLoading(true);
+    setJobSearchError("");
+    setJobSearch(null);
+
+    try {
+      const result = await searchLocalJobs({
+        data: {
+          profile,
+          location,
+        },
+      });
+      setJobSearch(result);
+    } catch (err) {
+      setJobSearchError(err instanceof Error ? err.message : "Tavily could not find jobs.");
+    } finally {
+      setJobSearchLoading(false);
     }
   };
 
@@ -595,6 +636,85 @@ function DynamicProfilePage({ snapshot }: { snapshot: ProfileSnapshot }) {
           ].filter((v): v is string => Boolean(v))}
           empty="No education or training details captured yet."
         />
+      </section>
+
+      <section className="mt-10 rounded-xl border border-border bg-card p-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-navy">Local job finder</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Use Tavily to search current openings that fit this ESCO skill profile.
+            </p>
+          </div>
+          {!showJobSearch && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowJobSearch(true)}
+              className="rounded-md"
+            >
+              <Search className="h-4 w-4" />
+              Find local jobs
+            </Button>
+          )}
+        </div>
+
+        {showJobSearch && (
+          <div className="mt-5">
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Input
+                value={jobLocation}
+                onChange={(event) => setJobLocation(event.target.value)}
+                placeholder="City, region, or country"
+                aria-label="Job search location"
+                className="sm:max-w-sm"
+              />
+              <Button
+                type="button"
+                onClick={runJobSearch}
+                disabled={jobSearchLoading}
+                className="rounded-md bg-navy text-navy-foreground hover:bg-navy/90"
+              >
+                {jobSearchLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Search className="h-4 w-4" />
+                )}
+                Search jobs
+              </Button>
+            </div>
+
+            {jobSearchError && (
+              <div className="mt-4 rounded-md border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                {jobSearchError}
+              </div>
+            )}
+
+            {jobSearch?.answer && (
+              <p className="mt-4 rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground">
+                {jobSearch.answer}
+              </p>
+            )}
+
+            {jobSearch && (
+              <div className="mt-4">
+                <div className="text-xs text-muted-foreground">Tavily query: {jobSearch.query}</div>
+                {jobSearch.jobs.length > 0 ? (
+                  <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-2">
+                    {jobSearch.jobs.map((job) => (
+                      <LiveJobCard key={job.id} job={job} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="mt-3 rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
+                    No job listings were returned for that location. Try a nearby city or a broader
+                    region.
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </section>
     </main>
   );
@@ -942,6 +1062,75 @@ function SkillRow({
             via {skill.verifiedBy}
           </span>
         )}
+      </div>
+    </div>
+  );
+}
+
+function LiveJobCard({ job }: { job: JobMatch }) {
+  const typeLabel: Record<JobMatch["type"], string> = {
+    formal: "Formal employment",
+    "self-employment": "Self-employment",
+    gig: "Gig",
+    training: "Training pathway",
+  };
+
+  return (
+    <div className="flex flex-col rounded-xl border border-border bg-background p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h3 className="font-semibold text-foreground">{job.title}</h3>
+          {job.company && <p className="text-sm capitalize text-muted-foreground">{job.company}</p>}
+        </div>
+        <Badge className="bg-navy/10 text-navy hover:bg-navy/10">{typeLabel[job.type]}</Badge>
+      </div>
+
+      <div className="mt-2 inline-flex items-center gap-1 text-xs text-muted-foreground">
+        <MapPin className="h-3 w-3" />
+        {job.location}
+      </div>
+
+      <div className="mt-3">
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-muted-foreground">Profile fit</span>
+          <span className="font-semibold text-foreground">{job.matchScore}%</span>
+        </div>
+        <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+          <div className="h-full bg-teal" style={{ width: `${job.matchScore}%` }} />
+        </div>
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-1.5">
+        {job.matchedSkills.map((skill) => (
+          <span
+            key={skill}
+            className="rounded-full bg-teal/10 px-2 py-0.5 text-[11px] font-medium text-teal"
+          >
+            {skill}
+          </span>
+        ))}
+        {job.missingSkills.map((skill) => (
+          <span
+            key={skill}
+            className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground"
+          >
+            Check {skill}
+          </span>
+        ))}
+      </div>
+
+      <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{job.gapAnalysis}</p>
+
+      <div className="mt-auto pt-4">
+        <a
+          href={job.sourceUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 rounded-md bg-navy px-3 py-2 text-xs font-semibold text-navy-foreground hover:bg-navy/90"
+        >
+          Open listing
+          <ExternalLink className="h-3 w-3" />
+        </a>
       </div>
     </div>
   );
