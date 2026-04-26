@@ -194,9 +194,7 @@ function ToggleButton({
       aria-selected={active}
       onClick={onClick}
       className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm transition ${
-        active
-          ? "bg-card text-navy shadow-sm"
-          : "text-muted-foreground hover:text-foreground"
+        active ? "bg-card text-navy shadow-sm" : "text-muted-foreground hover:text-foreground"
       }`}
     >
       {icon}
@@ -235,9 +233,7 @@ function YouthView({
         <div className="flex items-start gap-3">
           <Sparkles className="mt-0.5 h-5 w-5 text-teal" />
           <div>
-            <h2 className="text-base font-semibold text-navy">
-              What this means for you
-            </h2>
+            <h2 className="text-base font-semibold text-navy">What this means for you</h2>
             <p className="mt-2 text-sm leading-relaxed text-foreground">
               {isLoading
                 ? `Loading the latest signals from the World Bank for ${country.name}…`
@@ -266,11 +262,7 @@ function YouthView({
         <YouthFact
           label="Workers with formal pay"
           value={
-            wageShare
-              ? `${wageShare.value.toFixed(1)}%`
-              : isLoading
-                ? "Loading…"
-                : "Not available"
+            wageShare ? `${wageShare.value.toFixed(1)}%` : isLoading ? "Loading…" : "Not available"
           }
           plain={
             wageShare
@@ -280,13 +272,7 @@ function YouthView({
         />
         <YouthFact
           label="People active in the workforce"
-          value={
-            labor
-              ? `${labor.value.toFixed(1)}%`
-              : isLoading
-                ? "Loading…"
-                : "Not available"
-          }
+          value={labor ? `${labor.value.toFixed(1)}%` : isLoading ? "Loading…" : "Not available"}
           plain={
             labor
               ? `${formatRoundedPct(labor.value)} of adults in ${country.name} are working or actively looking for work (${labor.year}).`
@@ -296,9 +282,7 @@ function YouthView({
       </section>
 
       <section className="mt-6 rounded-xl border border-border bg-card p-5">
-        <h3 className="text-sm font-semibold text-navy">
-          Where the jobs are in {country.name}
-        </h3>
+        <h3 className="text-sm font-semibold text-navy">Where the jobs are in {country.name}</h3>
         {isLoading ? (
           <LoadingState message="Fetching live employment indicators…" />
         ) : sectorShares.length > 0 ? (
@@ -333,15 +317,7 @@ function YouthView({
   );
 }
 
-function YouthFact({
-  label,
-  value,
-  plain,
-}: {
-  label: string;
-  value: string;
-  plain: string;
-}) {
+function YouthFact({ label, value, plain }: { label: string; value: string; plain: string }) {
   return (
     <div className="rounded-xl border border-border bg-card p-5">
       <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -428,9 +404,9 @@ function PolicymakerView({
         />
         <Metric
           icon={<Database className="h-5 w-5 text-teal" />}
-          label="Unique ISCO/ESCO profiles"
+          label="Unique ISCO groups"
           value={formatCount(profileAggregates?.uniqueOccupations)}
-          sub="Grouped by normalized occupation"
+          sub="Grouped by ISCO-08 code"
         />
         <Metric
           icon={<Briefcase className="h-5 w-5 text-amber" />}
@@ -479,8 +455,8 @@ function PolicymakerView({
       <section className="mt-6 rounded-xl border border-border bg-card p-5">
         <h3 className="text-sm font-semibold text-navy">All loaded WDI signals</h3>
         <p className="mt-1 text-xs text-muted-foreground">
-          Every value below is fetched live from the World Bank Indicators API for{" "}
-          {country.name} when you switch country.
+          Every value below is fetched live from the World Bank Indicators API for {country.name}{" "}
+          when you switch country.
         </p>
         {isLoading ? (
           <LoadingState message="Fetching live WDI indicators…" />
@@ -506,9 +482,7 @@ function PolicymakerView({
                     <td className="px-3 py-2 text-right font-medium text-foreground">
                       {formatWdiValue(indicator)}
                     </td>
-                    <td className="px-3 py-2 text-right text-muted-foreground">
-                      {indicator.year}
-                    </td>
+                    <td className="px-3 py-2 text-right text-muted-foreground">{indicator.year}</td>
                     <td className="px-3 py-2">
                       <a
                         href={indicator.sourceUrl}
@@ -529,8 +503,8 @@ function PolicymakerView({
           <EmptyState message="No live WDI indicators were returned for this country." />
         )}
         <p className="mt-3 text-[10px] text-muted-foreground">
-          Source: World Bank Indicators API · https://api.worldbank.org/v2 · WDI series
-          refreshed annually.
+          Source: World Bank Indicators API · https://api.worldbank.org/v2 · WDI series refreshed
+          annually.
         </p>
       </section>
     </>
@@ -721,9 +695,7 @@ function OccupationProfileGroupView({
             <tbody>
               {group.candidates.map((candidate) => (
                 <tr key={candidate.profileId} className="border-t border-border">
-                  <td className="px-3 py-2 font-medium text-foreground">
-                    {candidate.fullName}
-                  </td>
+                  <td className="px-3 py-2 font-medium text-foreground">{candidate.fullName}</td>
                   <td className="px-3 py-2 text-muted-foreground">
                     {[candidate.location, candidate.country].filter(Boolean).join(", ") ||
                       "Unknown"}
@@ -799,8 +771,8 @@ function GdpCard({
             {indicator.indicatorId} · {indicator.countryName}, {indicator.year}
           </div>
           <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-            World Bank reports the most recent observation only via this endpoint;
-            historical series are fetched on demand and not cached client-side.
+            World Bank reports the most recent observation only via this endpoint; historical series
+            are fetched on demand and not cached client-side.
           </p>
           <a
             href={indicator.sourceUrl}

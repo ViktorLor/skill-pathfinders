@@ -3,10 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import {
-  getCandidateById,
-  getJobMatchesForTrack,
-} from "@/data/mock";
+import { getCandidateById, getJobMatchesForTrack } from "@/data/mock";
 import type {
   CandidateProfile,
   CandidateSkillProfile,
@@ -69,9 +66,7 @@ export const Route = createFileRoute("/profile/$id")({
     return {
       meta: [
         {
-          title: c
-            ? `${c.name} · Skill Passport · Unmapped`
-            : "Profile · Unmapped",
+          title: c ? `${c.name} · Skill Passport · Unmapped` : "Profile · Unmapped",
         },
         {
           name: "description",
@@ -105,13 +100,10 @@ const searchLocalJobs = createServerFn({ method: "POST" })
   .inputValidator((data: { profile: CandidateSkillProfile; location: string }) => data)
   .handler(async ({ data }) => searchTavilyJobsForProfile(data));
 
-const ESCO_OCCUPATION_BROWSER_URL = "https://esco.ec.europa.eu/en/classification/occupation-main";
-const ISCO_08_BROWSER_URL = "https://isco.ilo.org/en/isco-08/codelist/";
+const ISCO_08_CODELIST_URL = "https://isco.ilo.org/en/isco-08/codelist/";
+const ISCO_08_WEBSITE_LABEL = "isco.ilo.org";
 
-const trackMeta: Record<
-  TrackType,
-  { label: string; bg: string; text: string; ring: string }
-> = {
+const trackMeta: Record<TrackType, { label: string; bg: string; text: string; ring: string }> = {
   tech: {
     label: "Tech Track",
     bg: "bg-navy",
@@ -182,8 +174,6 @@ interface PassportData {
   countryName?: string;
   iscoCode?: string;
   iscoTitle?: string;
-  escoCode?: string;
-  escoTitle?: string;
   skillsByCategory: { category: string; skills: string[] }[];
   totalYears?: number;
   industries: string[];
@@ -227,10 +217,6 @@ function PassportDocument({ data }: { data: PassportData }) {
   if (data.iscoCode) classificationParts.push(`ISCO-08 ${data.iscoCode}`);
   if (data.iscoTitle && !data.iscoCode) classificationParts.push(data.iscoTitle);
   else if (data.iscoTitle) classificationParts.push(data.iscoTitle);
-  if (data.escoCode || data.escoTitle) {
-    const escoParts = [data.escoCode, data.escoTitle].filter(Boolean).join(" · ");
-    classificationParts.push(`ESCO ${escoParts}`);
-  }
   const hasClassification = classificationParts.length > 0;
 
   const locationLine = [data.location, data.countryName].filter(Boolean).join(", ");
@@ -262,7 +248,7 @@ function PassportDocument({ data }: { data: PassportData }) {
 
         {hasClassification && (
           <div className="sp-classification">
-            <div className="sp-label">Internationally recognised classification</div>
+            <div className="sp-label">ISCO-08 occupation classification</div>
             <div style={{ marginTop: 2 }}>{classificationParts.join(" · ")}</div>
           </div>
         )}
@@ -345,7 +331,10 @@ function PassportDocument({ data }: { data: PassportData }) {
           {(data.educationSkillLevel || data.credentialLabel) && (
             <div style={{ marginTop: 4 }}>
               <span className="sp-label">Mapped credential: </span>
-              {[data.credentialLabel, data.educationSkillLevel && `${data.educationSkillLevel} skill level`]
+              {[
+                data.credentialLabel,
+                data.educationSkillLevel && `${data.educationSkillLevel} skill level`,
+              ]
                 .filter(Boolean)
                 .join(" · ")}
             </div>
@@ -527,8 +516,6 @@ function dynamicPassportData(
     countryName,
     iscoCode: profile.occupation.iscoCode || undefined,
     iscoTitle: profile.occupation.iscoTitle || undefined,
-    escoCode: profile.occupation.escoOccupationCode || undefined,
-    escoTitle: profile.occupation.escoOccupationTitle || undefined,
     skillsByCategory,
     totalYears: profile.experience.totalYears,
     industries: profile.experience.industries ?? [],
@@ -641,9 +628,12 @@ function ProfilePage() {
               {initials}
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-navy">
-                {candidate.name}
-              </h1>
+              <h1 className="text-2xl font-bold text-navy">{candidate.name}</h1>
+              <OfficialIscoClassification
+                className="mt-2"
+                iscoCode={demoOccupation?.code}
+                iscoTitle={demoOccupation?.title}
+              />
               <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
                 {candidate.location && (
                   <span className="inline-flex items-center gap-1">
@@ -654,16 +644,9 @@ function ProfilePage() {
                 {candidate.age && <span>· {candidate.age} years old</span>}
               </p>
               <div className="mt-3 flex flex-wrap items-center gap-2">
-                <span
-                  className={`rounded-md px-2.5 py-1 text-xs font-medium ${meta.ring}`}
-                >
+                <span className={`rounded-md px-2.5 py-1 text-xs font-medium ${meta.ring}`}>
                   {meta.label}
                 </span>
-                {candidate.escoOccupation && (
-                  <span className="rounded-md bg-muted px-2.5 py-1 text-xs font-medium text-foreground">
-                    ESCO {candidate.escoOccupation}
-                  </span>
-                )}
               </div>
             </div>
           </div>
@@ -672,22 +655,14 @@ function ProfilePage() {
             <span className="text-xs uppercase tracking-wide text-muted-foreground">
               Skill Passport Score
             </span>
-            <div
-              className={`mt-1 text-5xl font-bold ${trustColor(candidate.trustScore)}`}
-            >
+            <div className={`mt-1 text-5xl font-bold ${trustColor(candidate.trustScore)}`}>
               {candidate.trustScore}
               <span className="text-xl text-muted-foreground">/100</span>
             </div>
           </div>
         </div>
+        <OfficialIscoFootnote />
       </section>
-
-      <TaxonomySection
-        escoTitle={demoOccupation?.title}
-        escoUri={undefined}
-        iscoCode={demoOccupation?.code}
-        iscoTitle={demoOccupation?.title}
-      />
 
       {/* Econometric signals */}
       <section className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 rounded-lg bg-sky/10 px-4 py-3 text-xs text-foreground">
@@ -730,11 +705,7 @@ function ProfilePage() {
         <h2 className="text-lg font-semibold text-navy">Verified skills</h2>
         <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
           {candidate.skillScores.map((s) => (
-            <SkillRow
-              key={s.name}
-              skill={s}
-              aiRisk={riskProfile?.bySkill[s.name]}
-            />
+            <SkillRow key={s.name} skill={s} aiRisk={riskProfile?.bySkill[s.name]} />
           ))}
         </div>
       </section>
@@ -744,9 +715,7 @@ function ProfilePage() {
 
       {/* Job matches */}
       <section className="mt-10">
-        <h2 className="text-lg font-semibold text-navy">
-          Matched opportunities
-        </h2>
+        <h2 className="text-lg font-semibold text-navy">Matched opportunities</h2>
         <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
           {jobs.map((j) => (
             <JobCard key={j.id} job={j} onApply={() => setActiveJob(j)} />
@@ -893,15 +862,18 @@ function DynamicProfilePage({ snapshot }: { snapshot: ProfileSnapshot }) {
               {initials}
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-navy">
-                {displayName}
-              </h1>
+              <h1 className="text-2xl font-bold text-navy">{displayName}</h1>
               <div className="mt-1 text-sm font-medium text-foreground">
                 {profile.profile.roleName || "Candidate profile"}
               </div>
               <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
                 {profile.profile.summary}
               </p>
+              <OfficialIscoClassification
+                className="mt-3"
+                iscoCode={profile.occupation.iscoCode}
+                iscoTitle={profile.occupation.iscoTitle}
+              />
               <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
                 {profile.location && (
                   <span className="inline-flex items-center gap-1">
@@ -934,11 +906,6 @@ function DynamicProfilePage({ snapshot }: { snapshot: ProfileSnapshot }) {
                 <span className="rounded-md bg-muted px-2.5 py-1 text-xs font-medium text-foreground">
                   Relocate: {profile.willingToRelocate ? "Yes" : "No"}
                 </span>
-                {(profile.occupation.escoOccupationTitle || profile.occupation.iscoTitle) && (
-                  <span className="rounded-md bg-muted px-2.5 py-1 text-xs font-medium text-foreground">
-                    {profile.occupation.escoOccupationTitle || profile.occupation.iscoTitle}
-                  </span>
-                )}
               </div>
               {educationMapping && (
                 <EducationSummary
@@ -978,19 +945,31 @@ function DynamicProfilePage({ snapshot }: { snapshot: ProfileSnapshot }) {
             {deleteError}
           </div>
         )}
+        <OfficialIscoFootnote />
       </section>
 
-      <TaxonomySection
-        escoTitle={profile.occupation.escoOccupationTitle}
-        escoCode={profile.occupation.escoOccupationCode}
-        escoUri={profile.occupation.escoOccupationUri}
-        iscoCode={profile.occupation.iscoCode}
-        iscoTitle={profile.occupation.iscoTitle}
-        alternatives={profile.occupation.alternativeOccupationMatches}
-      />
+      <section className="mt-8">
+        <h2 className="text-lg font-semibold text-navy">Skills from profile</h2>
+        <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
+          {skills.map((skill) => (
+            <DynamicSkillRow
+              key={`${skill.category}-${skill.name}`}
+              skill={skill}
+              aiRisk={riskProfile.bySkill[skill.name]}
+            />
+          ))}
+          {!skills.length && (
+            <div className="rounded-lg border border-border bg-card p-4 text-sm text-muted-foreground sm:col-span-2 xl:col-span-3">
+              No skills were captured in this profile yet.
+            </div>
+          )}
+        </div>
+      </section>
+
+      {skills.length > 0 && <AIRiskLens profile={riskProfile} />}
 
       {isIsoAlpha3 && (
-        <section className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 rounded-lg bg-sky/10 px-4 py-3 text-xs text-foreground">
+        <section className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 rounded-lg bg-sky/10 px-4 py-3 text-xs text-foreground">
           {signals.wageShare && (
             <span className="inline-flex items-center gap-1.5">
               <BarChart3 className="h-3.5 w-3.5 text-sky" />
@@ -1030,32 +1009,12 @@ function DynamicProfilePage({ snapshot }: { snapshot: ProfileSnapshot }) {
         </section>
       )}
 
-      <section className="mt-8">
-        <h2 className="text-lg font-semibold text-navy">Skills from profile</h2>
-        <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
-          {skills.map((skill) => (
-            <DynamicSkillRow
-              key={`${skill.category}-${skill.name}`}
-              skill={skill}
-              aiRisk={riskProfile.bySkill[skill.name]}
-            />
-          ))}
-          {!skills.length && (
-            <div className="rounded-lg border border-border bg-card p-4 text-sm text-muted-foreground sm:col-span-2 xl:col-span-3">
-              No skills were captured in this profile yet.
-            </div>
-          )}
-        </div>
-      </section>
-
-      {skills.length > 0 && <AIRiskLens profile={riskProfile} />}
-
       <section className="mt-10 rounded-xl border border-border bg-card p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
             <h2 className="text-lg font-semibold text-navy">Local job finder</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Use Tavily to search current openings that fit this ESCO skill profile.
+              Use Tavily to search current openings that fit this skill profile.
             </p>
           </div>
           {!showJobSearch && (
@@ -1146,141 +1105,46 @@ function DynamicProfilePage({ snapshot }: { snapshot: ProfileSnapshot }) {
   );
 }
 
-function TaxonomySection({
-  escoTitle,
-  escoCode,
-  escoUri,
+function OfficialIscoClassification({
   iscoCode,
   iscoTitle,
-  alternatives = [],
+  className = "",
 }: {
-  escoTitle?: string;
-  escoCode?: string;
-  escoUri?: string;
   iscoCode?: string;
   iscoTitle?: string;
-  alternatives?: CandidateSkillProfile["occupation"]["alternativeOccupationMatches"];
-}) {
-  const hasPrimary = Boolean(escoTitle || escoUri || iscoCode || iscoTitle);
-  const displayEscoCode = escoCode || deriveEscoCode(escoUri);
-
-  return (
-    <section className="mt-4 rounded-xl border border-border bg-card p-5">
-      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-        <div>
-          <h2 className="text-lg font-semibold text-navy">Official occupation classification</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            The candidate occupation is shown against ESCO and ISCO-08 where a mapping is available.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <OfficialLink href={ESCO_OCCUPATION_BROWSER_URL} label="ESCO browser" />
-          <OfficialLink href={ISCO_08_BROWSER_URL} label="ISCO-08 browser" />
-        </div>
-      </div>
-
-      <div className="mt-5 grid gap-4 md:grid-cols-2">
-        <TaxonomyCard
-          label="ESCO occupation"
-          title={escoTitle || "Not mapped yet"}
-          code={displayEscoCode}
-          href={escoUri && isHttpUrl(escoUri) ? escoUri : ESCO_OCCUPATION_BROWSER_URL}
-          linkLabel="Open official ESCO"
-        />
-        <TaxonomyCard
-          label="ISCO-08 occupation group"
-          title={iscoTitle || "Not mapped yet"}
-          code={iscoCode}
-          href={ISCO_08_BROWSER_URL}
-          linkLabel="Open official ISCO-08 list"
-        />
-      </div>
-
-      {!hasPrimary && (
-        <p className="mt-4 rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground">
-          No official ESCO or ISCO mapping has been saved for this profile yet.
-        </p>
-      )}
-
-      {alternatives.length > 0 && (
-        <div className="mt-5">
-          <h3 className="text-sm font-semibold text-foreground">Alternative occupation matches</h3>
-          <div className="mt-2 grid gap-2">
-            {alternatives.slice(0, 3).map((match) => (
-              <div
-                key={`${match.title}-${match.iscoCode ?? match.escoUri ?? match.reason}`}
-                className="rounded-md bg-muted px-3 py-2 text-sm"
-              >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="font-medium text-foreground">{match.title}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {Math.round(match.confidence * 100)}% confidence
-                  </span>
-                </div>
-                <p className="mt-1 text-xs text-muted-foreground">{match.reason}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </section>
-  );
-}
-
-function TaxonomyCard({
-  label,
-  title,
-  code,
-  href,
-  linkLabel,
-}: {
-  label: string;
-  title: string;
-  code?: string;
-  href: string;
-  linkLabel: string;
+  className?: string;
 }) {
   return (
-    <div className="rounded-lg border border-border bg-background p-4">
-      <div className="text-xs font-medium uppercase text-muted-foreground">{label}</div>
-      <div className="mt-2 font-semibold text-foreground">{title}</div>
-      {code && <div className="mt-1 break-all text-xs text-muted-foreground">{code}</div>}
-      <a
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-navy hover:text-teal"
-      >
-        {linkLabel}
-        <ExternalLink className="h-3 w-3" />
-      </a>
+    <div className={className}>
+      <div className="text-sm text-foreground">
+        <span className="font-semibold">Official ISCO-08 Classification:</span>{" "}
+        {iscoTitle || "Not mapped yet"}
+        {iscoCode && (
+          <>
+            <span className="mx-1 text-muted-foreground">·</span>
+            <span className="font-semibold">ID Code:</span> {iscoCode}
+          </>
+        )}
+      </div>
     </div>
   );
 }
 
-function OfficialLink({ href, label }: { href: string; label: string }) {
+function OfficialIscoFootnote() {
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="inline-flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
-    >
-      {label}
-      <ExternalLink className="h-3 w-3" />
-    </a>
+    <p className="mt-5 border-t border-border pt-3 text-xs text-muted-foreground">
+      Footnote: ISCO-08 codes can be looked up on the{" "}
+      <a
+        href={ISCO_08_CODELIST_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="underline hover:text-sky"
+      >
+        official ISCO website
+      </a>{" "}
+      ({ISCO_08_WEBSITE_LABEL}).
+    </p>
   );
-}
-
-function isHttpUrl(value: string) {
-  return value.startsWith("http://") || value.startsWith("https://");
-}
-
-function deriveEscoCode(uri?: string) {
-  if (!uri) return undefined;
-
-  const parts = uri.split(/[\/#]/).filter(Boolean);
-  return parts.at(-1);
 }
 
 function EducationSummary({
@@ -1326,13 +1190,8 @@ function EducationSummaryItem({
   title: string;
 }) {
   return (
-    <div
-      title={title}
-      className="rounded-md border border-border bg-background px-3 py-2"
-    >
-      <div className="text-[10px] font-medium uppercase text-muted-foreground">
-        {label}
-      </div>
+    <div title={title} className="rounded-md border border-border bg-background px-3 py-2">
+      <div className="text-[10px] font-medium uppercase text-muted-foreground">{label}</div>
       <div className="mt-0.5 truncate text-sm font-semibold capitalize text-foreground">
         {value.replaceAll("_", " ")}
       </div>
@@ -1372,14 +1231,9 @@ function DynamicSkillRow({ skill, aiRisk }: { skill: SkillItem; aiRisk?: SkillAI
     .join("\n");
 
   return (
-    <div
-      title={title}
-      className="rounded-md border border-border bg-card px-3 py-2 shadow-sm"
-    >
+    <div title={title} className="rounded-md border border-border bg-card px-3 py-2 shadow-sm">
       <div className="flex min-w-0 items-start justify-between gap-2">
-        <span className="min-w-0 truncate text-sm font-semibold text-foreground">
-          {skill.name}
-        </span>
+        <span className="min-w-0 truncate text-sm font-semibold text-foreground">{skill.name}</span>
         <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold capitalize text-muted-foreground">
           {skill.confidence}
         </span>
@@ -1406,13 +1260,7 @@ function DynamicSkillRow({ skill, aiRisk }: { skill: SkillItem; aiRisk?: SkillAI
   );
 }
 
-function SkillRow({
-  skill,
-  aiRisk,
-}: {
-  skill: SkillScore;
-  aiRisk?: SkillAIRisk;
-}) {
+function SkillRow({ skill, aiRisk }: { skill: SkillScore; aiRisk?: SkillAIRisk }) {
   const cfg = (() => {
     switch (skill.status) {
       case "confirmed":
@@ -1476,14 +1324,9 @@ function SkillRow({
     .join("\n");
 
   return (
-    <div
-      title={title}
-      className="rounded-md border border-border bg-card px-3 py-2 shadow-sm"
-    >
+    <div title={title} className="rounded-md border border-border bg-card px-3 py-2 shadow-sm">
       <div className="flex min-w-0 items-start justify-between gap-2">
-        <span className="min-w-0 truncate text-sm font-semibold text-foreground">
-          {skill.name}
-        </span>
+        <span className="min-w-0 truncate text-sm font-semibold text-foreground">{skill.name}</span>
         <span className="shrink-0 text-sm font-semibold text-foreground">{skill.score}</span>
       </div>
       <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
@@ -1533,16 +1376,16 @@ function LaborMarketInsightCard({ insight }: { insight: LocalLaborMarketInsight 
           <h3 className="mt-1 font-semibold text-foreground">
             {insight.occupationTitle} in {insight.location}
           </h3>
-          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            {insight.summary}
-          </p>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{insight.summary}</p>
         </div>
         <div className="flex flex-wrap gap-2 sm:justify-end">
           <span className="rounded-full bg-sky/10 px-2.5 py-1 text-xs font-semibold text-sky">
             {modeLabel[insight.commonWorkMode]}
           </span>
           <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${selfEmploymentTone}`}>
-            {insight.selfEmployment.suitable ? "Freelance route worth showing" : "Freelance route weak"}
+            {insight.selfEmployment.suitable
+              ? "Freelance route worth showing"
+              : "Freelance route weak"}
           </span>
         </div>
       </div>
@@ -1600,13 +1443,7 @@ function LaborMarketInsightCard({ insight }: { insight: LocalLaborMarketInsight 
   );
 }
 
-function InsightMiniPanel({
-  title,
-  children,
-}: {
-  title: string;
-  children: ReactNode;
-}) {
+function InsightMiniPanel({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="rounded-lg border border-border bg-card p-4">
       <div className="text-xs font-medium uppercase text-muted-foreground">{title}</div>
@@ -1646,16 +1483,12 @@ function JobOpportunityMetrics({ insight }: { insight: LocalLaborMarketInsight }
   return (
     <div className="mt-3 grid gap-3 md:grid-cols-2">
       <div className="rounded-lg border border-border bg-background p-4">
-        <div className="text-xs font-medium uppercase text-muted-foreground">
-          Avg pay in market
-        </div>
+        <div className="text-xs font-medium uppercase text-muted-foreground">Avg pay in market</div>
         <p className="mt-1 text-sm font-semibold text-foreground">{averagePay.value}</p>
         <p className="mt-1 text-xs text-muted-foreground">
           {averagePay.currency} / {averagePay.period}; confidence {averagePay.confidence}
         </p>
-        <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-          {averagePay.notes}
-        </p>
+        <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{averagePay.notes}</p>
       </div>
 
       <div className="rounded-lg border border-border bg-background p-4">
@@ -1666,9 +1499,7 @@ function JobOpportunityMetrics({ insight }: { insight: LocalLaborMarketInsight }
         <p className="mt-1 text-xs text-muted-foreground">
           {employment.ageGroup}; confidence {employment.confidence}
         </p>
-        <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-          {employment.notes}
-        </p>
+        <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{employment.notes}</p>
       </div>
     </div>
   );
@@ -1743,13 +1574,7 @@ function LiveJobCard({ job }: { job: JobMatch }) {
   );
 }
 
-function JobCard({
-  job,
-  onApply,
-}: {
-  job: JobMatch;
-  onApply: () => void;
-}) {
+function JobCard({ job, onApply }: { job: JobMatch; onApply: () => void }) {
   const typeLabel: Record<JobMatch["type"], string> = {
     formal: "Formal employment",
     "self-employment": "Self-employment",
@@ -1762,13 +1587,9 @@ function JobCard({
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="font-semibold text-foreground">{job.title}</h3>
-          {job.company && (
-            <p className="text-sm text-muted-foreground">{job.company}</p>
-          )}
+          {job.company && <p className="text-sm text-muted-foreground">{job.company}</p>}
         </div>
-        <Badge className="bg-navy/10 text-navy hover:bg-navy/10">
-          {typeLabel[job.type]}
-        </Badge>
+        <Badge className="bg-navy/10 text-navy hover:bg-navy/10">{typeLabel[job.type]}</Badge>
       </div>
 
       <div className="mt-2 inline-flex items-center gap-1 text-xs text-muted-foreground">
@@ -1779,15 +1600,10 @@ function JobCard({
       <div className="mt-3">
         <div className="flex items-center justify-between text-xs">
           <span className="text-muted-foreground">Match</span>
-          <span className="font-semibold text-foreground">
-            {job.matchScore}%
-          </span>
+          <span className="font-semibold text-foreground">{job.matchScore}%</span>
         </div>
         <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-muted">
-          <div
-            className="h-full bg-teal"
-            style={{ width: `${job.matchScore}%` }}
-          />
+          <div className="h-full bg-teal" style={{ width: `${job.matchScore}%` }} />
         </div>
       </div>
 
@@ -1810,15 +1626,9 @@ function JobCard({
         ))}
       </div>
 
-      <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-        {job.gapAnalysis}
-      </p>
+      <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{job.gapAnalysis}</p>
 
-      {job.wageRange && (
-        <p className="mt-2 text-xs font-medium text-foreground">
-          {job.wageRange}
-        </p>
-      )}
+      {job.wageRange && <p className="mt-2 text-xs font-medium text-foreground">{job.wageRange}</p>}
 
       <div className="mt-auto flex items-center justify-between pt-4">
         <Button
