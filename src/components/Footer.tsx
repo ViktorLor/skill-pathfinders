@@ -1,9 +1,12 @@
 import { Link } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import { ExternalLink } from "lucide-react";
 
 const YEAR = new Date().getFullYear();
 
 export function Footer() {
+  const { t } = useTranslation();
+
   return (
     <footer className="mt-20 border-t border-border bg-background print:hidden">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
@@ -17,15 +20,14 @@ export function Footer() {
               <span className="text-base font-bold tracking-tight text-navy">Unmapped</span>
             </Link>
             <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-              Open skills infrastructure for unmapped youth. A protocol, not a product — plug in
-              local data and it works anywhere.
+              {t("footer.tagline")}
             </p>
           </div>
 
           {/* Product */}
           <div>
             <h3 className="text-xs font-semibold uppercase tracking-wide text-foreground">
-              Product
+              {t("footer.product")}
             </h3>
             <ul className="mt-3 space-y-2">
               <li>
@@ -33,7 +35,7 @@ export function Footer() {
                   to="/"
                   className="text-sm text-muted-foreground transition hover:text-navy"
                 >
-                  Build my profile
+                  {t("nav.buildProfile")}
                 </Link>
               </li>
               <li>
@@ -41,7 +43,7 @@ export function Footer() {
                   to="/dashboard"
                   className="text-sm text-muted-foreground transition hover:text-navy"
                 >
-                  Live dashboard
+                  {t("nav.liveDashboard")}
                 </Link>
               </li>
             </ul>
@@ -50,7 +52,7 @@ export function Footer() {
           {/* Data sources */}
           <div>
             <h3 className="text-xs font-semibold uppercase tracking-wide text-foreground">
-              Data sources
+              {t("footer.dataSources")}
             </h3>
             <ul className="mt-3 space-y-2">
               <li>
@@ -60,7 +62,7 @@ export function Footer() {
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 text-sm text-muted-foreground transition hover:text-navy"
                 >
-                  World Bank WDI
+                  {t("footer.worldBankWdi")}
                   <ExternalLink className="h-3 w-3" />
                 </a>
               </li>
@@ -114,11 +116,11 @@ export function Footer() {
           {/* About */}
           <div>
             <h3 className="text-xs font-semibold uppercase tracking-wide text-foreground">
-              About
+              {t("footer.about")}
             </h3>
             <ul className="mt-3 space-y-2">
               <li className="text-sm text-muted-foreground">
-                Built for youth, NGOs, training providers, and policymakers in LMICs.
+                {t("footer.aboutText")}
               </li>
               <li>
                 <a
@@ -127,7 +129,7 @@ export function Footer() {
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 text-sm text-muted-foreground transition hover:text-navy"
                 >
-                  GitHub
+                  {t("footer.github")}
                   <ExternalLink className="h-3 w-3" />
                 </a>
               </li>
@@ -137,10 +139,11 @@ export function Footer() {
 
         {/* Bottom bar */}
         <div className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-6 text-[11px] text-muted-foreground">
-          <p>© {YEAR} Unmapped. Open skills infrastructure.</p>
+          <p>
+            &copy; {YEAR} Unmapped. {t("footer.copyright")}
+          </p>
           <p className="text-right leading-relaxed">
-            Automation data: Frey &amp; Osborne (2017) · ILO Task Index · World Bank STEP ·
-            Wittgenstein Centre 2025–2035
+            {t("footer.automationCredit")}
           </p>
         </div>
       </div>

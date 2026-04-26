@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import type { FormEvent } from "react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +12,7 @@ import { findLatestAccountProfile } from "@/services/profileAccounts.server";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
-    meta: [{ title: "Login - Unmapped" }],
+    meta: [{ title: "Unmapped" }],
   }),
   component: LoginPage,
 });
@@ -25,6 +26,7 @@ const loadLatestAccountProfile = createServerFn({ method: "POST" })
   .handler(async ({ data }) => findLatestAccountProfile(data.accountId));
 
 function LoginPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -62,7 +64,7 @@ function LoginPage() {
       setMessage(`Logged in as ${account.email}.`);
       setPassword("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not log in.");
+      setError(err instanceof Error ? err.message : t("login.errors.couldNotLogin"));
     } finally {
       setIsSubmitting(false);
     }
@@ -74,15 +76,15 @@ function LoginPage() {
         onSubmit={submitLogin}
         className="w-full rounded-xl border border-border bg-card p-6 shadow-sm sm:p-8"
       >
-        <h1 className="text-2xl font-semibold text-navy">Login</h1>
+        <h1 className="text-2xl font-semibold text-navy">{t("nav.login")}</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Sign in with the email and password saved in the SQL database.
+          {t("login.subtitle")}
         </p>
 
         <div className="mt-6 space-y-4">
           <label className="block">
             <span className="mb-1 block text-sm font-medium text-foreground">
-              Email
+              {t("landing.auth.email")}
             </span>
             <Input
               type="email"
@@ -95,7 +97,7 @@ function LoginPage() {
 
           <label className="block">
             <span className="mb-1 block text-sm font-medium text-foreground">
-              Password
+              {t("landing.auth.password")}
             </span>
             <Input
               type="password"
@@ -126,13 +128,13 @@ function LoginPage() {
           className="mt-6 w-full rounded-md bg-navy text-navy-foreground hover:bg-navy/90"
         >
           {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
-          Login
+          {t("nav.login")}
         </Button>
 
         <p className="mt-4 text-center text-sm text-muted-foreground">
-          No account yet?{" "}
+          {t("login.noAccountYet")} {" "}
           <Link to="/register" className="font-medium text-navy hover:text-teal">
-            Register
+            {t("landing.auth.register")}
           </Link>
         </p>
       </form>
