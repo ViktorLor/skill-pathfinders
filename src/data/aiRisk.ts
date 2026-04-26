@@ -26,6 +26,8 @@ export interface SkillAIRisk {
   outlook?: "rising" | "stable" | "declining";
   /** Plain-English Wittgenstein note tied to the projection */
   outlookNote?: string;
+  /** Annualised growth index 2025–2035, normalised: -1..+1 */
+  changeIndex?: number;
   /** US-baseline Frey-Osborne automation probability before LMIC adjustment, 0–100 */
   baselineExposure?: number;
 }
@@ -36,6 +38,13 @@ export interface AdjacentSkill {
   reason: string;
   /** Wittgenstein Centre 2025–2035 demand outlook in LMICs */
   outlook: "rising" | "stable";
+}
+
+export interface TrajectoryEntry {
+  skill: string;
+  cluster: string;
+  outlook: "rising" | "stable" | "declining";
+  changeIndex: number;
 }
 
 export interface SkillRiskProfile {
@@ -51,6 +60,15 @@ export interface SkillRiskProfile {
   resilient: string[];
   /** Adjacent skills to learn to increase resilience */
   adjacent: AdjacentSkill[];
+  /**
+   * Wittgenstein 2025–2035 trajectory snapshot for the candidate's skills:
+   * which clusters are rising vs. declining over the next decade.
+   */
+  trajectory?: {
+    rising: TrajectoryEntry[];
+    declining: TrajectoryEntry[];
+    summary: string;
+  };
 }
 
 export const TRADE_RISK_PROFILE: SkillRiskProfile = {
@@ -314,6 +332,11 @@ import {
   lookupWittgensteinOutlook,
   type SkillClusterOutlook,
 } from "./automation/wittgenstein";
+import {
+  getIloTaskShares,
+  ILO_TASK_INDEX_CITATION,
+  type IloTaskShares,
+} from "./automation/iloTaskIndex";
 
 const KNOWN_SKILL_RISKS: Record<string, SkillAIRisk> = (() => {
   const merged: Record<string, SkillAIRisk> = {};
@@ -416,6 +439,7 @@ function attachOutlook(risk: SkillAIRisk, outlook: SkillClusterOutlook | null): 
     ...risk,
     outlook: outlook.outlook,
     outlookNote: `Wittgenstein SSP2 2025–35: ${outlook.cluster} — ${outlook.rationale}`,
+    changeIndex: outlook.changeIndex,
   };
 }
 
@@ -428,6 +452,7 @@ function freyOsborneProbabilityForSkill(skillName: string): {
   probability: number;
   occupations: string[];
   socCodes: string[];
+  iscoCodes: string[];
 } | null {
   const socs = lookupSocForSkill(skillName);
   if (!socs.length) return null;
@@ -443,7 +468,18 @@ function freyOsborneProbabilityForSkill(skillName: string): {
     probability,
     occupations: matches.map((m) => m.occupation),
     socCodes: matches.map((m) => m.socCode),
+    iscoCodes: matches
+      .map((m) => m.iscoCode)
+      .filter((c): c is string => Boolean(c)),
   };
+}
+
+function describeIloShares(shares: IloTaskShares): string {
+  const routine = Math.round((shares.routineCognitive + shares.routineManual) * 100);
+  const nonRoutine = Math.round(
+    (shares.nonRoutineAnalytic + shares.nonRoutineInteractive + shares.nonRoutineManual) * 100,
+  );
+  return `ILO 2021 Task Index for ISCO ${shares.iscoCode} (${shares.title}): ${routine}% routine, ${nonRoutine}% non-routine task content.`;
 }
 
 function riskFromFreyOsborne(
@@ -462,12 +498,16 @@ function riskFromFreyOsborne(
     ? ` Adjusted to ${adjusted}/100 for ${countryCtx.countryName} labor market context (modifier ×${countryCtx.modifier.toFixed(2)}, ${countryCtx.source}).`
     : "";
 
+  const iloShares = getIloTaskShares(fo.iscoCodes[0]);
+  const iloClause = iloShares ? ` ${describeIloShares(iloShares)}` : "";
+  const iloSourceClause = iloShares ? ` · ${ILO_TASK_INDEX_CITATION}` : "";
+
   return {
     level: levelFromExposure(adjusted),
     exposure: adjusted,
     baselineExposure: baseline,
-    rationale: `Anchored to "${occupationLabel}" (SOC ${fo.socCodes[0]}) in Frey & Osborne 2017, automation probability ${fo.probability.toFixed(2)}.${adjustmentClause}`,
-    source: `${FREY_OSBORNE_CITATION}${isAdjusted ? ` · ${countryCtx.source}` : ""}`,
+    rationale: `Anchored to "${occupationLabel}" (SOC ${fo.socCodes[0]}) in Frey & Osborne 2017, automation probability ${fo.probability.toFixed(2)}.${adjustmentClause}${iloClause}`,
+    source: `${FREY_OSBORNE_CITATION}${iloSourceClause}${isAdjusted ? ` · ${countryCtx.source}` : ""}`,
   };
 }
 
@@ -600,6 +640,35 @@ export function computeRiskProfileForCandidateProfile(
     ? `${TRACK_HEADLINE[track]} Risk levels shown have been calibrated to ${countryCtx.countryName} via a ×${countryCtx.modifier.toFixed(2)} LMIC modifier (${countryCtx.source}). 2025–2035 outlook uses ${WITTGENSTEIN_CITATION}.`
     : `${TRACK_HEADLINE[track]} 2025–2035 outlook uses ${WITTGENSTEIN_CITATION}.`;
 
+  // Build Wittgenstein 2025–2035 trajectory snapshot for the candidate's skills.
+  const rising: TrajectoryEntry[] = [];
+  const declining: TrajectoryEntry[] = [];
+  for (const skill of allSkills) {
+    const outlook = lookupWittgensteinOutlook(skill.name);
+    if (!outlook) continue;
+    const entry: TrajectoryEntry = {
+      skill: skill.name,
+      cluster: outlook.cluster,
+      outlook: outlook.outlook,
+      changeIndex: outlook.changeIndex,
+    };
+    if (outlook.outlook === "rising") rising.push(entry);
+    else if (outlook.outlook === "declining") declining.push(entry);
+  }
+  rising.sort((a, b) => b.changeIndex - a.changeIndex);
+  declining.sort((a, b) => a.changeIndex - b.changeIndex);
+
+  let trajectorySummary: string;
+  if (!rising.length && !declining.length) {
+    trajectorySummary = `No Wittgenstein 2025–2035 cluster matched the candidate's skills directly. Adjacent-skill recommendations below still draw on ${WITTGENSTEIN_CITATION}.`;
+  } else if (rising.length && !declining.length) {
+    trajectorySummary = `${rising.length} of the candidate's skills sit in clusters projected to grow through 2035 in ${countryCtx.countryName}. The portfolio leans toward areas where demand is expanding.`;
+  } else if (!rising.length && declining.length) {
+    trajectorySummary = `${declining.length} of the candidate's skills sit in clusters projected to shrink through 2035 in ${countryCtx.countryName}. Reskilling toward the adjacent skills below is recommended.`;
+  } else {
+    trajectorySummary = `Mixed trajectory: ${rising.length} skill(s) in rising clusters and ${declining.length} in declining clusters through 2035 (${countryCtx.countryName}, ${WITTGENSTEIN_CITATION}).`;
+  }
+
   return {
     summary: {
       overallLevel,
@@ -609,6 +678,11 @@ export function computeRiskProfileForCandidateProfile(
     bySkill,
     resilient: resilient.slice(0, 8),
     adjacent,
+    trajectory: {
+      rising,
+      declining,
+      summary: trajectorySummary,
+    },
   };
 }
 

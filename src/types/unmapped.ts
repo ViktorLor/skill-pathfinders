@@ -1,5 +1,6 @@
 export interface CountryConfig {
-  code: "GHA" | "BGD" | "NGA";
+  /** ISO 3166-1 alpha-3 code. Any code is allowed (CVs may mention any country). */
+  code: string;
   name: string;
   flag: string;
   language: string;

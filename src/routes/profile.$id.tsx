@@ -29,6 +29,11 @@ import {
   Loader2,
 } from "lucide-react";
 import { useCountry } from "@/context/CountryContext";
+import {
+  getLaborForceParticipation,
+  getWageAndSalariedShare,
+  getYouthUnemploymentData,
+} from "@/services/worldBank";
 import { CoverLetterModal } from "@/components/profile/CoverLetterModal";
 import { AIRiskLens } from "@/components/profile/AIRiskLens";
 import {
@@ -355,9 +360,45 @@ function DynamicProfilePage({ snapshot }: { snapshot: ProfileSnapshot }) {
   const { country } = useCountry();
   const profile = snapshot.profile;
   const skills = Object.values(profile.skills).flat();
-  const riskProfile = computeRiskProfileForCandidateProfile(profile, country.code);
+  const effectiveCountryCode = profile.country?.trim() || country.code;
+  const riskProfile = computeRiskProfileForCandidateProfile(profile, effectiveCountryCode);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
+  const [signals, setSignals] = useState<{
+    wageShare?: { value: number; year: number; countryName: string };
+    laborForce?: { value: number; year: number; countryName: string };
+    youthUnemployment?: { value: number; year: number; countryName: string };
+    error?: string;
+  }>({});
+
+  const isIsoAlpha3 = /^[A-Z]{3}$/.test(effectiveCountryCode);
+
+  useEffect(() => {
+    if (!isIsoAlpha3) {
+      setSignals({});
+      return;
+    }
+    let cancelled = false;
+    setSignals({});
+    Promise.all([
+      getWageAndSalariedShare(effectiveCountryCode),
+      getLaborForceParticipation(effectiveCountryCode),
+      getYouthUnemploymentData(effectiveCountryCode),
+    ])
+      .then(([wageShare, lfp, youth]) => {
+        if (cancelled) return;
+        setSignals({ wageShare, laborForce: lfp, youthUnemployment: youth });
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setSignals({
+          error: err instanceof Error ? err.message : "Failed to load World Bank signals.",
+        });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [effectiveCountryCode, isIsoAlpha3]);
   const initials = (profile.profile.roleName || "Candidate")
     .split(" ")
     .map((part) => part[0])
@@ -472,6 +513,47 @@ function DynamicProfilePage({ snapshot }: { snapshot: ProfileSnapshot }) {
         iscoTitle={profile.occupation.iscoTitle}
         alternatives={profile.occupation.alternativeOccupationMatches}
       />
+
+      {isIsoAlpha3 && (
+        <section className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 rounded-lg bg-sky/10 px-4 py-3 text-xs text-foreground">
+          {signals.wageShare && (
+            <span className="inline-flex items-center gap-1.5">
+              <BarChart3 className="h-3.5 w-3.5 text-sky" />
+              {`Formal wage share ${signals.wageShare.value.toFixed(1)}% (${signals.wageShare.countryName}, ${signals.wageShare.year})`}
+            </span>
+          )}
+          {signals.laborForce && (
+            <span className="inline-flex items-center gap-1.5">
+              <BarChart3 className="h-3.5 w-3.5 text-sky" />
+              {`Labor force participation ${signals.laborForce.value.toFixed(1)}% (${signals.laborForce.countryName}, ${signals.laborForce.year})`}
+            </span>
+          )}
+          {signals.youthUnemployment && (
+            <span className="inline-flex items-center gap-1.5">
+              <TrendingDown className="h-3.5 w-3.5 text-sky" />
+              {`Youth unemployment ${signals.youthUnemployment.value.toFixed(1)}% (${signals.youthUnemployment.countryName}, ${signals.youthUnemployment.year})`}
+            </span>
+          )}
+          {!signals.wageShare && !signals.laborForce && !signals.youthUnemployment && (
+            <span className="text-muted-foreground">
+              {signals.error
+                ? `World Bank: ${signals.error}`
+                : `Loading World Bank signals for ${effectiveCountryCode}…`}
+            </span>
+          )}
+          <span className="ml-auto inline-flex items-center gap-1 text-muted-foreground">
+            Source:{" "}
+            <a
+              href="https://api.worldbank.org/v2"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-sky"
+            >
+              World Bank WDI
+            </a>
+          </span>
+        </section>
+      )}
 
       <section className="mt-8">
         <h2 className="text-lg font-semibold text-navy">Skills from profile</h2>

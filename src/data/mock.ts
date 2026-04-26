@@ -1,53 +1,7 @@
-import type {
-  CountryConfig,
-  CandidateProfile,
-  JobMatch,
-} from "@/types/unmapped";
+import type { CandidateProfile, JobMatch } from "@/types/unmapped";
 
-export const COUNTRY_CONFIGS: Record<string, CountryConfig> = {
-  GHA: {
-    code: "GHA",
-    name: "Ghana",
-    flag: "🇬🇭",
-    language: "en",
-    currency: "GHS",
-    currencySymbol: "₵",
-    iloCountryCode: "GHA",
-    wbCountryCode: "GH",
-    sectors: ["ICT", "Trade & Retail", "Agriculture", "Construction", "Textiles"],
-    opportunityTypes: ["formal", "self-employment", "gig", "training"],
-    avgWageSignal: "Avg. wage (ICT): GHS 2,400/mo",
-    youthUnemployment: "Youth unemployment: 12.4%",
-  },
-  BGD: {
-    code: "BGD",
-    name: "Bangladesh",
-    flag: "🇧🇩",
-    language: "en",
-    currency: "BDT",
-    currencySymbol: "৳",
-    iloCountryCode: "BGD",
-    wbCountryCode: "BD",
-    sectors: ["Garment & Textiles", "Agriculture", "ICT", "Construction", "Fishing"],
-    opportunityTypes: ["formal", "self-employment", "gig", "training"],
-    avgWageSignal: "Avg. wage (Textiles): BDT 8,200/mo",
-    youthUnemployment: "Youth unemployment: 10.6%",
-  },
-  NGA: {
-    code: "NGA",
-    name: "Nigeria",
-    flag: "🇳🇬",
-    language: "en",
-    currency: "NGN",
-    currencySymbol: "₦",
-    iloCountryCode: "NGA",
-    wbCountryCode: "NG",
-    sectors: ["ICT", "Trade & Retail", "Agriculture", "Finance", "Construction"],
-    opportunityTypes: ["formal", "self-employment", "gig", "training"],
-    avgWageSignal: "Avg. wage (ICT): NGN 180,000/mo",
-    youthUnemployment: "Youth unemployment: 19.2%",
-  },
-};
+export { COUNTRY_CONFIGS } from "@/data/countries.config";
+import { COUNTRY_CONFIGS } from "@/data/countries.config";
 
 export const MOCK_TECH_CANDIDATE: CandidateProfile = {
   id: "demo-tech",

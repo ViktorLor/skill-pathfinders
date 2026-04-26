@@ -1,7 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useCountry } from "@/context/CountryContext";
-import { getYouthUnemploymentData } from "@/services/worldBank";
+import { FEATURED_COUNTRIES } from "@/data/countries.config";
+import {
+  getEmploymentBySector,
+  getLaborForceParticipation,
+  getYouthUnemploymentData,
+  type EmploymentBySector,
+  type IndicatorObservation,
+} from "@/services/worldBank";
 import {
   Select,
   SelectTrigger,
@@ -49,42 +56,37 @@ const SKILLS = {
   ],
 };
 
-const UNEMP_BY_SECTOR = [
-  { label: "ICT", value: 12 },
-  { label: "Trade & Retail", value: 18 },
-  { label: "Agriculture", value: 34 },
-  { label: "Construction", value: 22 },
-  { label: "Textiles", value: 15 },
-];
-
-const WAGE_BY_OCC = [
-  { label: "Software dev (2512)", value: 2400 },
-  { label: "Electronics repair (7521)", value: 980 },
-  { label: "Field crop farmer (6111)", value: 600 },
-  { label: "Tailor (7531)", value: 850 },
-];
-
 function DashboardPage() {
   const { country, setCountryCode } = useCountry();
-  const [youthUnemployment, setYouthUnemployment] = useState(
-    country.youthUnemployment ?? "Loading World Bank data...",
-  );
+  const [youthUnemployment, setYouthUnemployment] = useState("Loading World Bank data…");
+  const [laborForce, setLaborForce] = useState<IndicatorObservation | null>(null);
+  const [employmentBySector, setEmploymentBySector] = useState<EmploymentBySector | null>(null);
+  const [signalsError, setSignalsError] = useState("");
 
   useEffect(() => {
     let isCurrent = true;
-    setYouthUnemployment(country.youthUnemployment ?? "Loading World Bank data...");
+    setYouthUnemployment("Loading World Bank data…");
+    setLaborForce(null);
+    setEmploymentBySector(null);
+    setSignalsError("");
 
-    getYouthUnemploymentData(country.wbCountryCode)
-      .then((data) => {
+    Promise.all([
+      getYouthUnemploymentData(country.wbCountryCode),
+      getLaborForceParticipation(country.wbCountryCode),
+      getEmploymentBySector(country.wbCountryCode),
+    ])
+      .then(([youth, lfp, sector]) => {
         if (!isCurrent) return;
-        setYouthUnemployment(
-          `${data.value.toFixed(1)}% (${data.countryName}, ${data.year})`,
-        );
+        setYouthUnemployment(`${youth.value.toFixed(1)}% (${youth.countryName}, ${youth.year})`);
+        setLaborForce(lfp);
+        setEmploymentBySector(sector);
       })
       .catch((error) => {
-        console.error("Failed to load World Bank youth unemployment", error);
+        console.error("Failed to load World Bank econometric signals", error);
         if (!isCurrent) return;
-        setYouthUnemployment(country.youthUnemployment ?? "Data unavailable");
+        setSignalsError(
+          error instanceof Error ? error.message : "Could not load World Bank data.",
+        );
       });
 
     return () => {
@@ -104,17 +106,16 @@ function DashboardPage() {
             Bank.
           </p>
         </div>
-        <Select
-          value={country.code}
-          onValueChange={(v) => setCountryCode(v as "GHA" | "BGD" | "NGA")}
-        >
+        <Select value={country.code} onValueChange={setCountryCode}>
           <SelectTrigger className="w-44">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="GHA">🇬🇭 Ghana</SelectItem>
-            <SelectItem value="BGD">🇧🇩 Bangladesh</SelectItem>
-            <SelectItem value="NGA">🇳🇬 Nigeria</SelectItem>
+            {FEATURED_COUNTRIES.map((c) => (
+              <SelectItem key={c.code} value={c.code}>
+                {c.flag} {c.name}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
@@ -127,16 +128,20 @@ function DashboardPage() {
           value="1,247"
         />
         <Metric
-          icon={<Briefcase className="h-5 w-5 text-sky" />}
-          label="Most common occupation"
-          value="Electronics Repair"
-          sub="ESCO 7521"
-        />
-        <Metric
           icon={<AlertCircle className="h-5 w-5 text-amber" />}
           label="Youth unemployment"
           value={youthUnemployment}
-          sub="World Bank WDI"
+          sub="World Bank WDI · SL.UEM.1524.ZS"
+        />
+        <Metric
+          icon={<Briefcase className="h-5 w-5 text-sky" />}
+          label="Labor force participation (15+)"
+          value={
+            laborForce
+              ? `${laborForce.value.toFixed(1)}% (${laborForce.countryName}, ${laborForce.year})`
+              : signalsError || "Loading…"
+          }
+          sub="World Bank WDI · SL.TLF.CACT.ZS"
         />
         <Metric
           icon={<Gauge className="h-5 w-5 text-greenT" />}
@@ -192,24 +197,72 @@ function DashboardPage() {
       {/* Econometrics */}
       <section className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2">
         <BarChart
-          title="Youth unemployment by sector (%)"
-          data={UNEMP_BY_SECTOR}
+          title={
+            employmentBySector
+              ? `Employment by sector (%) · ${employmentBySector.countryName} ${employmentBySector.year}`
+              : "Employment by sector (loading World Bank…)"
+          }
+          data={
+            employmentBySector
+              ? [
+                  { label: "Agriculture", value: Math.round(employmentBySector.agriculture) },
+                  { label: "Industry", value: Math.round(employmentBySector.industry) },
+                  { label: "Services", value: Math.round(employmentBySector.services) },
+                ]
+              : []
+          }
           color="bg-amber"
           unit="%"
-          max={40}
+          max={100}
         />
-        <BarChart
-          title={`Avg. wage by occupation (${country.currency}/mo)`}
-          data={WAGE_BY_OCC}
-          color="bg-teal"
-          unit=""
-          max={2800}
-        />
+        <div className="rounded-xl border border-border bg-card p-6">
+          <h3 className="text-sm font-semibold text-navy">Live signals · World Bank WDI</h3>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Three indicators load live from{" "}
+            <a
+              href="https://api.worldbank.org/v2"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-sky"
+            >
+              api.worldbank.org/v2
+            </a>{" "}
+            for {country.name} on every country switch:
+          </p>
+          <ul className="mt-4 space-y-2 text-xs">
+            <li>
+              <span className="font-medium text-foreground">Youth unemployment</span>{" "}
+              <span className="text-muted-foreground">(SL.UEM.1524.ZS)</span> ·{" "}
+              {youthUnemployment}
+            </li>
+            <li>
+              <span className="font-medium text-foreground">Labor force participation</span>{" "}
+              <span className="text-muted-foreground">(SL.TLF.CACT.ZS)</span> ·{" "}
+              {laborForce
+                ? `${laborForce.value.toFixed(1)}% (${laborForce.year})`
+                : "Loading…"}
+            </li>
+            <li>
+              <span className="font-medium text-foreground">Employment by sector</span>{" "}
+              <span className="text-muted-foreground">
+                (SL.AGR.EMPL.ZS / SL.IND.EMPL.ZS / SL.SRV.EMPL.ZS)
+              </span>{" "}
+              · {employmentBySector
+                ? `agriculture ${Math.round(employmentBySector.agriculture)}%, industry ${Math.round(employmentBySector.industry)}%, services ${Math.round(employmentBySector.services)}% (${employmentBySector.year})`
+                : "Loading…"}
+            </li>
+          </ul>
+          {signalsError && (
+            <p className="mt-3 rounded-md bg-danger/5 px-3 py-2 text-xs text-danger">
+              {signalsError}
+            </p>
+          )}
+        </div>
       </section>
 
       <p className="mt-6 text-xs text-muted-foreground">
-        Data represents verified profiles on Unmapped + ILO/World Bank
-        econometric signals. Updated monthly.
+        Data represents verified profiles on Unmapped + live World Bank WDI
+        econometric signals. World Bank refreshes WDI series annually.
       </p>
     </main>
   );

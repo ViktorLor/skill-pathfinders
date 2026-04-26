@@ -32,7 +32,10 @@ import {
 } from "@/lib/accountSession";
 import { createAccount, verifyAccountLogin } from "@/services/accounts.server";
 import { findLatestAccountProfile } from "@/services/profileAccounts.server";
+import { resolveEscoOccupation } from "@/services/esco";
 import { saveCandidateSkillProfileJson } from "@/services/profileHandler";
+import { CountryCombobox } from "@/components/CountryCombobox";
+import { getIsoCountry } from "@/data/isoCountries";
 import type { CandidateSkillProfile } from "@/types/unmapped";
 
 export const Route = createFileRoute("/")({
@@ -51,16 +54,6 @@ export const Route = createFileRoute("/")({
 
 const MAX_INTERVIEW_QUESTIONS = 5;
 
-const LOCATION_OPTIONS = [
-  { value: "accra-gha", label: "Accra, Ghana", country: "Ghana" },
-  { value: "kumasi-gha", label: "Kumasi, Ghana", country: "Ghana" },
-  { value: "sunyani-gha", label: "Sunyani, Ghana", country: "Ghana" },
-  { value: "lagos-nga", label: "Lagos, Nigeria", country: "Nigeria" },
-  { value: "abuja-nga", label: "Abuja, Nigeria", country: "Nigeria" },
-  { value: "dhaka-bgd", label: "Dhaka, Bangladesh", country: "Bangladesh" },
-  { value: "chattogram-bgd", label: "Chattogram, Bangladesh", country: "Bangladesh" },
-  { value: "remote-flexible", label: "Remote / flexible", country: "Remote / flexible" },
-] as const;
 
 type FixedProfileFields = {
   location: string;
@@ -180,10 +173,52 @@ const updateProfileFromAnswer = createServerFn({ method: "POST" })
     return normalizeDraftResult(result);
   });
 
+async function enrichOccupationWithEsco(
+  input: SaveProfileInput,
+): Promise<SaveProfileInput> {
+  const occ = input.profile.occupation;
+  const hasCode = Boolean(occ.escoOccupationCode?.trim());
+  const hasUri = Boolean(occ.escoOccupationUri?.trim());
+  const hasIsco = Boolean(occ.iscoCode?.trim());
+  if (hasCode && hasUri && hasIsco) return input;
+
+  const query =
+    input.profile.profile.roleName?.trim() ||
+    input.profile.profile.normalizedRoleName?.trim();
+  if (!query) return input;
+
+  const resolution = await resolveEscoOccupation(query);
+  if (!resolution) return input;
+
+  return {
+    ...input,
+    profile: {
+      ...input.profile,
+      occupation: {
+        ...occ,
+        escoOccupationTitle: occ.escoOccupationTitle?.trim()
+          ? occ.escoOccupationTitle
+          : resolution.escoOccupationTitle,
+        escoOccupationUri: hasUri ? occ.escoOccupationUri : resolution.escoOccupationUri,
+        escoOccupationCode: hasCode ? occ.escoOccupationCode : resolution.escoOccupationCode,
+        iscoCode: hasIsco ? occ.iscoCode : resolution.iscoCode ?? occ.iscoCode,
+        iscoTitle: occ.iscoTitle?.trim()
+          ? occ.iscoTitle
+          : resolution.iscoTitle ?? occ.iscoTitle,
+        alternativeOccupationMatches:
+          occ.alternativeOccupationMatches?.length
+            ? occ.alternativeOccupationMatches
+            : resolution.alternativeOccupationMatches,
+      },
+    },
+  };
+}
+
 const saveProfileJson = createServerFn({ method: "POST" })
   .inputValidator((data: SaveProfileInput) => data)
   .handler(async ({ data }) => {
-    return saveCandidateSkillProfileJson(data);
+    const enriched = await enrichOccupationWithEsco(data);
+    return saveCandidateSkillProfileJson(enriched);
   });
 
 const registerAccount = createServerFn({ method: "POST" })
@@ -200,9 +235,12 @@ const loadLatestAccountProfile = createServerFn({ method: "POST" })
 
 const profileSystemPrompt = `
 You create structured CandidateSkillProfile JSON for employment matching.
-Use only evidence from the CV if provided and the interview answers. Do not invent employers, degrees, certifications, taxonomies, or years.
+Use only evidence from the CV if provided and the interview answers. Do not invent employers, degrees, certifications, taxonomies, countries or years.
 Return JSON with this shape:
 {
+  "location": string,
+  "country": string,
+  "willingToRelocate": boolean,
   "profile": { "roleName": string, "normalizedRoleName": string, "summary": string, "seniority": "entry|junior|mid|senior|lead|manager|executive|unknown", "track": "tech|trade|agriculture|other", "confidence": "high|medium|low" },
   "occupation": { "iscoCode": string, "iscoTitle": string, "escoOccupationCode": string, "escoOccupationUri": string, "escoOccupationTitle": string, "alternativeOccupationMatches": [] },
   "experience": { "hasJob": boolean, "totalYears": number, "relevantYears": number, "industries": [], "jobTitles": [], "companies": [], "responsibilities": [], "achievements": [] },
@@ -215,7 +253,8 @@ Return JSON with this shape:
 }
 Each skill item must include name, normalizedName, category, evidence, and confidence. Add proficiency or yearsExperience only when supported.
 Always include escoOccupationCode when an ESCO occupation is mapped. Use the ESCO concept identifier or notation, not the full URL. Keep escoOccupationUri only for internal linking.
-Ask one natural chatbot question at a time. If there is no CV, start by discovering the person's target work, whether they currently have a job, past practical experience, tools, tasks, languages, education/training, and learning goals. Prioritize missing role, ISCO code/title, current job status, years, responsibilities, achievements, education/certifications, tools, languages, and learning goals.
+For "country", return an ISO 3166-1 alpha-3 code (e.g. "GHA", "BGD", "NGA", "KEN", "AUT", "IND") inferred from the CV or the candidate's answers. Leave it as an empty string only if the candidate's country is genuinely unknown. For "location" use a "City, Country" string when known.
+Ask one natural chatbot question at a time. If there is no CV, start by discovering the person's target work, whether they currently have a job, past practical experience, tools, tasks, languages, education/training, country/city of residence, and learning goals. Prioritize missing role, ISCO code/title, current job status, years, responsibilities, achievements, education/certifications, tools, languages, country, and learning goals.
 Set isComplete true when the profile is useful for matching or after 5 answered questions.
 `;
 
@@ -443,7 +482,8 @@ function LandingPage() {
   const [authError, setAuthError] = useState("");
   const [isCheckingAccountProfile, setIsCheckingAccountProfile] = useState(false);
   const [cvFile, setCvFile] = useState<File | null>(null);
-  const [selectedLocation, setSelectedLocation] = useState("");
+  const [selectedCountry, setSelectedCountry] = useState("");
+  const [cityInput, setCityInput] = useState("");
   const [currentlyEmployed, setCurrentlyEmployed] = useState("");
   const [willingToRelocate, setWillingToRelocate] = useState("");
   const [profileId, setProfileId] = useState(() => createProfileId());
@@ -463,12 +503,15 @@ function LandingPage() {
     ? 100
     : Math.min(100, Math.round((questionCount / MAX_INTERVIEW_QUESTIONS) * 100));
   const latestQuestion = [...messages].reverse().find((message) => message.role === "assistant")?.text;
-  const selectedLocationOption = LOCATION_OPTIONS.find((option) => option.value === selectedLocation);
+  const selectedCountryRecord = getIsoCountry(selectedCountry);
+  const trimmedCity = cityInput.trim();
   const fixedFields =
-    selectedLocationOption && currentlyEmployed && willingToRelocate
+    selectedCountryRecord && currentlyEmployed && willingToRelocate
       ? {
-          location: selectedLocationOption.label,
-          country: selectedLocationOption.country,
+          location: trimmedCity
+            ? `${trimmedCity}, ${selectedCountryRecord.name}`
+            : selectedCountryRecord.name,
+          country: selectedCountryRecord.code,
           currentlyEmployed: currentlyEmployed === "yes",
           willingToRelocate: willingToRelocate === "yes",
         }
@@ -729,30 +772,34 @@ function LandingPage() {
               />
             </label>
 
-            <div className="mt-4">
-              <label className="mb-2 flex items-center gap-2 text-sm font-medium text-foreground">
-                <MapPin className="h-4 w-4 text-muted-foreground" />
-                Location
-              </label>
-              <Select
-                value={selectedLocation}
-                onValueChange={(value) => {
-                  setSelectedLocation(value);
-                  setError("");
-                }}
-                disabled={isAnalyzing || isSendingAnswer || Boolean(profile)}
-              >
-                <SelectTrigger className="h-11 bg-background">
-                  <SelectValue placeholder="Choose your location" />
-                </SelectTrigger>
-                <SelectContent>
-                  {LOCATION_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-2 flex items-center gap-2 text-sm font-medium text-foreground">
+                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                  Country
+                </label>
+                <CountryCombobox
+                  value={selectedCountry}
+                  onChange={(code) => {
+                    setSelectedCountry(code);
+                    setError("");
+                  }}
+                  placeholder="Select your country"
+                  disabled={isAnalyzing || isSendingAnswer || Boolean(profile)}
+                />
+              </div>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-foreground">
+                  City <span className="text-muted-foreground">(optional)</span>
+                </label>
+                <Input
+                  value={cityInput}
+                  onChange={(event) => setCityInput(event.target.value)}
+                  placeholder="e.g. Nairobi"
+                  disabled={isAnalyzing || isSendingAnswer || Boolean(profile)}
+                  className="h-11 bg-background"
+                />
+              </div>
             </div>
 
             <div className="mt-4 grid gap-4 sm:grid-cols-2">

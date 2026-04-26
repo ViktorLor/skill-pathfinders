@@ -89,6 +89,10 @@ export function AIRiskLens({ profile }: { profile: SkillRiskProfile }) {
             const showBaseline =
               typeof risk.baselineExposure === "number" &&
               risk.baselineExposure !== risk.exposure;
+            const deltaPct =
+              typeof risk.changeIndex === "number"
+                ? Math.round(risk.changeIndex * 100)
+                : null;
             return (
               <div
                 key={name}
@@ -104,6 +108,13 @@ export function AIRiskLens({ profile }: { profile: SkillRiskProfile }) {
                       >
                         <OutlookIcon className="h-3 w-3" />
                         {outlook.label}
+                        {deltaPct !== null && deltaPct !== 0 && (
+                          <span className="font-bold">
+                            {" "}
+                            {deltaPct > 0 ? "+" : ""}
+                            {deltaPct}%
+                          </span>
+                        )}
                       </span>
                     )}
                   </div>
@@ -204,6 +215,80 @@ export function AIRiskLens({ profile }: { profile: SkillRiskProfile }) {
           </ul>
         </div>
       </div>
+
+      {profile.trajectory && (
+        <div className="mt-6 rounded-lg border border-border bg-background p-4">
+          <div className="flex items-start gap-2">
+            <TrendingUp className="mt-0.5 h-4 w-4 text-navy" />
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-navy">
+                Landscape 2025 → 2035
+              </h3>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                {profile.trajectory.summary}
+              </p>
+            </div>
+          </div>
+
+          {(profile.trajectory.rising.length > 0 ||
+            profile.trajectory.declining.length > 0) && (
+            <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+              {profile.trajectory.rising.length > 0 && (
+                <div>
+                  <div className="text-[10px] font-semibold uppercase tracking-wide text-greenT">
+                    Rising clusters in your portfolio
+                  </div>
+                  <ul className="mt-2 space-y-1.5">
+                    {profile.trajectory.rising.map((t) => (
+                      <li
+                        key={`r-${t.skill}`}
+                        className="flex items-center justify-between gap-2 rounded-md bg-greenT/5 px-2.5 py-1.5 text-xs"
+                      >
+                        <span className="font-medium text-foreground">
+                          {t.skill}
+                        </span>
+                        <span className="inline-flex items-center gap-1 text-greenT">
+                          <TrendingUp className="h-3 w-3" />
+                          +{Math.round(t.changeIndex * 100)}% by 2035
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {profile.trajectory.declining.length > 0 && (
+                <div>
+                  <div className="text-[10px] font-semibold uppercase tracking-wide text-danger">
+                    Declining clusters in your portfolio
+                  </div>
+                  <ul className="mt-2 space-y-1.5">
+                    {profile.trajectory.declining.map((t) => (
+                      <li
+                        key={`d-${t.skill}`}
+                        className="flex items-center justify-between gap-2 rounded-md bg-danger/5 px-2.5 py-1.5 text-xs"
+                      >
+                        <span className="font-medium text-foreground">
+                          {t.skill}
+                        </span>
+                        <span className="inline-flex items-center gap-1 text-danger">
+                          <TrendingDown className="h-3 w-3" />
+                          {Math.round(t.changeIndex * 100)}% by 2035
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+
+          <p className="mt-3 text-[10px] uppercase tracking-wide text-muted-foreground/80">
+            Source: Wittgenstein Centre Human Capital Data Explorer (SSP2,
+            2025–2035)
+          </p>
+        </div>
+      )}
     </section>
   );
 }
